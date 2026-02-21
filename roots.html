@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bikes – Roots Bike Route Planner. Visualise GPX routes and GPS waypoints on an interactive map." />
+  <title>Roots – Bike Route Planner – Tomika Bikes</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+  #map {
+    height: 70vh;
+    width: 100%;
+    border-radius: 6px;
+    margin-bottom: 1em;
+    z-index: 1;
+  }
+
+  .point-type-icon {
+    background: none !important;
+    border: none !important;
+  }
+
+  .roots-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+    align-items: center;
+  }
+
+  .roots-controls label {
+    padding: 0.4em 0.8em;
+    background: #252a34;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  .roots-controls label:hover {
+    border-color: #58a6ff;
+  }
+
+  .roots-controls input[type="checkbox"] {
+    accent-color: #58a6ff;
+  }
+
+  .roots-btn {
+    padding: 0.4em 0.8em;
+    background: #252a34;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 0.85em;
+  }
+
+  .roots-btn:hover {
+    border-color: #58a6ff;
+  }
+
+  .roots-btn.active {
+    border-color: #58a6ff;
+    background: #1a1f2e;
+  }
+
+  .roots-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  #route-stats {
+    background: #252a34;
+    padding: 1em;
+    border-radius: 6px;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+    display: none;
+  }
+
+  #route-stats table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #route-stats th, #route-stats td {
+    text-align: left;
+    padding: 0.3em 0.6em;
+    border-bottom: 1px solid #444;
+  }
+
+  #route-stats th {
+    color: #58a6ff;
+  }
+
+  .route-color-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.3em;
+  }
+
+  /* Firebase admin UI */
+  #admin-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+    align-items: center;
+    min-height: 2em;
+  }
+
+  #upload-area {
+    display: none;
+    border: 2px dashed #444;
+    border-radius: 6px;
+    padding: 1.5em;
+    margin-bottom: 1em;
+    text-align: center;
+    color: #888;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  #upload-area.drag-over {
+    border-color: #58a6ff;
+    background: rgba(88, 166, 255, 0.05);
+    color: #58a6ff;
+  }
+
+  #upload-status {
+    font-size: 0.85em;
+    margin-top: 0.5em;
+    color: #58a6ff;
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 0.8em;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    margin-left: 0.5em;
+  }
+
+  .delete-btn:hover {
+    background: rgba(255, 107, 107, 0.15);
+  }
+
+  .info-btn {
+    background: none;
+    border: none;
+    color: #58a6ff;
+    cursor: pointer;
+    font-size: 0.8em;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    margin-left: 0.3em;
+  }
+
+  .info-btn:hover {
+    background: rgba(88, 166, 255, 0.15);
+  }
+
+  /* Metadata modal */
+  .meta-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .meta-overlay.open {
+    display: flex;
+  }
+
+  .meta-modal {
+    background: #1e2330;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 1.5em;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #e0e0e0;
+  }
+
+  .meta-modal h3 {
+    margin: 0 0 1em 0;
+    color: #58a6ff;
+    font-size: 1.1em;
+  }
+
+  .meta-modal label {
+    display: block;
+    font-size: 0.85em;
+    color: #aaa;
+    margin-bottom: 0.3em;
+    margin-top: 0.8em;
+  }
+
+  .meta-modal input[type="text"],
+  .meta-modal textarea {
+    width: 100%;
+    padding: 0.5em;
+    background: #252a34;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 0.9em;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .meta-modal input[type="text"]:focus,
+  .meta-modal textarea:focus {
+    outline: none;
+    border-color: #58a6ff;
+  }
+
+  .meta-modal textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  .meta-modal .meta-actions {
+    margin-top: 1.2em;
+    display: flex;
+    gap: 0.5em;
+    justify-content: flex-end;
+  }
+
+  .meta-modal .meta-link {
+    color: #58a6ff;
+    text-decoration: none;
+    word-break: break-all;
+  }
+
+  .meta-modal .meta-link:hover {
+    text-decoration: underline;
+  }
+
+  .meta-modal .meta-view-value {
+    font-size: 0.95em;
+    margin-bottom: 0.2em;
+    color: #e0e0e0;
+  }
+
+  .meta-modal .meta-view-value.empty {
+    color: #666;
+    font-style: italic;
+  }
+
+  /* Loading overlay */
+  #map-loading {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(20, 24, 33, 0.85);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: opacity 0.4s ease;
+  }
+
+  #map-loading.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #map-loading .loading-text {
+    color: #aaa;
+    font-size: 0.9em;
+    margin-bottom: 0.8em;
+  }
+
+  #map-loading .progress-bar {
+    width: 200px;
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  #map-loading .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #58a6ff;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  #map-wrapper {
+    position: relative;
+  }
+
+  /* Marker cluster custom styling */
+  .marker-cluster-small {
+    background-color: rgba(88, 166, 255, 0.6);
+  }
+  .marker-cluster-small div {
+    background-color: rgba(88, 166, 255, 0.8);
+  }
+
+  .marker-cluster-medium {
+    background-color: rgba(241, 196, 15, 0.6);
+  }
+  .marker-cluster-medium div {
+    background-color: rgba(241, 196, 15, 0.8);
+  }
+
+  .marker-cluster-large {
+    background-color: rgba(231, 76, 60, 0.6);
+  }
+  .marker-cluster-large div {
+    background-color: rgba(231, 76, 60, 0.8);
+  }
+  </style>
+</head>
+<body>
+
+<!-- Page Loader -->
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-dots">
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Planning</a></li>
+      <li><a href="roots.html">Roots</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="journal.html">Journal</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-login-btn" data-auth>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign In
+      </button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Planning</a>
+  <a href="roots.html">🚵 Roots</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="journal.html">📔 Journal</a>
+  <a href="admin.html">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+</div>
+
+<!-- Auth Modal -->
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access your journal and admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">🚵 Bike Routes</div>
+    <h1>Roots – Route Planner</h1>
+    <p>Interactive map for GPX bike routes, onsen, campsites, and GPS waypoints</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ROOTS APP
+════════════════════════════════════════════ -->
+<section class="section" style="padding-top:2rem">
+  <div class="container">
+
+    <p style="color:var(--color-gray-600);margin-bottom:1.5rem;font-size:.95rem">
+      Drop your <code>.gpx</code> files onto the <strong>+ Add GPX</strong> button to visualise bike routes on the
+      map, or use <strong>+ Add CSV Points</strong> to add individual GPS points from a CSV file. Toggle routes and
+      points on/off with the checkboxes and view distance &amp; elevation stats below the map.
+    </p>
+    <p style="color:var(--color-gray-600);margin-bottom:1.5rem;font-size:.9rem">
+      <strong>CSV Format:</strong> Your CSV file should have columns for <code>name</code>, <code>latitude</code>,
+      <code>longitude</code>, and optionally <code>url</code> and <code>Type</code> (Onsen, Campsite, Roadside
+      Station, Must See, Hotel, Other). &nbsp;
+      <strong>Firebase mode:</strong> Sign in with Google to upload GPX and CSV files directly to Firebase Storage.
+    </p>
+
+    <!-- Admin bar: login/logout + upload -->
+    <div id="admin-bar">
+      <button class="roots-btn" id="auth-btn" style="display:none;">Sign In</button>
+      <span id="auth-status" style="font-size:0.8em; color:#888;"></span>
+    </div>
+
+    <div id="upload-area">
+      <strong>Drop GPX or CSV files here</strong> or click to select<br>
+      <input type="file" id="firebase-file-input" accept=".gpx,.csv" multiple style="display:none;">
+      <div id="upload-status"></div>
+    </div>
+
+    <div class="roots-controls">
+      <button class="roots-btn" id="add-gpx-btn" title="Load a GPX file from your device">+ Add GPX</button>
+      <input type="file" id="gpx-file-input" accept=".gpx" multiple style="display:none;">
+      <button class="roots-btn" id="add-csv-btn" title="Load a CSV file with GPS points">+ Add CSV Points</button>
+      <input type="file" id="csv-file-input" accept=".csv" multiple style="display:none;">
+      <button class="roots-btn" id="add-gmaps-btn" title="Add a point from Google Maps URL">+ Add Google Maps Point</button>
+      <span id="type-filters"></span>
+      <button class="roots-btn" id="fit-bounds-btn" title="Zoom to fit all routes">Fit All</button>
+    </div>
+
+    <!-- Metadata modal -->
+    <div class="meta-overlay" id="meta-overlay">
+      <div class="meta-modal" id="meta-modal">
+        <h3 id="meta-title">Route Info</h3>
+        <div id="meta-body"></div>
+        <div class="meta-actions">
+          <button class="roots-btn" id="meta-save-btn" style="display:none;">Save</button>
+          <button class="roots-btn" id="meta-close-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Google Maps Point modal -->
+    <div class="meta-overlay" id="gmaps-overlay">
+      <div class="meta-modal" id="gmaps-modal">
+        <h3>Add Google Maps Point</h3>
+        <div id="gmaps-body">
+          <label for="gmaps-url-input">Google Maps URL</label>
+          <input type="text" id="gmaps-url-input" placeholder="Paste Google Maps URL here..." />
+
+          <label for="gmaps-type-input">Point Type</label>
+          <select id="gmaps-type-input" style="width:100%;padding:0.5em;background:#252a34;border:1px solid #444;border-radius:4px;color:#e0e0e0;font-size:0.9em;font-family:inherit;box-sizing:border-box;">
+            <option value="Campsite">Campsite</option>
+            <option value="Onsen">Onsen</option>
+            <option value="Roadside Station">Roadside Station</option>
+            <option value="Must See">Must See</option>
+            <option value="Hotel">Hotel</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="meta-actions">
+          <button class="roots-btn" id="gmaps-add-btn">Add Point</button>
+          <button class="roots-btn" id="gmaps-close-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="map-wrapper">
+      <div id="map-loading">
+        <div class="loading-text" id="loading-text">Loading routes &amp; points...</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+      <div id="map"></div>
+    </div>
+    <div id="route-stats"></div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
+        <p>A cycling adventure blog documenting our journey across continents. Planning routes, collecting stories, and sharing every beautiful moment.</p>
+        <div class="social-links">
+          <a class="social-link" title="Instagram" aria-label="Instagram">📸</a>
+          <a class="social-link" title="Twitter" aria-label="Twitter">🐦</a>
+          <a class="social-link" title="YouTube" aria-label="YouTube">▶️</a>
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="index.html">Home</a>
+        <a href="planning.html">Planning</a>
+        <a href="roots.html">Roots</a>
+        <a href="blog.html">Blog</a>
+        <a href="photos.html">Photos</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="journal.html">Private Journal</a>
+        <a href="admin.html">Admin Panel</a>
+        <a href="#" data-auth>Sign In</a>
+      </div>
+      <div class="footer-col">
+        <h4>Info</h4>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">tomika.bikes</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bikes – All rights reserved</span>
+      <span>Made with ❤️ and 🚴 by Tomika &amp; Partner</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Firebase SDK — only app + firestore loaded upfront (auth & storage lazy-loaded on sign-in) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- Firebase config -->
+<script src="assets/js/firebase-config.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script src="js/main.js"></script>
+<script>
+(function() {
+  // ── Map & Route Logic (unchanged) ──────────────────────────
+  const ROUTE_COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a29bfe','#fd79a8','#00b894','#e17055','#0984e3','#6c5ce7','#fdcb6e'];
+  const routes = [];
+  const points = []; // Array for CSV points
+  let colorIdx = 0;
+
+  // Type-based marker icons using SVG divIcons
+  const POINT_ICON_SIZE = [18, 18];
+  const POINT_ICON_ANCHOR = [9, 9];
+  const POINT_POPUP_ANCHOR = [0, -10];
+
+  const POINT_TYPE_ICONS = {
+    'Onsen': {
+      color: '#e74c3c',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#fff" stroke-width="1.5"/><path d="M8 13c0-2.2 1.8-4 4-4s4 1.8 4 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M9.5 8.5c0.3-1 0.7-1.5 0.5-2.5M12 7.5c0.3-1 0.7-1.5 0.5-2.5M14.5 8.5c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
+    },
+    'Campsite': {
+      color: '#27ae60',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#27ae60" stroke="#fff" stroke-width="1.5"/><path d="M12 6L6 17h12L12 6z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 17v-3h4v3" fill="none" stroke="#fff" stroke-width="1" stroke-linejoin="round"/></svg>'
+    },
+    'Roadside Station': {
+      color: '#3498db',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#3498db" stroke="#fff" stroke-width="1.5"/><rect x="7" y="9" width="10" height="7" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M7 12h10" stroke="#fff" stroke-width="1"/><path d="M10 9V7h4v2" fill="none" stroke="#fff" stroke-width="1.2"/></svg>'
+    },
+    'Must See': {
+      color: '#f1c40f',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#f1c40f" stroke="#fff" stroke-width="1.5"/><polygon points="12,5 13.8,10.2 19.4,10.2 14.8,13.4 16.6,18.6 12,15.4 7.4,18.6 9.2,13.4 4.6,10.2 10.2,10.2" fill="#fff"/></svg>'
+    },
+    'Hotel': {
+      color: '#9b59b6',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#9b59b6" stroke="#fff" stroke-width="1.5"/><rect x="7" y="8" width="10" height="9" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M7 11h10" stroke="#fff" stroke-width="1"/><rect x="9" y="13" width="2" height="3" fill="#fff"/><rect x="13" y="13" width="2" height="3" fill="#fff"/></svg>'
+    },
+    'Other': {
+      color: '#95a5a6',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#95a5a6" stroke="#fff" stroke-width="1.5"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
+    },
+    '_default': {
+      color: '#7f8c8d',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#7f8c8d" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg>'
+    }
+  };
+
+  function getPointIcon(type) {
+    const key = normalizePointType(type);
+
+    const iconDef = POINT_TYPE_ICONS[key];
+    return L.divIcon({
+      html: iconDef.svg,
+      className: 'point-type-icon',
+      iconSize: POINT_ICON_SIZE,
+      iconAnchor: POINT_ICON_ANCHOR,
+      popupAnchor: POINT_POPUP_ANCHOR
+    });
+  }
+
+  function normalizePointType(type) {
+    const rawType = type ? String(type).trim() : '';
+    if (!rawType) return '_default';
+
+    if (/onsen/i.test(rawType)) return 'Onsen';
+    if (/camp/i.test(rawType)) return 'Campsite';
+    if (/roadside\s*station/i.test(rawType)) return 'Roadside Station';
+    if (/must\s*see/i.test(rawType)) return 'Must See';
+    if (/hotel/i.test(rawType)) return 'Hotel';
+    if (/other/i.test(rawType)) return 'Other';
+
+    return POINT_TYPE_ICONS[rawType] ? rawType : 'Other';
+  }
+
+  function getPointType(pointData) {
+    const rawType = pointData && pointData.metadata
+      ? (pointData.metadata.Type || pointData.metadata.type || pointData.type || null)
+      : (pointData ? pointData.type : null);
+    const normalized = normalizePointType(rawType);
+    return normalized === '_default' ? 'Other' : normalized;
+  }
+
+  const map = L.map('map').setView([49.25, -123.1], 11);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Create marker cluster group for points
+  const markerClusterGroup = L.markerClusterGroup({
+    maxClusterRadius: function(zoom) {
+      if (zoom >= 14) return 24;
+      if (zoom >= 12) return 40;
+      return 60;
+    },
+    disableClusteringAtZoom: 15,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    iconCreateFunction: function(cluster) {
+      const count = cluster.getChildCount();
+      let size = 'small';
+      let clusterClass = 'marker-cluster-small';
+
+      if (count > 100) {
+        size = 'large';
+        clusterClass = 'marker-cluster-large';
+      } else if (count > 10) {
+        size = 'medium';
+        clusterClass = 'marker-cluster-medium';
+      }
+
+      return L.divIcon({
+        html: '<div><span>' + count + '</span></div>',
+        className: 'marker-cluster ' + clusterClass,
+        iconSize: L.point(40, 40)
+      });
+    }
+  });
+  markerClusterGroup.addTo(map);
+
+  function parseGPX(xmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlString, 'application/xml');
+    const points = [];
+    const trkpts = doc.querySelectorAll('trkpt, rtept');
+    trkpts.forEach(pt => {
+      const lat = parseFloat(pt.getAttribute('lat'));
+      const lon = parseFloat(pt.getAttribute('lon'));
+      const eleEl = pt.querySelector('ele');
+      const ele = eleEl ? parseFloat(eleEl.textContent) : null;
+      if (!isNaN(lat) && !isNaN(lon)) {
+        points.push({ lat, lon, ele });
+      }
+    });
+    const nameEl = doc.querySelector('trk > name, rte > name, metadata > name');
+    const name = nameEl ? nameEl.textContent : null;
+    return { points, name };
+  }
+
+  function computeStats(points) {
+    let distance = 0, elevGain = 0, elevLoss = 0;
+    let minEle = Infinity, maxEle = -Infinity;
+
+    for (let i = 0; i < points.length; i++) {
+      if (points[i].ele !== null) {
+        minEle = Math.min(minEle, points[i].ele);
+        maxEle = Math.max(maxEle, points[i].ele);
+      }
+      if (i === 0) continue;
+      const R = 6371000;
+      const dLat = (points[i].lat - points[i-1].lat) * Math.PI / 180;
+      const dLon = (points[i].lon - points[i-1].lon) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 +
+                Math.cos(points[i-1].lat * Math.PI/180) *
+                Math.cos(points[i].lat * Math.PI/180) *
+                Math.sin(dLon/2)**2;
+      distance += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      if (points[i].ele !== null && points[i-1].ele !== null) {
+        const diff = points[i].ele - points[i-1].ele;
+        if (diff > 0) elevGain += diff;
+        else elevLoss += Math.abs(diff);
+      }
+    }
+
+    return {
+      distanceKm: (distance / 1000).toFixed(1),
+      elevGain: Math.round(elevGain),
+      elevLoss: Math.round(elevLoss),
+      minEle: minEle === Infinity ? '—' : Math.round(minEle),
+      maxEle: maxEle === -Infinity ? '—' : Math.round(maxEle)
+    };
+  }
+
+  // Extended addRoute to optionally track Firebase doc ID for deletion
+  function addRoute(gpxText, fileName, firebaseDocId, metadata) {
+    const { points, name } = parseGPX(gpxText);
+    if (points.length === 0) { alert('No track points found in ' + fileName); return; }
+
+    const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
+    colorIdx++;
+    const latlngs = points.map(p => [p.lat, p.lon]);
+    const polyline = L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
+
+    const startMarker = L.circleMarker(latlngs[0], { radius: 6, color, fillColor: '#fff', fillOpacity: 1, weight: 2 }).addTo(map);
+    const endMarker = L.circleMarker(latlngs[latlngs.length - 1], { radius: 6, color, fillColor: color, fillOpacity: 1, weight: 2 }).addTo(map);
+
+    const routeName = name || fileName.replace(/\.gpx$/i, '');
+    const stats = computeStats(points);
+    const meta = metadata || {};
+    const route = { routeName, color, polyline, startMarker, endMarker, stats, visible: true, firebaseDocId: firebaseDocId || null, metadata: meta };
+    routes.push(route);
+
+    let popupHtml = '<b>' + escapeHtml(routeName) + '</b><br>' + stats.distanceKm + ' km';
+    if (meta.description) {
+      popupHtml += '<br><span style="color:#ccc;font-size:0.92em;">' + escapeHtml(meta.description) + '</span>';
+    }
+    if (meta.sourceUrl) {
+      popupHtml += '<br><a href="' + escapeAttr(meta.sourceUrl) + '" target="_blank" rel="noopener" style="color:#4fc3f7;">Source</a>';
+    }
+    polyline.bindPopup(popupHtml);
+    startMarker.bindTooltip('Start: ' + routeName);
+    endMarker.bindTooltip('End: ' + routeName);
+
+    map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+    renderToggles();
+    renderStats();
+  }
+
+  function removeRouteFromMap(idx) {
+    const r = routes[idx];
+    map.removeLayer(r.polyline);
+    map.removeLayer(r.startMarker);
+    map.removeLayer(r.endMarker);
+    routes.splice(idx, 1);
+    renderToggles();
+    renderStats();
+  }
+
+  function renderToggles() {
+    const container = document.getElementById('route-toggles');
+    if (!container) return;
+    container.innerHTML = '';
+    routes.forEach((r, i) => {
+      const lbl = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = r.visible;
+      cb.addEventListener('change', () => toggleRoute(i));
+      const dot = document.createElement('span');
+      dot.className = 'route-color-dot';
+      dot.style.background = r.color;
+      lbl.appendChild(cb);
+      lbl.appendChild(dot);
+      lbl.appendChild(document.createTextNode(r.routeName));
+
+      // Show info button for Firebase routes (viewable by anyone)
+      if (r.firebaseDocId) {
+        const info = document.createElement('button');
+        info.className = 'info-btn';
+        info.textContent = 'ℹ';
+        info.title = 'Route info';
+        info.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openMetadataModal(i); });
+        lbl.appendChild(info);
+      }
+
+      // Show delete button for Firebase routes when admin is logged in
+      if (r.firebaseDocId && isAdmin()) {
+        const del = document.createElement('button');
+        del.className = 'delete-btn';
+        del.textContent = '✕';
+        del.title = 'Delete from Firebase';
+        del.addEventListener('click', (e) => { e.preventDefault(); deleteFirebaseRoute(i); });
+        lbl.appendChild(del);
+      }
+
+      container.appendChild(lbl);
+    });
+  }
+
+  function toggleRoute(idx) {
+    const r = routes[idx];
+    r.visible = !r.visible;
+    if (r.visible) {
+      r.polyline.addTo(map);
+      r.startMarker.addTo(map);
+      r.endMarker.addTo(map);
+    } else {
+      map.removeLayer(r.polyline);
+      map.removeLayer(r.startMarker);
+      map.removeLayer(r.endMarker);
+    }
+    renderStats();
+  }
+
+  function renderStats() {
+    const statsDiv = document.getElementById('route-stats');
+    const visible = routes.filter(r => r.visible);
+    if (visible.length === 0) { statsDiv.style.display = 'none'; return; }
+
+    statsDiv.style.display = 'block';
+    let html = '<table><tr><th>Route</th><th>Distance</th><th>Elev Gain</th><th>Elev Loss</th><th>Min Elev</th><th>Max Elev</th></tr>';
+    visible.forEach(r => {
+      html += '<tr>';
+      html += '<td><span class="route-color-dot" style="background:' + r.color + '"></span>' + r.routeName + '</td>';
+      html += '<td>' + r.stats.distanceKm + ' km</td>';
+      html += '<td>' + r.stats.elevGain + ' m</td>';
+      html += '<td>' + r.stats.elevLoss + ' m</td>';
+      html += '<td>' + r.stats.minEle + ' m</td>';
+      html += '<td>' + r.stats.maxEle + ' m</td>';
+      html += '</tr>';
+    });
+    html += '</table>';
+    statsDiv.innerHTML = html;
+  }
+
+  // Load bundled GPX files from assets/gpx/
+  function loadBundledRoutes() {
+    fetch('assets/gpx/routes.json')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(files => {
+        if (files.length === 0) { markLoaded('bundled'); return; }
+        let loaded = 0;
+        files.forEach(f => {
+          fetch('assets/gpx/' + f)
+            .then(r => r.text())
+            .then(txt => { addRoute(txt, f); })
+            .finally(() => { loaded++; if (loaded >= files.length) markLoaded('bundled'); });
+        });
+      })
+      .catch(() => { markLoaded('bundled'); });
+  }
+
+  // Local file input
+  const fileInput = document.getElementById('gpx-file-input');
+  document.getElementById('add-gpx-btn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    Array.from(e.target.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => addRoute(ev.target.result, file.name);
+      reader.readAsText(file);
+    });
+    fileInput.value = '';
+  });
+
+  document.getElementById('fit-bounds-btn').addEventListener('click', () => {
+    const visible = routes.filter(r => r.visible);
+    const layers = visible.map(r => r.polyline);
+
+    // Include marker cluster group if it has any layers
+    if (markerClusterGroup.getLayers().length > 0) {
+      layers.push(markerClusterGroup);
+    }
+
+    if (layers.length === 0) return;
+    const group = L.featureGroup(layers);
+    map.fitBounds(group.getBounds(), { padding: [30, 30] });
+  });
+
+  // ── CSV Point Logic ─────────────────────────────────────────
+  function parseCSV(csvText) {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) return [];
+    
+    // Simple CSV parser that handles quoted fields
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+    
+    const headers = parseCSVLine(lines[0]);
+    const nameIdx = headers.findIndex(h => h.toLowerCase() === 'name');
+    const latIdx = headers.findIndex(h => h.toLowerCase() === 'latitude' || h.toLowerCase() === 'lat');
+    const lonIdx = headers.findIndex(h => h.toLowerCase() === 'longitude' || h.toLowerCase() === 'lon' || h.toLowerCase() === 'lng');
+    const urlIdx = headers.findIndex(h => {
+      const key = h.toLowerCase().trim();
+      return key === 'url' || key === 'link' || key === 'page' || key === 'website';
+    });
+    
+    if (latIdx === -1 || lonIdx === -1) {
+      alert('CSV must have latitude and longitude columns');
+      return [];
+    }
+    
+    const parsedPoints = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length < 2) continue;
+      
+      const lat = parseFloat(values[latIdx]);
+      const lon = parseFloat(values[lonIdx]);
+      if (isNaN(lat) || isNaN(lon)) continue;
+      
+      const metadata = {};
+      headers.forEach((header, idx) => {
+        // Exclude lat, lon, name, and url from metadata
+        if (idx !== latIdx && idx !== lonIdx && idx !== nameIdx && idx !== urlIdx && values[idx]) {
+          metadata[header] = values[idx];
+        }
+      });
+      
+      parsedPoints.push({
+        name: nameIdx !== -1 && values[nameIdx] ? values[nameIdx] : `Point ${i}`,
+        lat,
+        lon,
+        url: urlIdx !== -1 && values[urlIdx] ? values[urlIdx] : null,
+        metadata
+      });
+    }
+    
+    return parsedPoints;
+  }
+
+  function resolvePointUrl(data, metadata) {
+    const fromData = data && (
+      data.url || data.URL || data.link || data.Link || data.website || data.Website || data.page || data.Page
+    );
+    if (fromData) return String(fromData).trim();
+
+    const fromMeta = metadata && (
+      metadata.url || metadata.URL || metadata.link || metadata.Link || metadata.website || metadata.Website || metadata.page || metadata.Page
+    );
+    return fromMeta ? String(fromMeta).trim() : null;
+  }
+
+  // Debounced toggle rendering — avoids rebuilding DOM hundreds of times during bulk loads
+  let _toggleTimer = null;
+  function scheduleRenderPointToggles() {
+    if (_toggleTimer) clearTimeout(_toggleTimer);
+    _toggleTimer = setTimeout(renderPointToggles, 50);
+  }
+
+  const pointTypeFilters = new Set();
+
+  function getAvailablePointTypes() {
+    const available = new Set();
+    points.forEach(p => {
+      const type = p.type || 'Other';
+      available.add(type);
+    });
+
+    if (available.size === 0) {
+      ['Onsen', 'Campsite', 'Roadside Station', 'Must See', 'Hotel', 'Other'].forEach(t => available.add(t));
+    }
+
+    return Array.from(available);
+  }
+
+  function applyPointTypeFilters() {
+    points.forEach(p => {
+      const type = p.type || 'Other';
+      const show = p.visible !== false && pointTypeFilters.has(type);
+      if (show) {
+        markerClusterGroup.addLayer(p.marker);
+      } else {
+        markerClusterGroup.removeLayer(p.marker);
+      }
+    });
+  }
+
+  function createPointMarker(pointData) {
+    const pointType = getPointType(pointData);
+    const pointUrl = resolvePointUrl(pointData, pointData.metadata);
+    const marker = L.marker([pointData.lat, pointData.lon], {
+      icon: getPointIcon(pointType)
+    });
+
+    let popupContent = '<b>' + escapeHtml(pointData.name) + '</b>';
+    if (pointData.metadata) {
+      const desc = pointData.metadata.description || pointData.metadata.Description || '';
+      if (desc) {
+        popupContent += '<br><span style="color:#ccc;font-size:0.92em;">' + escapeHtml(desc) + '</span>';
+      }
+      const notes = pointData.metadata.notes || pointData.metadata.Notes || '';
+      if (notes) {
+        popupContent += '<br><span style="color:#aaa;font-size:0.88em;font-style:italic;">' + escapeHtml(notes) + '</span>';
+      }
+    }
+    if (pointUrl) {
+      popupContent += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';
+    }
+    marker.bindPopup(popupContent);
+    return marker;
+  }
+
+  function addPoint(pointData, fileName, firebaseDocId) {
+    const marker = createPointMarker(pointData);
+    // Add to cluster group individually (used for single-point additions)
+    markerClusterGroup.addLayer(marker);
+
+    const point = {
+      name: pointData.name,
+      lat: pointData.lat,
+      lon: pointData.lon,
+      url: resolvePointUrl(pointData, pointData.metadata),
+      type: getPointType(pointData),
+      metadata: pointData.metadata,
+      marker,
+      visible: true,
+      fileName,
+      firebaseDocId: firebaseDocId || null
+    };
+    points.push(point);
+
+    scheduleRenderPointToggles();
+  }
+
+  // Bulk add — creates all markers, adds them in one batch call, renders toggles once
+  function addPointsBatch(pointDataArray) {
+    const markers = [];
+    pointDataArray.forEach(({ pointData, fileName, firebaseDocId }) => {
+      const marker = createPointMarker(pointData);
+      markers.push(marker);
+
+      points.push({
+        name: pointData.name,
+        lat: pointData.lat,
+        lon: pointData.lon,
+        url: resolvePointUrl(pointData, pointData.metadata),
+        type: getPointType(pointData),
+        metadata: pointData.metadata,
+        marker,
+        visible: true,
+        fileName,
+        firebaseDocId: firebaseDocId || null
+      });
+    });
+
+    // Single batch add — cluster recalculates once instead of per-marker
+    if (markers.length > 0) {
+      markerClusterGroup.addLayers(markers);
+    }
+    renderPointToggles();
+  }
+
+  function addPointsFromCSV(csvText, fileName, docIdMap) {
+    const parsedPoints = parseCSV(csvText);
+    if (parsedPoints.length === 0) {
+      alert('No valid points found in ' + fileName);
+      return;
+    }
+
+    // Use batch add for performance
+    const batch = parsedPoints.map((p, idx) => ({
+      pointData: p,
+      fileName,
+      firebaseDocId: docIdMap ? docIdMap[idx] : null
+    }));
+    addPointsBatch(batch);
+
+    // Fit map to show newly added points using cluster group
+    if (markerClusterGroup.getLayers().length > 0) {
+      map.fitBounds(markerClusterGroup.getBounds(), { padding: [30, 30] });
+    }
+  }
+
+  function removePointFromMap(idx) {
+    const p = points[idx];
+    markerClusterGroup.removeLayer(p.marker);
+    points.splice(idx, 1);
+    renderPointToggles();
+  }
+
+  function renderPointToggles() {
+    const container = document.getElementById('type-filters') || document.getElementById('point-toggles');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const availableTypes = getAvailablePointTypes();
+
+    if (pointTypeFilters.size === 0) {
+      availableTypes.forEach(type => pointTypeFilters.add(type));
+    } else {
+      availableTypes.forEach(type => {
+        if (!pointTypeFilters.has(type)) {
+          pointTypeFilters.add(type);
+        }
+      });
+    }
+
+    availableTypes.forEach(type => {
+      const count = points.filter(p => (p.type || 'Other') === type).length;
+      const lbl = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = pointTypeFilters.has(type);
+      cb.addEventListener('change', () => togglePointType(type, cb.checked));
+
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(type + ' (' + count + ')'));
+
+      container.appendChild(lbl);
+    });
+
+    applyPointTypeFilters();
+  }
+
+  function togglePointType(type, isChecked) {
+    if (isChecked) {
+      pointTypeFilters.add(type);
+    } else {
+      pointTypeFilters.delete(type);
+    }
+    applyPointTypeFilters();
+  }
+
+  function openPointMetadataModal(idx) {
+    const point = points[idx];
+    if (!point.firebaseDocId) return;
+    metaRouteIdx = null; // Not a route
+    metaPointIdx = idx;
+    metaTitle.textContent = point.name;
+    
+    metaBody.innerHTML = '<span style="color:#888;">Loading...</span>';
+    metaSaveBtn.style.display = 'none';
+    metaOverlay.classList.add('open');
+    
+    db.collection('points').doc(point.firebaseDocId).get()
+      .then(doc => {
+        const data = doc.data() || {};
+        renderPointMetadataView(data);
+      })
+      .catch(err => {
+        metaBody.innerHTML = '<span style="color:#ff6b6b;">Failed to load metadata.</span>';
+        console.error('Metadata load error:', err);
+      });
+  }
+
+  function renderPointMetadataView(data) {
+    let html = '';
+    
+    const sourceUrl = resolvePointUrl(data, data.metadata);
+    if (sourceUrl) {
+      html += '<label>Source Link</label>';
+      html += '<div class="meta-view-value"><a class="meta-link" href="' + escapeAttr(sourceUrl) + '" target="_blank" rel="noopener">' + escapeHtml(sourceUrl) + '</a></div>';
+    }
+    
+    html += '<label>Location</label>';
+    html += '<div class="meta-view-value">Lat: ' + data.lat + ', Lon: ' + data.lon + '</div>';
+    
+    if (data.metadata) {
+      html += '<label>Additional Data</label>';
+      Object.entries(data.metadata).forEach(([key, value]) => {
+        html += '<div class="meta-view-value"><strong>' + escapeHtml(key) + ':</strong> ' + escapeHtml(value) + '</div>';
+      });
+    }
+    
+    metaBody.innerHTML = html;
+    metaSaveBtn.style.display = 'none';
+  }
+
+  // Local CSV file input
+  const csvFileInput = document.getElementById('csv-file-input');
+  document.getElementById('add-csv-btn').addEventListener('click', () => csvFileInput.click());
+  csvFileInput.addEventListener('change', (e) => {
+    Array.from(e.target.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => addPointsFromCSV(ev.target.result, file.name);
+      reader.readAsText(file);
+    });
+    csvFileInput.value = '';
+  });
+
+  // ── Google Maps Point Input ────────────────────────────────
+  const gmapsOverlay = document.getElementById('gmaps-overlay');
+  const gmapsUrlInput = document.getElementById('gmaps-url-input');
+  const gmapsTypeInput = document.getElementById('gmaps-type-input');
+  const gmapsAddBtn = document.getElementById('gmaps-add-btn');
+  const gmapsCloseBtn = document.getElementById('gmaps-close-btn');
+
+  document.getElementById('add-gmaps-btn').addEventListener('click', () => {
+    gmapsUrlInput.value = '';
+    gmapsTypeInput.value = 'Campsite';
+    gmapsOverlay.classList.add('open');
+    gmapsUrlInput.focus();
+  });
+
+  gmapsCloseBtn.addEventListener('click', closeGmapsModal);
+  gmapsOverlay.addEventListener('click', (e) => {
+    if (e.target === gmapsOverlay) closeGmapsModal();
+  });
+
+  function closeGmapsModal() {
+    gmapsOverlay.classList.remove('open');
+  }
+
+  function parseGoogleMapsUrl(url) {
+    try {
+      // Extract name from URL (after /place/ and before /@)
+      const placeMatch = url.match(/\/place\/([^/@]+)/);
+      const name = placeMatch ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')) : 'Unnamed Location';
+      
+      // Extract coordinates - they appear after /@ in format: lat,lon,zoom
+      const coordMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (!coordMatch) {
+        // Try alternative format with !3d and !4d
+        const altCoordMatch = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+        if (!altCoordMatch) {
+          throw new Error('Could not extract coordinates from URL');
+        }
+        return {
+          name: name,
+          lat: parseFloat(altCoordMatch[1]),
+          lon: parseFloat(altCoordMatch[2])
+        };
+      }
+      
+      return {
+        name: name,
+        lat: parseFloat(coordMatch[1]),
+        lon: parseFloat(coordMatch[2])
+      };
+    } catch (err) {
+      throw new Error('Invalid Google Maps URL format');
+    }
+  }
+
+  gmapsAddBtn.addEventListener('click', () => {
+    const url = gmapsUrlInput.value.trim();
+    const type = gmapsTypeInput.value;
+    
+    if (!url) {
+      alert('Please enter a Google Maps URL');
+      return;
+    }
+    
+    try {
+      const parsed = parseGoogleMapsUrl(url);
+      
+      // Create point data
+      const pointData = {
+        name: parsed.name,
+        lat: parsed.lat,
+        lon: parsed.lon,
+        url: url,
+        metadata: {
+          Type: type
+        }
+      };
+      
+      // If Firebase is available and user is admin, upload to Firebase
+      if (firebaseReady && isAdmin()) {
+        uploadGoogleMapsPointToFirebase(pointData);
+      } else {
+        // Otherwise, just add locally
+        addPoint(pointData, 'Google Maps - ' + parsed.name, null);
+        // Fit map to show the new point
+        map.setView([parsed.lat, parsed.lon], 14);
+      }
+      
+      closeGmapsModal();
+    } catch (err) {
+      alert('Error parsing Google Maps URL: ' + err.message);
+    }
+  });
+
+  function uploadGoogleMapsPointToFirebase(pointData) {
+    const statusEl = document.getElementById('upload-status');
+    statusEl.textContent = 'Adding point to Firebase...';
+
+    db.collection('points').add({
+      name: pointData.name,
+      lat: pointData.lat,
+      lon: pointData.lon,
+      url: pointData.url,
+      metadata: pointData.metadata,
+      fileName: 'Google Maps - ' + pointData.name,
+      storagePath: null, // No file storage for manual points
+      uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(docRef => {
+      addPoint(pointData, 'Google Maps - ' + pointData.name, docRef.id);
+      // Fit map to show the new point
+      map.setView([pointData.lat, pointData.lon], 14);
+      statusEl.textContent = 'Point added successfully ✓';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    })
+    .catch(err => {
+      console.error('Firebase upload error:', err);
+      statusEl.textContent = 'Upload failed: ' + err.message;
+      alert('Failed to upload to Firebase. Point added locally only.');
+      // Fallback to local add
+      addPoint(pointData, 'Google Maps - ' + pointData.name, null);
+      map.setView([pointData.lat, pointData.lon], 14);
+    });
+  }
+
+  // ── Firebase Integration ───────────────────────────────────
+  let currentUser = null;
+  let db = null;
+  let storage = null;
+  let firebaseReady = false;
+  const loadedFirebaseIds = new Set();
+  const loadedFirebasePointIds = new Set();
+  let metaPointIdx = null; // Track point index for metadata modal
+
+  // ── Loading progress tracker ──────────────────────────────
+  const _loadTasks = { routes: false, points: false, bundled: false };
+  function markLoaded(task) {
+    _loadTasks[task] = true;
+    const done = Object.values(_loadTasks).filter(Boolean).length;
+    const total = Object.keys(_loadTasks).length;
+    const pct = Math.round((done / total) * 100);
+    const fill = document.getElementById('progress-fill');
+    const text = document.getElementById('loading-text');
+    if (fill) fill.style.width = pct + '%';
+    if (text) text.textContent = done < total ? 'Loading data... ' + pct + '%' : 'Done';
+    if (done >= total) {
+      const overlay = document.getElementById('map-loading');
+      if (overlay) {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 500);
+      }
+    }
+  }
+
+  let authLoaded = false;
+
+  function loadAuthAndStorage() {
+    if (authLoaded) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const authScript = document.createElement('script');
+      authScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js';
+      authScript.onload = () => {
+        const storageScript = document.createElement('script');
+        storageScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js';
+        storageScript.onload = () => {
+          authLoaded = true;
+          storage = firebase.storage();
+          resolve();
+        };
+        storageScript.onerror = reject;
+        document.head.appendChild(storageScript);
+      };
+      authScript.onerror = reject;
+      document.head.appendChild(authScript);
+    });
+  }
+
+  function setupAuth() {
+    firebase.auth().onAuthStateChanged(user => {
+      currentUser = user;
+      updateAuthUI();
+      // Reload to pick up any admin-only features
+      loadFirebaseRoutes();
+      loadFirebasePoints();
+    });
+  }
+
+  function initFirebase() {
+    // Check if config is set (not placeholder values)
+    if (typeof FIREBASE_CONFIG === 'undefined' ||
+        !FIREBASE_CONFIG.apiKey ||
+        FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+      console.log('Roots: Firebase not configured — running in local-only mode.');
+      document.getElementById('auth-btn').style.display = 'none';
+      markLoaded('routes');
+      markLoaded('points');
+      return;
+    }
+
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      // Enable local persistence — repeat visits serve data from cache first
+      db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+          console.warn('Firestore persistence error:', err);
+        }
+      });
+      firebaseReady = true;
+
+      // Load read-only data immediately (no auth needed)
+      loadFirebaseRoutes();
+      loadFirebasePoints();
+
+      const authBtn = document.getElementById('auth-btn');
+      authBtn.style.display = '';
+
+      // Lazy-load auth & storage SDKs only when user clicks Sign In
+      authBtn.addEventListener('click', () => {
+        if (authLoaded && currentUser) {
+          firebase.auth().signOut();
+          return;
+        }
+        authBtn.disabled = true;
+        authBtn.textContent = 'Loading...';
+        loadAuthAndStorage()
+          .then(() => {
+            setupAuth();
+            if (!currentUser) {
+              const provider = new firebase.auth.GoogleAuthProvider();
+              return firebase.auth().signInWithPopup(provider);
+            }
+          })
+          .catch(err => {
+            console.error('Auth error:', err);
+            alert('Sign-in failed: ' + err.message);
+          })
+          .finally(() => {
+            authBtn.disabled = false;
+          });
+      });
+    } catch (err) {
+      console.error('Firebase init error:', err);
+    }
+  }
+
+  function isAdmin() {
+    return currentUser && typeof ADMIN_EMAIL !== 'undefined' && currentUser.email === ADMIN_EMAIL;
+  }
+
+  function updateAuthUI() {
+    const authBtn = document.getElementById('auth-btn');
+    const authStatus = document.getElementById('auth-status');
+    const uploadArea = document.getElementById('upload-area');
+
+    if (currentUser) {
+      authBtn.textContent = 'Sign Out';
+      if (isAdmin()) {
+        authStatus.textContent = 'Signed in as ' + currentUser.email + ' (admin)';
+        uploadArea.style.display = 'block';
+        // Show admin link
+        let adminLink = document.getElementById('admin-link');
+        if (!adminLink) {
+          adminLink = document.createElement('a');
+          adminLink.id = 'admin-link';
+          adminLink.href = 'admin.html';
+          adminLink.className = 'roots-btn';
+          adminLink.textContent = 'Admin Editor';
+          adminLink.style.textDecoration = 'none';
+          document.getElementById('admin-bar').appendChild(adminLink);
+        }
+        adminLink.style.display = '';
+      } else {
+        authStatus.textContent = 'Signed in as ' + currentUser.email;
+        uploadArea.style.display = 'none';
+        const adminLink = document.getElementById('admin-link');
+        if (adminLink) adminLink.style.display = 'none';
+      }
+    } else {
+      authBtn.textContent = 'Sign In';
+      authStatus.textContent = '';
+      uploadArea.style.display = 'none';
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) adminLink.style.display = 'none';
+    }
+    renderToggles(); // refresh delete buttons
+  }
+
+  // ── Load routes from Firestore ─────────────────────────────
+  function loadFirebaseRoutes() {
+    if (!firebaseReady) return;
+
+    db.collection('routes').orderBy('uploadedAt', 'desc').get()
+      .then(snapshot => {
+        snapshot.forEach(doc => {
+          if (loadedFirebaseIds.has(doc.id)) return;
+          loadedFirebaseIds.add(doc.id);
+          const data = doc.data();
+          const meta = data.metadata || {};
+          if (data.gpxContent) {
+            // Read GPX directly from Firestore (no CORS issues)
+            addRoute(data.gpxContent, data.fileName, doc.id, meta);
+          } else {
+            // Fallback for old docs without gpxContent: fetch from Storage
+            storage.ref(data.storagePath).getDownloadURL()
+              .then(url => fetch(url))
+              .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.text();
+              })
+              .then(gpxText => {
+                addRoute(gpxText, data.fileName, doc.id, meta);
+                // Backfill gpxContent so future loads avoid CORS
+                doc.ref.update({ gpxContent: gpxText }).catch(() => {});
+              })
+              .catch(err => console.error('Error loading route ' + data.fileName + ':', err));
+          }
+        });
+        markLoaded('routes');
+      })
+      .catch(err => { console.error('Firestore read error:', err); markLoaded('routes'); });
+  }
+
+  // ── Load points from Firestore ──────────────────────────────
+  function loadFirebasePoints() {
+    if (!firebaseReady) return;
+
+    db.collection('points').orderBy('uploadedAt', 'desc').get()
+      .then(snapshot => {
+        const batch = [];
+        snapshot.forEach(doc => {
+          if (loadedFirebasePointIds.has(doc.id)) return;
+          loadedFirebasePointIds.add(doc.id);
+          const data = doc.data();
+          batch.push({
+            pointData: {
+              name: data.name,
+              lat: data.lat,
+              lon: data.lon,
+              url: resolvePointUrl(data, data.metadata),
+              metadata: data.metadata || {}
+            },
+            fileName: data.fileName,
+            firebaseDocId: doc.id
+          });
+        });
+        if (batch.length > 0) {
+          addPointsBatch(batch);
+          // Fit map to show all points
+          if (markerClusterGroup.getLayers().length > 0) {
+            map.fitBounds(markerClusterGroup.getBounds(), { padding: [30, 30] });
+          }
+        }
+        markLoaded('points');
+      })
+      .catch(err => { console.error('Firestore points read error:', err); markLoaded('points'); });
+  }
+
+  // ── Upload GPX to Firebase ─────────────────────────────────
+  function uploadToFirebase(file) {
+    if (!isAdmin()) return;
+
+    const statusEl = document.getElementById('upload-status');
+    statusEl.textContent = 'Uploading ' + file.name + '...';
+
+    const isCSV = file.name.toLowerCase().endsWith('.csv');
+    const storagePath = (isCSV ? 'csv/' : 'gpx/') + Date.now() + '_' + file.name;
+    const storageRef = storage.ref(storagePath);
+
+    // Read file text first, then upload both to Storage and Firestore
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const fileText = ev.target.result;
+      storageRef.put(file)
+        .then(() => {
+          if (isCSV) {
+            return uploadCSVToFirestore(file.name, storagePath, fileText);
+          } else {
+            // Save GPX metadata + content to Firestore (avoids CORS on Storage fetch)
+            return db.collection('routes').add({
+              fileName: file.name,
+              storagePath: storagePath,
+              gpxContent: fileText,
+              uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(docRef => {
+              addRoute(fileText, file.name, docRef.id);
+            });
+          }
+        })
+        .then(() => {
+          statusEl.textContent = 'Uploaded ' + file.name + ' ✓';
+          setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        })
+        .catch(err => {
+          console.error('Upload error:', err);
+          statusEl.textContent = 'Upload failed: ' + err.message;
+        });
+    };
+    reader.readAsText(file);
+  }
+
+  function uploadCSVToFirestore(fileName, storagePath, csvText) {
+    const parsedPoints = parseCSV(csvText);
+    if (parsedPoints.length === 0) {
+      throw new Error('No valid points found in CSV');
+    }
+
+    // Create a batch write for all points
+    const batch = db.batch();
+    const docIds = [];
+    
+    parsedPoints.forEach(p => {
+      const docRef = db.collection('points').doc();
+      batch.set(docRef, {
+        name: p.name,
+        lat: p.lat,
+        lon: p.lon,
+        url: p.url,
+        metadata: p.metadata,
+        fileName: fileName,
+        storagePath: storagePath,
+        uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      docIds.push(docRef.id);
+    });
+
+    return batch.commit().then(() => {
+      addPointsFromCSV(csvText, fileName, docIds);
+    });
+  }
+
+  // ── Delete route from Firebase ─────────────────────────────
+  function deleteFirebaseRoute(routeIdx) {
+    const route = routes[routeIdx];
+    if (!route.firebaseDocId || !isAdmin()) return;
+    if (!confirm('Delete "' + route.routeName + '" from Firebase?')) return;
+
+    // Get the storage path from Firestore, then delete both
+    db.collection('routes').doc(route.firebaseDocId).get()
+      .then(doc => {
+        const data = doc.data();
+        // Delete from Storage
+        return storage.ref(data.storagePath).delete().then(() => {
+          // Delete Firestore doc
+          return db.collection('routes').doc(route.firebaseDocId).delete();
+        });
+      })
+      .then(() => {
+        removeRouteFromMap(routeIdx);
+      })
+      .catch(err => {
+        console.error('Delete error:', err);
+        alert('Delete failed: ' + err.message);
+      });
+  }
+
+  // ── Delete points from Firebase ────────────────────────────
+  function deleteFirebasePoints(fileName) {
+    if (!isAdmin()) return;
+    if (!confirm('Delete all points from "' + fileName + '" from Firebase?')) return;
+
+    const pointsToDelete = points.filter(p => p.fileName === fileName && p.firebaseDocId);
+    if (pointsToDelete.length === 0) return;
+
+    // Get storage path from first point before deleting
+    db.collection('points').doc(pointsToDelete[0].firebaseDocId).get()
+      .then(doc => {
+        const data = doc.data();
+        const storagePath = data.storagePath;
+        
+        // Create batch to delete all point documents
+        const batch = db.batch();
+        pointsToDelete.forEach(p => {
+          const docRef = db.collection('points').doc(p.firebaseDocId);
+          batch.delete(docRef);
+        });
+        
+        return batch.commit().then(() => storagePath);
+      })
+      .then((storagePath) => {
+        // Delete CSV from Storage
+        if (storagePath) {
+          return storage.ref(storagePath).delete();
+        }
+      })
+      .then(() => {
+        // Remove points from map
+        const indicesToRemove = [];
+        points.forEach((p, idx) => {
+          if (p.fileName === fileName) {
+            indicesToRemove.push(idx);
+          }
+        });
+        // Remove in reverse order to maintain indices
+        indicesToRemove.reverse().forEach(idx => removePointFromMap(idx));
+      })
+      .catch(err => {
+        console.error('Delete error:', err);
+        alert('Delete failed: ' + err.message);
+      });
+  }
+
+  // ── Metadata modal ──────────────────────────────────────────
+  let metaRouteIdx = null;
+
+  const metaOverlay = document.getElementById('meta-overlay');
+  const metaTitle = document.getElementById('meta-title');
+  const metaBody = document.getElementById('meta-body');
+  const metaSaveBtn = document.getElementById('meta-save-btn');
+  const metaCloseBtn = document.getElementById('meta-close-btn');
+
+  metaCloseBtn.addEventListener('click', closeMetadataModal);
+  metaOverlay.addEventListener('click', (e) => {
+    if (e.target === metaOverlay) closeMetadataModal();
+  });
+
+  function closeMetadataModal() {
+    metaOverlay.classList.remove('open');
+    metaRouteIdx = null;
+    metaPointIdx = null;
+  }
+
+  function openMetadataModal(idx) {
+    const route = routes[idx];
+    if (!route.firebaseDocId) return;
+    metaRouteIdx = idx;
+    metaTitle.textContent = route.routeName;
+
+    // Load current metadata from Firestore
+    metaBody.innerHTML = '<span style="color:#888;">Loading...</span>';
+    metaSaveBtn.style.display = 'none';
+    metaOverlay.classList.add('open');
+
+    db.collection('routes').doc(route.firebaseDocId).get()
+      .then(doc => {
+        const data = doc.data() || {};
+        const meta = data.metadata || {};
+        if (isAdmin()) {
+          renderMetadataEdit(meta);
+        } else {
+          renderMetadataView(meta);
+        }
+      })
+      .catch(err => {
+        metaBody.innerHTML = '<span style="color:#ff6b6b;">Failed to load metadata.</span>';
+        console.error('Metadata load error:', err);
+      });
+  }
+
+  function renderMetadataView(meta) {
+    let html = '';
+
+    html += '<label>Source Link</label>';
+    if (meta.sourceUrl) {
+      html += '<div class="meta-view-value"><a class="meta-link" href="' + escapeAttr(meta.sourceUrl) + '" target="_blank" rel="noopener">' + escapeHtml(meta.sourceUrl) + '</a></div>';
+    } else {
+      html += '<div class="meta-view-value empty">Not provided</div>';
+    }
+
+    html += '<label>Description</label>';
+    html += '<div class="meta-view-value' + (meta.description ? '' : ' empty') + '">' + (meta.description ? escapeHtml(meta.description) : 'No description') + '</div>';
+
+    html += '<label>Notes</label>';
+    html += '<div class="meta-view-value' + (meta.notes ? '' : ' empty') + '">' + (meta.notes ? escapeHtml(meta.notes) : 'No notes') + '</div>';
+
+    metaBody.innerHTML = html;
+    metaSaveBtn.style.display = 'none';
+  }
+
+  function renderMetadataEdit(meta) {
+    let html = '';
+
+    html += '<label for="meta-source-url">Source Link</label>';
+    html += '<input type="text" id="meta-source-url" placeholder="https://example.com/route-page" value="' + escapeAttr(meta.sourceUrl || '') + '">';
+
+    html += '<label for="meta-description">Description</label>';
+    html += '<textarea id="meta-description" placeholder="Brief description of this route">' + escapeHtml(meta.description || '') + '</textarea>';
+
+    html += '<label for="meta-notes">Notes</label>';
+    html += '<textarea id="meta-notes" placeholder="Any additional notes">' + escapeHtml(meta.notes || '') + '</textarea>';
+
+    metaBody.innerHTML = html;
+    metaSaveBtn.style.display = '';
+
+    // Re-bind save handler
+    metaSaveBtn.onclick = saveMetadata;
+  }
+
+  function saveMetadata() {
+    if (metaRouteIdx === null) return;
+    const route = routes[metaRouteIdx];
+    if (!route.firebaseDocId || !isAdmin()) return;
+
+    const metadata = {
+      sourceUrl: document.getElementById('meta-source-url').value.trim(),
+      description: document.getElementById('meta-description').value.trim(),
+      notes: document.getElementById('meta-notes').value.trim()
+    };
+
+    metaSaveBtn.disabled = true;
+    metaSaveBtn.textContent = 'Saving...';
+
+    db.collection('routes').doc(route.firebaseDocId).update({ metadata: metadata })
+      .then(() => {
+        metaSaveBtn.textContent = 'Saved!';
+        setTimeout(() => {
+          metaSaveBtn.textContent = 'Save';
+          metaSaveBtn.disabled = false;
+        }, 1500);
+      })
+      .catch(err => {
+        console.error('Metadata save error:', err);
+        metaSaveBtn.textContent = 'Save';
+        metaSaveBtn.disabled = false;
+        alert('Failed to save metadata: ' + err.message);
+      });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ── Upload area drag & drop + click ────────────────────────
+  const uploadArea = document.getElementById('upload-area');
+  const firebaseFileInput = document.getElementById('firebase-file-input');
+
+  uploadArea.addEventListener('click', () => firebaseFileInput.click());
+
+  firebaseFileInput.addEventListener('change', (e) => {
+    Array.from(e.target.files).forEach(file => uploadToFirebase(file));
+    firebaseFileInput.value = '';
+  });
+
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+  });
+
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+  });
+
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => {
+      const name = f.name.toLowerCase();
+      return name.endsWith('.gpx') || name.endsWith('.csv');
+    });
+    if (files.length === 0) {
+      alert('Please drop .gpx or .csv files only.');
+      return;
+    }
+    files.forEach(file => uploadToFirebase(file));
+  });
+
+  // ── Initialise ─────────────────────────────────────────────
+  loadBundledRoutes();
+  initFirebase();
+})();
+</script>
+
+</body>
+</html>
