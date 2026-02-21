@@ -682,16 +682,57 @@
 
   const map = L.map('map').setView([49.25, -123.1], 11);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19
-  }).addTo(map);
+  // Debounced fit-all: fires 600ms after the last route/point is added,
+  // ensuring async Firebase Storage routes are included before zooming.
+  let _fitAllTimer = null;
+  function scheduleFitAll() {
+    clearTimeout(_fitAllTimer);
+    _fitAllTimer = setTimeout(() => {
+      map.invalidateSize();
+      const visibleLayers = routes.filter(r => r.visible).map(r => r.polyline);
+      if (markerClusterGroup && markerClusterGroup.getLayers().length > 0) visibleLayers.push(markerClusterGroup);
+      if (visibleLayers.length > 0) map.fitBounds(L.featureGroup(visibleLayers).getBounds(), { padding: [30, 30] });
+    }, 600);
+  }
+
+  const baseLayers = {
+    'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19
+    }),
+    'OpenTopoMap': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+      maxZoom: 17
+    }),
+    'CyclOSM (Cycling)': L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://www.cyclosm.org">CyclOSM</a>',
+      maxZoom: 20
+    }),
+    'ESRI Topo': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
+      maxZoom: 19
+    }),
+    'ESRI Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
+      maxZoom: 19
+    })
+  };
+
+  baseLayers['ESRI Topo'].addTo(map);
+  const overlayLayers = {
+    'Waymarked Cycling Routes': L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://cycling.waymarkedtrails.org">Waymarked Trails</a>',
+      maxZoom: 19,
+      opacity: 0.85
+    })
+  };
+
+  L.control.layers(baseLayers, overlayLayers, { position: 'topright', collapsed: true }).addTo(map);
 
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
-      if (zoom >= 14) return 24;
-      if (zoom >= 12) return 40;
-      return 60;
+      if (zoom >= 10) return 0; // disable clustering at zoom 10+
+      return 50;
     },
     disableClusteringAtZoom: 15,
     spiderfyOnMaxZoom: true,
@@ -804,7 +845,7 @@
     polyline.bindPopup(buildPopupContent(routeIdx), { maxWidth: 280 });
     startMarker.bindTooltip('Start: ' + routeName);
     endMarker.bindTooltip('End: ' + routeName);
-    map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+    scheduleFitAll();
     renderToggles();
     renderStats();
   }
@@ -1027,7 +1068,7 @@
     const parsedPoints = parseCSV(csvText);
     if (!parsedPoints.length) { alert('No valid points found in ' + fileName); return; }
     addPointsBatch(parsedPoints.map((p, idx) => ({ pointData: p, fileName, firebaseDocId: docIdMap ? docIdMap[idx] : null })));
-    if (markerClusterGroup.getLayers().length > 0) map.fitBounds(markerClusterGroup.getBounds(), { padding: [30, 30] });
+    scheduleFitAll();
   }
 
   function removePointFromMap(idx) { markerClusterGroup.removeLayer(points[idx].marker); points.splice(idx, 1); renderPointToggles(); }
@@ -1134,6 +1175,7 @@
     if (done >= total) {
       const overlay = document.getElementById('map-loading');
       if (overlay) { overlay.classList.add('fade-out'); setTimeout(() => overlay.remove(), 500); }
+      scheduleFitAll();
     }
   }
 
@@ -1247,7 +1289,7 @@
         });
         if (batch.length > 0) {
           addPointsBatch(batch);
-          if (markerClusterGroup.getLayers().length > 0) map.fitBounds(markerClusterGroup.getBounds(), { padding: [30, 30] });
+          scheduleFitAll();
         }
         markLoaded('points');
       })
