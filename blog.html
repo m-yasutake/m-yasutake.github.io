@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bikes – Travel blog with stories, tips, and adventures from the road." />
+  <title>Blog – Tomika Bikes</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    .blog-search-wrap {
+      background: var(--color-white);
+      border-radius: var(--radius-xl);
+      padding: 1.75rem 2rem;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 3rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      border: 1px solid var(--color-gray-200);
+    }
+
+    .blog-search-wrap input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.7rem 1.1rem;
+      border: 2px solid var(--color-gray-200);
+      border-radius: var(--radius-full);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .blog-search-wrap input:focus {
+      border-color: var(--color-secondary);
+    }
+
+    .featured-post {
+      background: var(--color-white);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      border: 1px solid var(--color-gray-200);
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-md);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .featured-post-img {
+      background: linear-gradient(135deg, #264653, #2A9D8F);
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7rem;
+    }
+
+    .featured-post-body {
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .featured-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(233,196,106,.15);
+      border: 1px solid rgba(233,196,106,.3);
+      color: #b78800;
+      padding: 0.3rem 0.8rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 1rem;
+    }
+
+    .featured-post-body h2 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      margin-bottom: 1rem;
+      line-height: 1.3;
+    }
+
+    .featured-post-body p {
+      color: var(--color-gray-600);
+      margin-bottom: 1.5rem;
+      line-height: 1.75;
+    }
+
+    @media (max-width: 700px) {
+      .featured-post { grid-template-columns: 1fr; }
+      .featured-post-img { min-height: 200px; font-size: 5rem; }
+    }
+
+    .post-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .author-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--color-gray-800);
+    }
+
+    .author-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--color-white);
+    }
+
+    .post-date { font-size: 0.8rem; color: var(--color-gray-600); }
+    .read-time { font-size: 0.8rem; color: var(--color-gray-600); }
+  </style>
+</head>
+<body>
+
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Planning</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="journal.html">Journal</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-login-btn" data-auth>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign In
+      </button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Planning</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="journal.html">📔 Journal</a>
+  <a href="admin.html">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+</div>
+
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access your journal and admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">✍️ Travel Stories</div>
+    <h1>The Blog</h1>
+    <p>Routes, reflections, and all the beautiful chaos of cycling the world</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BLOG CONTENT
+════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+
+    <!-- Search & Filter -->
+    <div class="blog-search-wrap">
+      <input type="text" id="blogSearch" placeholder="🔍 Search posts..." />
+      <div class="gallery-filters" style="margin:0">
+        <button class="filter-btn active" data-cat="all">All</button>
+        <button class="filter-btn" data-cat="planning">Planning</button>
+        <button class="filter-btn" data-cat="gear">Gear</button>
+        <button class="filter-btn" data-cat="stories">Stories</button>
+        <button class="filter-btn" data-cat="food">Food</button>
+        <button class="filter-btn" data-cat="tips">Tips</button>
+      </div>
+    </div>
+
+    <!-- Featured Post -->
+    <article class="featured-post" data-cat="planning">
+      <div class="featured-post-img">🏔️</div>
+      <div class="featured-post-body">
+        <div class="featured-badge">⭐ Featured Post</div>
+        <div class="post-meta-row">
+          <div class="author-chip">
+            <div class="author-avatar" style="background:var(--color-secondary)">T</div>
+            <span>Tomika</span>
+          </div>
+          <span class="post-date">February 2026</span>
+          <span class="read-time">8 min read</span>
+        </div>
+        <h2>The Grand Plan: Cycling Across Europe from London to Istanbul</h2>
+        <p>After 6 months of planning, spreadsheets, gear reviews, and route debates, we're finally ready to share our full itinerary. Here's everything – the good, the daunting, and the absolutely ridiculous.</p>
+        <a href="#" class="btn btn-primary" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read Full Post →</a>
+      </div>
+    </article>
+
+    <!-- Blog Main + Sidebar -->
+    <div class="blog-grid">
+      <div class="blog-main" id="postList">
+
+        <article class="blog-post-card" data-cat="gear">
+          <div class="blog-post-img">🚴</div>
+          <div class="blog-post-body">
+            <div class="post-meta-row">
+              <span class="card-tag">Gear</span>
+              <div class="author-chip">
+                <div class="author-avatar" style="background:var(--color-warm)">P</div>
+                <span>Partner</span>
+              </div>
+              <span class="post-date">Feb 12, 2026</span>
+              <span class="read-time">6 min read</span>
+            </div>
+            <h2>Packing Light: Our Complete Bikepacking Setup for 6 Months</h2>
+            <p>We're bringing two bikes, four panniers, a tent, and somehow fitting in 6 months of life. Here's exactly what's going in the bags and why every gram matters when you're climbing alpine passes.</p>
+            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
+          </div>
+        </article>
+
+        <article class="blog-post-card" data-cat="stories">
+          <div class="blog-post-img">🌅</div>
+          <div class="blog-post-body">
+            <div class="post-meta-row">
+              <span class="card-tag">Stories</span>
+              <div class="author-chip">
+                <div class="author-avatar" style="background:var(--color-secondary)">T</div>
+                <span>Tomika</span>
+              </div>
+              <span class="post-date">Jan 28, 2026</span>
+              <span class="read-time">5 min read</span>
+            </div>
+            <h2>Why We're Doing This Together: A Love Letter to Partnership</h2>
+            <p>There's something uniquely terrifying – and incredibly exciting – about planning a six-month cycling trip with your partner. Every decision becomes a negotiation, and somehow that makes it better.</p>
+            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
+          </div>
+        </article>
+
+        <article class="blog-post-card" data-cat="planning">
+          <div class="blog-post-img">🗺️</div>
+          <div class="blog-post-body">
+            <div class="post-meta-row">
+              <span class="card-tag">Planning</span>
+              <div class="author-chip">
+                <div class="author-avatar" style="background:var(--color-warm)">P</div>
+                <span>Partner</span>
+              </div>
+              <span class="post-date">Jan 15, 2026</span>
+              <span class="read-time">10 min read</span>
+            </div>
+            <h2>Route Research: How We Built Our London-to-Istanbul Itinerary</h2>
+            <p>GPS tracks, elevation profiles, border crossings, visa requirements – planning a trans-European bike tour is part spreadsheet, part dream, part extreme optimism. Here's our process.</p>
+            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
+          </div>
+        </article>
+
+        <article class="blog-post-card" data-cat="food">
+          <div class="blog-post-img">🍝</div>
+          <div class="blog-post-body">
+            <div class="post-meta-row">
+              <span class="card-tag">Food</span>
+              <div class="author-chip">
+                <div class="author-avatar" style="background:var(--color-secondary)">T</div>
+                <span>Tomika</span>
+              </div>
+              <span class="post-date">Jan 5, 2026</span>
+              <span class="read-time">4 min read</span>
+            </div>
+            <h2>Cycling Nutrition: Eating Well on the Road Without a Kitchen</h2>
+            <p>When you're burning 3,000+ calories a day on a loaded touring bike, food becomes an obsession. We've spent months researching what to eat, when, and how to carry enough energy without carrying too much weight.</p>
+            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
+          </div>
+        </article>
+
+        <article class="blog-post-card" data-cat="tips">
+          <div class="blog-post-img">🔧</div>
+          <div class="blog-post-body">
+            <div class="post-meta-row">
+              <span class="card-tag">Tips</span>
+              <div class="author-chip">
+                <div class="author-avatar" style="background:var(--color-warm)">P</div>
+                <span>Partner</span>
+              </div>
+              <span class="post-date">Dec 20, 2025</span>
+              <span class="read-time">7 min read</span>
+            </div>
+            <h2>Bike Maintenance 101: Keeping Your Touring Bike Running for 6 Months</h2>
+            <p>Your bike is your engine, your car, your lifeline. Learning basic maintenance before a long trip isn't optional – it's survival. Here's our crash course in keeping wheels turning.</p>
+            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Sidebar -->
+      <div class="blog-sidebar">
+        <div class="sidebar-widget">
+          <h3>About the Blog</h3>
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--color-secondary),var(--color-accent));display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🚴</div>
+            <p style="font-size:.875rem;color:var(--color-gray-600);margin:0">Two cyclists. One route. London → Istanbul → beyond. Documenting every beautiful, difficult, hilarious moment.</p>
+          </div>
+          <a href="planning.html" class="btn btn-dark" style="width:100%;justify-content:center">See Our Route 🗺️</a>
+        </div>
+
+        <div class="sidebar-widget">
+          <h3>Categories</h3>
+          <ul class="category-list">
+            <li><a href="#" onclick="filterByTag('planning')">🗺️ Planning</a><span class="category-count">3</span></li>
+            <li><a href="#" onclick="filterByTag('gear')">🔧 Gear</a><span class="category-count">2</span></li>
+            <li><a href="#" onclick="filterByTag('stories')">📖 Stories</a><span class="category-count">1</span></li>
+            <li><a href="#" onclick="filterByTag('food')">🍝 Food & Nutrition</a><span class="category-count">1</span></li>
+            <li><a href="#" onclick="filterByTag('tips')">💡 Tips & Tricks</a><span class="category-count">1</span></li>
+          </ul>
+        </div>
+
+        <div class="sidebar-widget">
+          <h3>Tags</h3>
+          <div class="tag-cloud">
+            <span class="tag" onclick="filterByTag('cycling')">cycling</span>
+            <span class="tag" onclick="filterByTag('bikepacking')">bikepacking</span>
+            <span class="tag" onclick="filterByTag('europe')">europe</span>
+            <span class="tag" onclick="filterByTag('touring')">touring</span>
+            <span class="tag" onclick="filterByTag('gear')">gear</span>
+            <span class="tag" onclick="filterByTag('food')">food</span>
+            <span class="tag" onclick="filterByTag('adventure')">adventure</span>
+            <span class="tag" onclick="filterByTag('couple')">couple travel</span>
+          </div>
+        </div>
+
+        <div class="sidebar-widget">
+          <h3>Newsletter</h3>
+          <p style="font-size:.875rem;color:var(--color-gray-600);margin-bottom:1rem">Get updates from the road.</p>
+          <div class="form-group">
+            <input type="email" class="form-control" placeholder="your@email.com" />
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="TomikaBikes.showToast('Newsletter coming soon!','info')">Subscribe</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Want the full story?</h2>
+    <p>Sign in to read the private journal and get behind-the-scenes entries.</p>
+    <button class="btn btn-accent" data-auth>🔑 Sign In to Read More</button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
+        <p>A cycling adventure blog.</p>
+      </div>
+      <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="planning.html">Planning</a><a href="blog.html">Blog</a><a href="photos.html">Photos</a></div>
+      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a><a href="admin.html">Admin</a></div>
+      <div class="footer-col"><h4>Info</h4><a href="#">About</a><a href="#">Contact</a></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bikes</span>
+      <span>Made with ❤️ and 🚴</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+  // Search
+  document.getElementById('blogSearch').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.blog-post-card, .featured-post').forEach(post => {
+      const text = post.textContent.toLowerCase();
+      post.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+
+  // Category filter
+  document.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.dataset.cat;
+      document.querySelectorAll('.blog-post-card').forEach(post => {
+        post.style.display = (cat === 'all' || post.dataset.cat === cat) ? '' : 'none';
+      });
+    });
+  });
+
+  function filterByTag(tag) {
+    document.getElementById('blogSearch').value = tag;
+    document.getElementById('blogSearch').dispatchEvent(new Event('input'));
+    TomikaBikes.showToast(`Filtering by: ${tag}`, 'info');
+    return false;
+  }
+</script>
+</body>
+</html>

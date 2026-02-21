@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bikes – Admin dashboard. Manage posts, photos, and settings." />
+  <title>Admin – Tomika Bikes</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    body { background: var(--color-gray-100); }
+
+    .admin-gate {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      padding-top: calc(var(--nav-height) + 2rem);
+    }
+
+    .admin-gate-card {
+      background: var(--color-white);
+      border-radius: var(--radius-xl);
+      padding: 3rem;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .admin-gate-card .lock-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .admin-gate-card h2 { margin-bottom: .5rem; }
+    .admin-gate-card > p { color: var(--color-gray-600); margin-bottom: 2rem; }
+
+    .admin-section { margin-bottom: 2rem; }
+
+    .admin-section > h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .quick-action {
+      background: var(--color-white);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      border: 1px solid var(--color-gray-200);
+      cursor: pointer;
+      transition: all var(--transition);
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .quick-action:hover {
+      border-color: var(--color-secondary);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .quick-action .qa-icon { font-size: 1.75rem; }
+    .quick-action h4 { font-size: .9rem; margin: 0; }
+    .quick-action p  { font-size: .78rem; color: var(--color-gray-600); margin: 0; }
+
+    .activity-list { }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .9rem;
+      border-radius: var(--radius-md);
+      transition: background var(--transition);
+    }
+
+    .activity-item:hover { background: var(--color-gray-100); }
+
+    .activity-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(42,157,143,.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .activity-body { flex: 1; }
+    .activity-body strong { font-size: .875rem; display: block; }
+    .activity-body span  { font-size: .78rem; color: var(--color-gray-600); }
+
+    .activity-time { font-size: .75rem; color: var(--color-gray-400); }
+
+    /* New post form */
+    .new-post-form {
+      background: var(--color-white);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      border: 1px solid var(--color-gray-200);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Planning</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="journal.html">Journal</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-login-btn" data-auth>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign In
+      </button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Planning</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="journal.html">📔 Journal</a>
+  <a href="admin.html">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+</div>
+
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access the admin dashboard</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     AUTH GATE
+════════════════════════════════════════════ -->
+<div id="adminGate" class="admin-gate">
+  <div class="admin-gate-card">
+    <span class="lock-icon">🔐</span>
+    <h2>Admin Access Only</h2>
+    <p>This panel is restricted to site admins. Sign in with your Google account to continue.</p>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:1rem" data-auth>Sign In with Google</button>
+    <button class="btn btn-outline" style="width:100%;justify-content:center;color:var(--color-secondary);border-color:var(--color-secondary)" onclick="unlockAdmin()">👁️ Preview Demo Dashboard</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ADMIN DASHBOARD
+════════════════════════════════════════════ -->
+<div id="adminDashboard" style="display:none" class="admin-layout">
+
+  <!-- Sidebar -->
+  <div class="admin-sidebar">
+    <div class="admin-sidebar-header">
+      <div class="footer-logo" style="font-size:1.1rem;margin-bottom:.25rem">🚴 tomika<span style="color:var(--color-accent)">.bikes</span></div>
+      <h3>Admin Panel</h3>
+    </div>
+    <nav class="admin-nav">
+      <a href="#" class="active" onclick="showSection('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="#" onclick="showSection('posts',this)"><span class="nav-icon">✍️</span> Blog Posts</a>
+      <a href="#" onclick="showSection('photos',this)"><span class="nav-icon">📷</span> Photos</a>
+      <a href="#" onclick="showSection('journal',this)"><span class="nav-icon">📔</span> Journal</a>
+      <a href="#" onclick="showSection('waypoints',this)"><span class="nav-icon">🗺️</span> Waypoints</a>
+      <a href="#" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
+      <a href="index.html" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1rem"><span class="nav-icon">🏠</span> View Site</a>
+    </nav>
+  </div>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <!-- ── Dashboard ── -->
+    <div id="section-dashboard" class="admin-section">
+      <div class="admin-header">
+        <h1>Dashboard 📊</h1>
+        <p>Welcome back! Here's what's happening on your site.</p>
+      </div>
+
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <div class="stat-icon">✍️</div>
+          <span class="stat-value">8</span>
+          <div class="stat-label">Blog Posts</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="stat-icon">📷</div>
+          <span class="stat-value">24</span>
+          <div class="stat-label">Photos</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="stat-icon">📔</div>
+          <span class="stat-value">3</span>
+          <div class="stat-label">Journal Entries</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="stat-icon">📍</div>
+          <span class="stat-value">9</span>
+          <div class="stat-label">Waypoints</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="admin-section">
+        <h2>⚡ Quick Actions</h2>
+        <div class="quick-actions">
+          <div class="quick-action" onclick="showSection('posts',null);TomikaBikes.showToast('Opening new post editor','info')">
+            <div class="qa-icon">✍️</div>
+            <h4>New Blog Post</h4>
+            <p>Write and publish a post</p>
+          </div>
+          <div class="quick-action" onclick="TomikaBikes.showToast('Photo upload coming soon','info')">
+            <div class="qa-icon">📤</div>
+            <h4>Upload Photos</h4>
+            <p>Add new gallery images</p>
+          </div>
+          <div class="quick-action" onclick="showSection('journal',null)">
+            <div class="qa-icon">📔</div>
+            <h4>New Journal Entry</h4>
+            <p>Write a private entry</p>
+          </div>
+          <div class="quick-action" onclick="TomikaBikes.showToast('Waypoint editor coming soon','info')">
+            <div class="qa-icon">📍</div>
+            <h4>Add Waypoint</h4>
+            <p>Update the trip map</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="admin-table-card">
+        <h3>Recent Activity</h3>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-icon">✍️</div>
+            <div class="activity-body">
+              <strong>New blog post published</strong>
+              <span>"The Grand Plan: Cycling Across Europe"</span>
+            </div>
+            <div class="activity-time">2h ago</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">📷</div>
+            <div class="activity-body">
+              <strong>12 photos uploaded</strong>
+              <span>Album: Pre-trip preparation</span>
+            </div>
+            <div class="activity-time">1d ago</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">📔</div>
+            <div class="activity-body">
+              <strong>Journal entry added</strong>
+              <span>"Valentine's Day – Pre-trip nerves"</span>
+            </div>
+            <div class="activity-time">2d ago</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">📍</div>
+            <div class="activity-body">
+              <strong>Waypoint updated</strong>
+              <span>Istanbul, Turkey – added notes</span>
+            </div>
+            <div class="activity-time">3d ago</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Posts table -->
+      <div class="admin-table-card">
+        <h3>Latest Blog Posts</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The Grand Plan: Cycling Across Europe</td>
+              <td>Tomika</td>
+              <td>Planning</td>
+              <td><span class="status-badge status-published">Published</span></td>
+              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
+            </tr>
+            <tr>
+              <td>Packing Light: Our Bikepacking Setup</td>
+              <td>Partner</td>
+              <td>Gear</td>
+              <td><span class="status-badge status-published">Published</span></td>
+              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
+            </tr>
+            <tr>
+              <td>Why We're Doing This Together</td>
+              <td>Tomika</td>
+              <td>Stories</td>
+              <td><span class="status-badge status-draft">Draft</span></td>
+              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
+            </tr>
+            <tr>
+              <td>Cycling Nutrition on the Road</td>
+              <td>Tomika</td>
+              <td>Food</td>
+              <td><span class="status-badge status-draft">Draft</span></td>
+              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Blog Posts ── -->
+    <div id="section-posts" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Blog Posts ✍️</h1>
+        <p>Create, edit, and manage your travel blog posts.</p>
+      </div>
+
+      <div class="new-post-form">
+        <h3 style="margin-bottom:1.5rem">New Blog Post</h3>
+        <div class="form-group">
+          <label>Post Title</label>
+          <input type="text" class="form-control" placeholder="An Unforgettable Day in the Alps..." />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category</label>
+            <select class="form-control">
+              <option>Planning</option>
+              <option>Gear</option>
+              <option>Stories</option>
+              <option>Food</option>
+              <option>Tips</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select class="form-control">
+              <option>Draft</option>
+              <option>Published</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Content</label>
+          <textarea class="form-control" rows="10" placeholder="Write your post here..."></textarea>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="TomikaBikes.showToast('Post saved! Firebase sync coming soon','success')">💾 Save Post</button>
+          <button class="btn" style="background:var(--color-gray-200)" onclick="TomikaBikes.showToast('Draft saved','info')">Save Draft</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Photos ── -->
+    <div id="section-photos" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Photos 📷</h1>
+        <p>Upload and manage your travel gallery.</p>
+      </div>
+      <div class="upload-zone" style="background:var(--color-white)" onclick="TomikaBikes.showToast('Firebase storage upload coming soon','info')">
+        <div class="upload-icon" style="font-size:2.5rem">📤</div>
+        <h3>Upload Photos</h3>
+        <p>Drag & drop or click to upload. Firebase Storage integration coming soon.</p>
+      </div>
+    </div>
+
+    <!-- ── Journal ── -->
+    <div id="section-journal" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Journal 📔</h1>
+        <p>Manage private journal entries.</p>
+      </div>
+      <p style="color:var(--color-gray-600)">Journal entries are managed from the <a href="journal.html" style="color:var(--color-secondary)">Journal page</a>.</p>
+    </div>
+
+    <!-- ── Waypoints ── -->
+    <div id="section-waypoints" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Waypoints 🗺️</h1>
+        <p>Add and manage trip waypoints on the planning map.</p>
+      </div>
+      <p style="color:var(--color-gray-600)">Waypoints are managed from the <a href="planning.html" style="color:var(--color-secondary)">Planning page</a>.</p>
+    </div>
+
+    <!-- ── Settings ── -->
+    <div id="section-settings" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Settings ⚙️</h1>
+        <p>Site configuration and Firebase setup.</p>
+      </div>
+      <div class="new-post-form">
+        <h3 style="margin-bottom:1.5rem">Site Settings</h3>
+        <div class="form-group">
+          <label>Site Name</label>
+          <input type="text" class="form-control" value="tomika.bikes" />
+        </div>
+        <div class="form-group">
+          <label>Site Tagline</label>
+          <input type="text" class="form-control" value="A cycling adventure blog" />
+        </div>
+        <div class="form-group">
+          <label>Firebase Project ID</label>
+          <input type="text" class="form-control" placeholder="your-firebase-project-id" />
+        </div>
+        <div class="form-group">
+          <label>Firebase API Key</label>
+          <input type="text" class="form-control" placeholder="AIza..." />
+        </div>
+        <div class="form-group">
+          <label>Authorized Emails (one per line)</label>
+          <textarea class="form-control" rows="3" placeholder="admin1@gmail.com&#10;admin2@gmail.com"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="TomikaBikes.showToast('Settings saved! Firebase integration pending','success')">💾 Save Settings</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+  function unlockAdmin() {
+    document.getElementById('adminGate').style.display = 'none';
+    document.getElementById('adminDashboard').style.display = 'grid';
+    TomikaBikes.showToast('Demo admin dashboard – sign in for full access', 'info');
+  }
+
+  function showSection(name, linkEl) {
+    // Hide all sections
+    document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+    // Show target
+    const target = document.getElementById(`section-${name}`);
+    if (target) target.style.display = 'block';
+    // Update nav
+    if (linkEl) {
+      document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
+      linkEl.classList.add('active');
+    }
+  }
+
+  // Attach auth unlock to sign-in buttons inside gate
+  document.querySelectorAll('[data-auth]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // If on admin page, also show preview
+      if (document.getElementById('adminGate') && document.getElementById('adminGate').style.display !== 'none') {
+        unlockAdmin();
+      }
+    });
+  });
+</script>
+</body>
+</html>

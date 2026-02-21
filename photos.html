@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bikes – Photo gallery of our cycling adventures." />
+  <title>Photos – Tomika Bikes</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    .upload-zone {
+      border: 2px dashed var(--color-gray-300);
+      border-radius: var(--radius-xl);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: var(--color-white);
+      margin-bottom: 2.5rem;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--color-secondary);
+      background: rgba(42,157,143,.03);
+    }
+
+    .upload-zone .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .upload-zone p { color: var(--color-gray-600); font-size: .9rem; margin-top: .5rem; }
+
+    .photos-stats {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .photos-stat {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-size: .875rem;
+      color: var(--color-gray-600);
+    }
+
+    .photos-stat strong { color: var(--color-primary); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Planning</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="journal.html">Journal</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-login-btn" data-auth>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign In
+      </button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Planning</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="journal.html">📔 Journal</a>
+  <a href="admin.html">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+</div>
+
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access your journal and admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">📷 Gallery</div>
+    <h1>Photo Gallery</h1>
+    <p>Every moment captured – landscapes, cities, people, and the open road</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PHOTOS CONTENT
+════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+
+    <div class="photos-stats">
+      <div class="photos-stat">📷 <strong>24</strong> photos</div>
+      <div class="photos-stat">🗺️ <strong>4</strong> countries</div>
+      <div class="photos-stat">🏔️ <strong>3</strong> albums</div>
+    </div>
+
+    <!-- Upload zone (visible when logged in conceptually) -->
+    <div class="upload-zone" onclick="TomikaBikes.showToast('Sign in to upload photos','info')">
+      <div class="upload-icon">📤</div>
+      <h3>Add New Photos</h3>
+      <p>Drag & drop photos here, or click to browse.<br>Sign in to upload your adventure photos.</p>
+      <button class="btn btn-primary" style="margin-top:1rem" onclick="event.stopPropagation();TomikaBikes.openAuth()">Sign In to Upload</button>
+    </div>
+
+    <!-- Gallery Filters -->
+    <div class="gallery-filters">
+      <button class="filter-btn active" data-gcat="all">🌍 All Photos</button>
+      <button class="filter-btn" data-gcat="landscapes">🏔️ Landscapes</button>
+      <button class="filter-btn" data-gcat="cycling">🚴 Cycling</button>
+      <button class="filter-btn" data-gcat="food">🍜 Food</button>
+      <button class="filter-btn" data-gcat="people">👥 People</button>
+      <button class="filter-btn" data-gcat="cities">🏙️ Cities</button>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div class="gallery-grid" id="gallery">
+
+      <div class="gallery-item" data-gcat="landscapes">
+        <div class="photo-placeholder" style="height:280px">🏔️</div>
+        <div class="gallery-item-overlay"><p>Alpine Pass – Swiss Alps<br><small>Mar 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="cycling">
+        <div class="photo-placeholder" style="height:180px">🚴</div>
+        <div class="gallery-item-overlay"><p>Morning ride through Burgundy<br><small>Apr 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="cities">
+        <div class="photo-placeholder" style="height:220px;background:linear-gradient(135deg,#e9c46a,#f4a261)">🗼</div>
+        <div class="gallery-item-overlay"><p>Paris at sunrise<br><small>Apr 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="food">
+        <div class="photo-placeholder" style="height:200px;background:linear-gradient(135deg,#e76f51,#f4a261)">🍕</div>
+        <div class="gallery-item-overlay"><p>Best pizza in Naples 🍕<br><small>May 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="landscapes">
+        <div class="photo-placeholder" style="height:320px;background:linear-gradient(135deg,#2a9d8f,#264653)">🌅</div>
+        <div class="gallery-item-overlay"><p>Sunset over Tuscany<br><small>May 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="people">
+        <div class="photo-placeholder" style="height:180px;background:linear-gradient(135deg,#264653,#2a9d8f)">👥</div>
+        <div class="gallery-item-overlay"><p>New friends at a campsite<br><small>May 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="cycling">
+        <div class="photo-placeholder" style="height:240px;background:linear-gradient(135deg,#e9c46a,#2a9d8f)">🛣️</div>
+        <div class="gallery-item-overlay"><p>Empty roads in Umbria<br><small>May 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="cities">
+        <div class="photo-placeholder" style="height:200px;background:linear-gradient(135deg,#e76f51,#264653)">🏛️</div>
+        <div class="gallery-item-overlay"><p>The Colosseum, Rome<br><small>May 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="landscapes">
+        <div class="photo-placeholder" style="height:260px;background:linear-gradient(135deg,#52b788,#2a9d8f)">🏖️</div>
+        <div class="gallery-item-overlay"><p>Adriatic Coast<br><small>Jun 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="food">
+        <div class="photo-placeholder" style="height:200px;background:linear-gradient(135deg,#f4a261,#e9c46a)">🥗</div>
+        <div class="gallery-item-overlay"><p>Greek salad in Thessaloniki<br><small>Jun 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="landscapes">
+        <div class="photo-placeholder" style="height:180px;background:linear-gradient(135deg,#264653,#e9c46a)">🌊</div>
+        <div class="gallery-item-overlay"><p>Aegean Sea views<br><small>Jul 2026</small></p></div>
+      </div>
+
+      <div class="gallery-item" data-gcat="cities">
+        <div class="photo-placeholder" style="height:280px;background:linear-gradient(135deg,#e76f51,#e9c46a)">🕌</div>
+        <div class="gallery-item-overlay"><p>Blue Mosque, Istanbul<br><small>Aug 2026</small></p></div>
+      </div>
+
+    </div>
+
+    <!-- Load more -->
+    <div style="text-align:center;margin-top:3rem">
+      <button class="btn btn-dark" onclick="TomikaBikes.showToast('More photos coming as we travel!','info')">Load More Photos</button>
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-content">
+    <button class="lightbox-close" id="lightboxClose">✕</button>
+    <div id="lightboxBody"></div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Want to add photos?</h2>
+    <p>Sign in with your Google account to upload and manage the gallery.</p>
+    <button class="btn btn-accent" data-auth>📷 Sign In to Upload</button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
+        <p>A cycling adventure blog.</p>
+      </div>
+      <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="planning.html">Planning</a><a href="blog.html">Blog</a><a href="photos.html">Photos</a></div>
+      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a><a href="admin.html">Admin</a></div>
+      <div class="footer-col"><h4>Info</h4><a href="#">About</a><a href="#">Contact</a></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bikes</span>
+      <span>Made with ❤️ and 🚴</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+  // Gallery filter
+  document.querySelectorAll('[data-gcat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-gcat]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.dataset.gcat;
+      document.querySelectorAll('.gallery-item').forEach(item => {
+        item.style.display = (cat === 'all' || item.dataset.gcat === cat) ? 'block' : 'none';
+      });
+    });
+  });
+
+  // Lightbox
+  const lightbox = document.getElementById('lightbox');
+  const lightboxBody = document.getElementById('lightboxBody');
+
+  document.querySelectorAll('.gallery-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const content = item.innerHTML;
+      lightboxBody.innerHTML = content;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  document.getElementById('lightboxClose').addEventListener('click', () => {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+  });
+
+  lightbox.addEventListener('click', e => {
+    if (e.target === lightbox) {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+</script>
+</body>
+</html>

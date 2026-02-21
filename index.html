@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bikes – A travel adventure blog. Follow our cycling journey around the world." />
+  <title>Tomika Bikes – Travel Adventure</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+</head>
+<body>
+
+<!-- Page Loader -->
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-dots">
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <span class="logo-icon">🚴</span>
+      tomika<span class="accent">.bikes</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Planning</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="journal.html">Journal</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <button class="nav-login-btn" data-auth>
+        <svg class="google-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Sign In
+      </button>
+    </div>
+
+    <button class="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Planning</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="journal.html">📔 Journal</a>
+  <a href="admin.html">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+</div>
+
+<!-- Auth Modal -->
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close" aria-label="Close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access your journal and admin tools</p>
+
+    <button class="google-btn">
+      <svg class="google-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div class="auth-divider">or</div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" class="form-control" placeholder="you@example.com" />
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" class="form-control" placeholder="••••••••" />
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="TomikaBikes.showToast('Firebase auth coming soon!','info')">Sign In</button>
+
+    <p class="auth-note">
+      This site uses Google / Firebase Authentication.<br>
+      <a href="#" style="color: var(--color-secondary)">Learn more about our privacy policy</a>
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-particles"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🚴 Adventure Awaits</div>
+    <h1 class="hero-title">
+      Every Road<br>
+      <span class="line2">Tells a Story</span>
+    </h1>
+    <p class="hero-desc">
+      Follow our cycling journey across continents – planning routes, collecting memories,
+      and sharing every beautiful moment along the way.
+    </p>
+    <div class="hero-actions">
+      <a href="planning.html" class="btn btn-primary">🗺️ View Our Route</a>
+      <a href="blog.html" class="btn btn-outline">📖 Read the Blog</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     STATS
+════════════════════════════════════════════ -->
+<section class="stats-bar">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-num" data-count="12">0</span>
+        <div class="stat-label">Countries Planned</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="4200">0</span>
+        <div class="stat-label">Kilometres of Routes</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="8">0</span>
+        <div class="stat-label">Blog Posts</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="120">0</span>
+        <div class="stat-label">Photos Captured</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FEATURES
+════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">What we're building</span>
+      <h2>Everything in one place</h2>
+      <p>A home for our adventure – plan routes, share stories, capture memories.</p>
+      <div class="divider"></div>
+    </div>
+    <div class="feature-grid">
+      <a href="planning.html" class="feature-box" style="text-decoration:none;color:inherit">
+        <span class="feature-icon">🗺️</span>
+        <h3>Trip Planning</h3>
+        <p>Interactive map with waypoints, routes, and a visual trip timeline to plan every stage.</p>
+      </a>
+      <a href="blog.html" class="feature-box" style="text-decoration:none;color:inherit">
+        <span class="feature-icon">✍️</span>
+        <h3>Travel Blog</h3>
+        <p>Stories from the road – destinations, food, people, and everything in between.</p>
+      </a>
+      <a href="photos.html" class="feature-box" style="text-decoration:none;color:inherit">
+        <span class="feature-icon">📷</span>
+        <h3>Photo Gallery</h3>
+        <p>A beautiful masonry gallery of all the moments we want to remember forever.</p>
+      </a>
+      <a href="journal.html" class="feature-box" style="text-decoration:none;color:inherit">
+        <span class="feature-icon">📔</span>
+        <h3>Private Journal</h3>
+        <p>Our personal diary – raw thoughts, feelings, and reflections for our eyes only.</p>
+      </a>
+      <div class="feature-box" style="cursor:default">
+        <span class="feature-icon">🔐</span>
+        <h3>Google Sign-In</h3>
+        <p>Secure access using your Google account – Firebase authentication coming soon.</p>
+      </div>
+      <a href="admin.html" class="feature-box" style="text-decoration:none;color:inherit">
+        <span class="feature-icon">⚙️</span>
+        <h3>Admin Dashboard</h3>
+        <p>Manage posts, photos, and journal entries all from a single admin panel.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     LATEST POSTS
+════════════════════════════════════════════ -->
+<section class="section bg-light">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">From the Blog</span>
+      <h2>Latest Adventures</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="grid-3">
+      <article class="card">
+        <div class="card-img" style="background:linear-gradient(135deg,#264653,#2A9D8F);display:flex;align-items:center;justify-content:center;font-size:4rem;">🏔️</div>
+        <div class="card-body">
+          <span class="card-tag">Planning</span>
+          <h3 class="card-title">The Grand Plan: Cycling Across Europe</h3>
+          <p class="card-text">We've been mapping our dream route for months. Here's the plan, the gear list, and why we chose this path.</p>
+        </div>
+        <div class="card-footer">
+          <span>Feb 2026</span>
+          <a href="blog.html" style="color:var(--color-secondary);font-weight:600">Read →</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-img" style="background:linear-gradient(135deg,#2A9D8F,#52B788);display:flex;align-items:center;justify-content:center;font-size:4rem;">🚴</div>
+        <div class="card-body">
+          <span class="card-tag">Gear</span>
+          <h3 class="card-title">Packing Light: Our Bikepacking Setup</h3>
+          <p class="card-text">Everything we're bringing, everything we're leaving behind. The art of packing for a multi-month bike trip.</p>
+        </div>
+        <div class="card-footer">
+          <span>Feb 2026</span>
+          <a href="blog.html" style="color:var(--color-secondary);font-weight:600">Read →</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-img" style="background:linear-gradient(135deg,#E9C46A,#F4A261);display:flex;align-items:center;justify-content:center;font-size:4rem;">🌅</div>
+        <div class="card-body">
+          <span class="card-tag">Motivation</span>
+          <h3 class="card-title">Why We're Doing This Together</h3>
+          <p class="card-text">Adventure is better shared. This is the story of how two people decided to cycle the world as a team.</p>
+        </div>
+        <div class="card-footer">
+          <span>Jan 2026</span>
+          <a href="blog.html" style="color:var(--color-secondary);font-weight:600">Read →</a>
+        </div>
+      </article>
+    </div>
+    <div style="text-align:center;margin-top:2.5rem">
+      <a href="blog.html" class="btn btn-dark">View All Posts</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CTA
+════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to follow the journey?</h2>
+    <p>Sign in to access the private journal and get updates from the road.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-accent" data-auth>🔑 Sign In with Google</button>
+      <a href="planning.html" class="btn btn-outline">🗺️ See the Route</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
+        <p>A cycling adventure blog documenting our journey across continents. Planning routes, collecting stories, and sharing every beautiful moment.</p>
+        <div class="social-links">
+          <a class="social-link" title="Instagram" aria-label="Instagram">📸</a>
+          <a class="social-link" title="Twitter" aria-label="Twitter">🐦</a>
+          <a class="social-link" title="YouTube" aria-label="YouTube">▶️</a>
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="index.html">Home</a>
+        <a href="planning.html">Planning</a>
+        <a href="blog.html">Blog</a>
+        <a href="photos.html">Photos</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="journal.html">Private Journal</a>
+        <a href="admin.html">Admin Panel</a>
+        <a href="#" data-auth>Sign In</a>
+      </div>
+      <div class="footer-col">
+        <h4>Info</h4>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">tomika.bikes</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bikes – All rights reserved</span>
+      <span>Made with ❤️ and 🚴 by Tomika & Partner</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+  // Animated counters
+  const counters = document.querySelectorAll('[data-count]');
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const target = parseInt(el.dataset.count, 10);
+        let current = 0;
+        const step = Math.ceil(target / 50);
+        const interval = setInterval(() => {
+          current = Math.min(current + step, target);
+          el.textContent = current.toLocaleString();
+          if (current >= target) clearInterval(interval);
+        }, 40);
+        counterObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  counters.forEach(c => counterObserver.observe(c));
+</script>
+</body>
+</html>

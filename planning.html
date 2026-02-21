@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bikes – Trip planning with interactive route maps, waypoints, and timeline." />
+  <title>Trip Planning – Tomika Bikes</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    .waypoint-popup h4 { margin-bottom: 4px; font-size: 0.95rem; }
+    .waypoint-popup p  { margin: 0; font-size: 0.8rem; color: #555; }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--color-gray-600);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: .5rem;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-secondary), var(--color-accent));
+      border-radius: 2px;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -1.625rem;
+      top: .35rem;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--color-secondary);
+      border: 3px solid var(--color-white);
+      box-shadow: 0 0 0 2px var(--color-secondary);
+    }
+
+    .timeline-content {
+      background: var(--color-white);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--color-gray-200);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-date {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--color-secondary);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: .25rem;
+    }
+
+    .timeline-content h4 { font-size: 1rem; margin-bottom: .25rem; }
+    .timeline-content p  { font-size: .85rem; color: var(--color-gray-600); margin: 0; }
+
+    .pack-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .pack-list li {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem 0;
+      border-bottom: 1px solid var(--color-gray-100);
+      font-size: .9rem;
+    }
+
+    .pack-list li:last-child { border-bottom: none; }
+
+    .pack-check {
+      width: 20px; height: 20px;
+      border-radius: 4px;
+      border: 2px solid var(--color-gray-300);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+
+    .pack-check.checked {
+      background: var(--color-secondary);
+      border-color: var(--color-secondary);
+      color: var(--color-white);
+    }
+
+    .planning-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .planning-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Page Loader -->
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-dots">
+      <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Planning</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="journal.html">Journal</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-login-btn" data-auth>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign In
+      </button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Planning</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="journal.html">📔 Journal</a>
+  <a href="admin.html">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+</div>
+
+<!-- Auth Modal -->
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access your journal and admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">🗺️ Route Planning</div>
+    <h1>Our Adventure Map</h1>
+    <p>Interactive route planner, trip waypoints, and timeline overview</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PLANNING CONTENT
+════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="planning-grid">
+
+      <!-- Left: Map -->
+      <div>
+        <div class="map-controls">
+          <input type="text" class="map-search" id="mapSearch" placeholder="🔍 Search a city or country..." />
+          <div class="filter-group">
+            <span class="filter-label">Show:</span>
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="planned">Planned</button>
+            <button class="filter-btn" data-filter="visited">Visited</button>
+          </div>
+        </div>
+
+        <div class="map-wrapper">
+          <div id="map"></div>
+        </div>
+
+        <div class="map-legend">
+          <h4>Map Legend</h4>
+          <div class="legend-items">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#2A9D8F"></div>
+              <span>Planned waypoint</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#E9C46A"></div>
+              <span>Visited ✅</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#E76F51"></div>
+              <span>Must-see 🌟</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#264653;width:30px;height:3px;border-radius:2px"></div>
+              <span>Planned route</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destination Cards -->
+        <div class="trip-list">
+          <h3 style="margin-bottom:1.25rem">Planned Destinations</h3>
+          <div id="destinationList"></div>
+        </div>
+      </div>
+
+      <!-- Right: Sidebar -->
+      <div>
+        <!-- Trip Stats -->
+        <div class="sidebar-widget">
+          <h3>Trip Overview</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">12</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">Countries</div>
+            </div>
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">4,200</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">km</div>
+            </div>
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-accent);font-family:var(--font-heading)">180</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">Days</div>
+            </div>
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-warm);font-family:var(--font-heading)">24</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">Waypoints</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="sidebar-widget">
+          <h3>Trip Timeline</h3>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-secondary)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">Mar 2026 – Start</div>
+                <h4>🇬🇧 London, UK</h4>
+                <p>Departure point. Final packing and bike check.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-accent)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">Apr 2026</div>
+                <h4>🇫🇷 Paris, France</h4>
+                <p>Across the Channel and into France. First major checkpoint.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-secondary)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">May 2026</div>
+                <h4>🇮🇹 Milan → Rome</h4>
+                <p>Through the Alps and down through beautiful Italy.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-warm)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">Jun–Jul 2026</div>
+                <h4>🇬🇷 Greece + Islands</h4>
+                <p>Balkan route through Greece. Island hopping break 🏝️</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-coral)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">Aug 2026 – End</div>
+                <h4>🇹🇷 Istanbul, Turkey</h4>
+                <p>Final destination. Europe to Asia crossing!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Packing List -->
+        <div class="sidebar-widget">
+          <h3>Packing Checklist</h3>
+          <ul class="pack-list" id="packList">
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Touring bike + panniers</li>
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Tent + sleeping bag</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Repair kit & spare tubes</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Waterproof panniers</li>
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> GPS device</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> First aid kit</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Solar charging panel</li>
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Camera + lenses</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Travel insurance</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Visas sorted</li>
+          </ul>
+          <div style="margin-top:1rem;font-size:.8rem;color:var(--color-gray-600)" id="packProgress"></div>
+        </div>
+
+        <!-- Add Waypoint -->
+        <div class="sidebar-widget">
+          <h3>Add Waypoint</h3>
+          <div class="form-group">
+            <label>Location Name</label>
+            <input type="text" class="form-control" id="wpName" placeholder="e.g. Vienna, Austria" />
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" id="wpNotes" rows="2" placeholder="Things to do, see, eat..."></textarea>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="addWaypointFromForm()">📍 Add to Map</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
+        <p>A cycling adventure blog documenting our journey across continents.</p>
+      </div>
+      <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="planning.html">Planning</a><a href="blog.html">Blog</a><a href="photos.html">Photos</a></div>
+      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a><a href="admin.html">Admin</a><a href="#" data-auth>Sign In</a></div>
+      <div class="footer-col"><h4>Info</h4><a href="#">About</a><a href="#">Contact</a></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bikes</span>
+      <span>Made with ❤️ and 🚴</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs=" crossorigin=""></script>
+<script src="js/main.js"></script>
+<script>
+  // ── Waypoints data ───────────────────────────
+  const waypoints = [
+    { id: 1,  lat: 51.5074,  lng: -0.1278, name: 'London, UK',         notes: 'Start point',                    type: 'visited',  emoji: '🇬🇧' },
+    { id: 2,  lat: 48.8566,  lng:  2.3522, name: 'Paris, France',      notes: 'Eiffel Tower + croissants!',     type: 'planned',  emoji: '🇫🇷' },
+    { id: 3,  lat: 47.3769,  lng:  8.5417, name: 'Zurich, Switzerland',notes: 'Alps entry point',               type: 'planned',  emoji: '🇨🇭' },
+    { id: 4,  lat: 45.4642,  lng:  9.1900, name: 'Milan, Italy',       notes: 'Fashion capital & good pasta',   type: 'planned',  emoji: '🇮🇹' },
+    { id: 5,  lat: 43.7696,  lng: 11.2558, name: 'Florence, Italy',    notes: 'Must-see museums',               type: 'mustSee',  emoji: '🎨' },
+    { id: 6,  lat: 41.9028,  lng: 12.4964, name: 'Rome, Italy',        notes: 'Colosseum & Vatican',            type: 'mustSee',  emoji: '🏛️' },
+    { id: 7,  lat: 40.6401,  lng: 22.9444, name: 'Thessaloniki, Greece',notes: 'Great seafood',                 type: 'planned',  emoji: '🇬🇷' },
+    { id: 8,  lat: 37.9838,  lng: 23.7275, name: 'Athens, Greece',     notes: 'Acropolis + islands hop start', type: 'mustSee',  emoji: '🏺' },
+    { id: 9,  lat: 41.0082,  lng: 28.9784, name: 'Istanbul, Turkey',   notes: 'Final destination! 🎉',          type: 'mustSee',  emoji: '🕌' },
+  ];
+
+  const typeColors = { visited: '#E9C46A', planned: '#2A9D8F', mustSee: '#E76F51' };
+
+  // ── Initialise map ───────────────────────────
+  const map = L.map('map', { zoomControl: true }).setView([46, 14], 5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  // Draw route polyline
+  const routeCoords = waypoints.map(w => [w.lat, w.lng]);
+  L.polyline(routeCoords, { color: '#264653', weight: 3, opacity: .7, dashArray: '8 6' }).addTo(map);
+
+  // Add markers
+  waypoints.forEach(wp => {
+    const color = typeColors[wp.type] || '#2A9D8F';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        background:${color};
+        width:34px;height:34px;
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        border:3px solid #fff;
+        box-shadow:0 3px 10px rgba(0,0,0,.25);
+        display:flex;align-items:center;justify-content:center;
+      "><span style="transform:rotate(45deg);font-size:14px">${wp.emoji}</span></div>`,
+      iconSize: [34, 34],
+      iconAnchor: [17, 34],
+      popupAnchor: [0, -38],
+    });
+
+    L.marker([wp.lat, wp.lng], { icon })
+      .addTo(map)
+      .bindPopup(`
+        <div class="waypoint-popup">
+          <h4>${wp.emoji} ${wp.name}</h4>
+          <p>${wp.notes}</p>
+          <p style="margin-top:4px;font-size:.75rem;color:${color};font-weight:600;text-transform:uppercase">${wp.type}</p>
+        </div>
+      `);
+  });
+
+  // ── Render destination cards ─────────────────
+  const listEl = document.getElementById('destinationList');
+  waypoints.forEach(wp => {
+    const color = typeColors[wp.type] || '#2A9D8F';
+    const card = document.createElement('div');
+    card.className = 'trip-card';
+    card.dataset.type = wp.type;
+    card.innerHTML = `
+      <div class="trip-card-icon">${wp.emoji}</div>
+      <div class="trip-card-body">
+        <h4>${wp.name}</h4>
+        <p>${wp.notes}</p>
+      </div>
+      <div class="trip-card-meta">
+        <span style="display:inline-block;background:${color}22;color:${color};padding:.2rem .6rem;border-radius:999px;font-weight:600;font-size:.72rem;text-transform:uppercase">${wp.type}</span>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      map.flyTo([wp.lat, wp.lng], 10, { duration: 1.5 });
+    });
+    listEl.appendChild(card);
+  });
+
+  // ── Filter buttons ───────────────────────────
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('.trip-card').forEach(card => {
+        card.style.display = (filter === 'all' || card.dataset.type === filter) ? 'flex' : 'none';
+      });
+    });
+  });
+
+  // ── Packing checklist progress ───────────────
+  function updatePackProgress() {
+    const items = document.querySelectorAll('.pack-check');
+    const checked = document.querySelectorAll('.pack-check.checked').length;
+    const el = document.getElementById('packProgress');
+    if (el) el.textContent = `${checked} of ${items.length} items packed`;
+  }
+  updatePackProgress();
+
+  function toggleCheck(el) {
+    el.classList.toggle('checked');
+    el.textContent = el.classList.contains('checked') ? '✓' : '';
+    updatePackProgress();
+  }
+
+  // ── Add waypoint from form ───────────────────
+  function addWaypointFromForm() {
+    const name = document.getElementById('wpName').value.trim();
+    const notes = document.getElementById('wpNotes').value.trim();
+    if (!name) { TomikaBikes.showToast('Please enter a location name', 'error'); return; }
+
+    // Simple geocode placeholder – open a popup at map center
+    const center = map.getCenter();
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="background:#E76F51;width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:14px">📍</span></div>`,
+      iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -38],
+    });
+
+    L.marker([center.lat, center.lng], { icon })
+      .addTo(map)
+      .bindPopup(`<div class="waypoint-popup"><h4>📍 ${name}</h4><p>${notes || 'No notes'}</p></div>`)
+      .openPopup();
+
+    document.getElementById('wpName').value = '';
+    document.getElementById('wpNotes').value = '';
+    TomikaBikes.showToast(`Added waypoint: ${name}`, 'success');
+  }
+
+  // ── Map search (basic filter of cards) ───────
+  document.getElementById('mapSearch').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.trip-card').forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.display = text.includes(q) ? 'flex' : 'none';
+    });
+  });
+</script>
+</body>
+</html>
