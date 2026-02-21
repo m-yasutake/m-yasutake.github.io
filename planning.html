@@ -1212,7 +1212,7 @@
       markLoaded('routes'); markLoaded('points'); return;
     }
     try {
-      firebase.initializeApp(FIREBASE_CONFIG);
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       db = firebase.firestore();
       db.enablePersistence().catch(err => {
         if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore persistence error:', err);
@@ -1220,7 +1220,7 @@
       firebaseReady = true;
       loadFirebaseRoutes(); loadFirebasePoints();
       loadAuthAndStorage().then(setupAuth).catch(err => console.warn('Auth load:', err));
-    } catch (err) { console.error('Firebase init error:', err); }
+    } catch (err) { console.error('Firebase init error:', err); markLoaded('routes'); markLoaded('points'); }
   }
 
   function isAdmin() { return currentUser && typeof ADMIN_EMAIL !== 'undefined' && currentUser.email === ADMIN_EMAIL; }
