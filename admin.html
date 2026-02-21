@@ -533,8 +533,7 @@
     <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="planning.html">Planning</a></li>
-      <li><a href="roots.html">Roots</a></li>
+      <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
       <li><a href="journal.html">Journal</a></li>
@@ -552,8 +551,7 @@
 
 <div class="mobile-menu">
   <a href="index.html">🏠 Home</a>
-  <a href="planning.html">🗺️ Planning</a>
-  <a href="roots.html">🚵 Roots</a>
+  <a href="planning.html">🗺️ Map</a>
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
   <a href="journal.html">📔 Journal</a>
@@ -604,7 +602,7 @@
       <a href="#" onclick="showSection('photos',this)"><span class="nav-icon">📷</span> Photos</a>
       <a href="#" onclick="showSection('journal',this)"><span class="nav-icon">📔</span> Journal</a>
       <a href="#" onclick="showSection('waypoints',this)"><span class="nav-icon">🗺️</span> Waypoints</a>
-      <a href="#" onclick="showSection('roots',this)"><span class="nav-icon">🗺️</span> Roots Admin</a>
+      <a href="#" onclick="showSection('roots',this)"><span class="nav-icon">🗺️</span> Map Admin</a>
       <a href="#" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
       <a href="index.html" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1rem"><span class="nav-icon">🏠</span> View Site</a>
     </nav>
@@ -827,7 +825,7 @@
         <h1>Waypoints 🗺️</h1>
         <p>Add and manage trip waypoints on the planning map.</p>
       </div>
-      <p style="color:var(--color-gray-600)">Waypoints are managed from the <a href="planning.html" style="color:var(--color-secondary)">Planning page</a>.</p>
+      <p style="color:var(--color-gray-600)">Waypoints are managed from the <a href="planning.html" style="color:var(--color-secondary)">Map page</a>.</p>
     </div>
 
     <!-- ── Settings ── -->
@@ -865,21 +863,21 @@
     <!-- ── Roots Admin ── -->
     <div id="section-roots" class="admin-section" style="display:none">
       <div class="admin-header">
-        <h1>Roots Admin 🗺️</h1>
-        <p>Manage Firestore data for the Roots Bike Route Planner.</p>
+        <h1>Map Admin 🗺️</h1>
+        <p>Manage Firestore data for the Map page (routes &amp; points).</p>
       </div>
 
       <!-- Roots auth gate (Firebase sign-in required) -->
       <div id="roots-auth-gate" style="text-align:center;padding:3em 1em;color:#888;">
-        <h2>Roots Firestore Access</h2>
-        <p>Sign in with your admin Google account to manage Roots data.</p>
+        <h2>Map Firestore Access</h2>
+        <p>Sign in with your admin Google account to manage Map data.</p>
         <button class="roots-btn" id="roots-admin-auth-btn" style="font-size:1.1em;padding:0.6em 1.5em;margin-top:1em;">Sign In with Google</button>
         <div id="roots-admin-auth-status" style="margin-top:1em;font-size:0.85em;"></div>
       </div>
 
       <!-- Main admin content (hidden until auth) -->
       <div id="roots-admin-content" style="display:none">
-        <a href="roots.html" class="back-link">&larr; Back to Roots</a>
+        <a href="planning.html" class="back-link">&larr; Back to Map</a>
 
         <!-- Collection tabs -->
         <div class="collection-tabs">
