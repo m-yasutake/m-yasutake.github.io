@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Open index.html in Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/index.html",
+            "runtimeArgs": ["--allow-file-access-from-files"]
+        },
+        {
+            "name": "Open planning.html in Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/planning.html",
+            "runtimeArgs": ["--allow-file-access-from-files"]
+        },
+        {
+            "name": "Open index.html in Edge",
+            "type": "msedge",
+            "request": "launch",
+            "file": "${workspaceFolder}/index.html"
+        }
+    ]
+}
