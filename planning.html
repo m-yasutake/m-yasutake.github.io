@@ -3,140 +3,278 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bikes – Trip planning with interactive route maps, waypoints, and timeline." />
-  <title>Trip Planning – Tomika Bikes</title>
+  <meta name="description" content="Tomika Bikes – Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning." />
+  <title>Map – Tomika Bikes</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
-  <!-- Leaflet CSS -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
 
   <style>
-    .waypoint-popup h4 { margin-bottom: 4px; font-size: 0.95rem; }
-    .waypoint-popup p  { margin: 0; font-size: 0.8rem; color: #555; }
+  #map {
+    height: 70vh;
+    width: 100%;
+    border-radius: 6px;
+    margin-bottom: 1em;
+    z-index: 1;
+  }
 
-    .leaflet-popup-content-wrapper {
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.15);
-    }
+  .point-type-icon {
+    background: none !important;
+    border: none !important;
+  }
 
-    .filter-group {
-      display: flex;
-      gap: .5rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+  .roots-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+    align-items: center;
+  }
 
-    .filter-label {
-      font-size: .8rem;
-      font-weight: 600;
-      color: var(--color-gray-600);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-    }
+  .roots-controls label {
+    padding: 0.4em 0.8em;
+    background: #252a34;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
 
-    .timeline {
-      position: relative;
-      padding-left: 2rem;
-    }
+  .roots-controls label:hover { border-color: #58a6ff; }
+  .roots-controls input[type="checkbox"] { accent-color: #58a6ff; }
 
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: .5rem;
-      top: 0; bottom: 0;
-      width: 2px;
-      background: linear-gradient(to bottom, var(--color-secondary), var(--color-accent));
-      border-radius: 2px;
-    }
+  .roots-btn {
+    padding: 0.4em 0.8em;
+    background: #252a34;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 0.85em;
+  }
 
-    .timeline-item {
-      position: relative;
-      margin-bottom: 1.5rem;
-    }
+  .roots-btn:hover { border-color: #58a6ff; }
+  .roots-btn.active { border-color: #58a6ff; background: #1a1f2e; }
+  .roots-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .timeline-dot {
-      position: absolute;
-      left: -1.625rem;
-      top: .35rem;
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      background: var(--color-secondary);
-      border: 3px solid var(--color-white);
-      box-shadow: 0 0 0 2px var(--color-secondary);
-    }
+  #route-stats {
+    background: #252a34;
+    padding: 1em;
+    border-radius: 6px;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+    display: none;
+  }
 
-    .timeline-content {
-      background: var(--color-white);
-      border-radius: var(--radius-md);
-      padding: 1rem 1.25rem;
-      border: 1px solid var(--color-gray-200);
-      box-shadow: var(--shadow-sm);
-    }
+  #route-stats table { width: 100%; border-collapse: collapse; }
+  #route-stats th, #route-stats td { text-align: left; padding: 0.3em 0.6em; border-bottom: 1px solid #444; }
+  #route-stats th { color: #58a6ff; }
 
-    .timeline-date {
-      font-size: .75rem;
-      font-weight: 700;
-      color: var(--color-secondary);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      margin-bottom: .25rem;
-    }
+  .route-color-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 0.3em;
+  }
 
-    .timeline-content h4 { font-size: 1rem; margin-bottom: .25rem; }
-    .timeline-content p  { font-size: .85rem; color: var(--color-gray-600); margin: 0; }
+  #admin-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+    align-items: center;
+    min-height: 2em;
+  }
 
-    .pack-list {
-      list-style: none;
-      padding: 0;
-    }
+  #upload-area {
+    display: none;
+    border: 2px dashed #444;
+    border-radius: 6px;
+    padding: 1.5em;
+    margin-bottom: 1em;
+    text-align: center;
+    color: #888;
+    transition: border-color 0.2s, background 0.2s;
+  }
 
-    .pack-list li {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      padding: .6rem 0;
-      border-bottom: 1px solid var(--color-gray-100);
-      font-size: .9rem;
-    }
+  #upload-area.drag-over { border-color: #58a6ff; background: rgba(88, 166, 255, 0.05); color: #58a6ff; }
+  #upload-status { font-size: 0.85em; margin-top: 0.5em; color: #58a6ff; }
 
-    .pack-list li:last-child { border-bottom: none; }
+  .delete-btn { background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8em; padding: 0.2em 0.4em; border-radius: 3px; margin-left: 0.5em; }
+  .delete-btn:hover { background: rgba(255, 107, 107, 0.15); }
 
-    .pack-check {
-      width: 20px; height: 20px;
-      border-radius: 4px;
-      border: 2px solid var(--color-gray-300);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: all var(--transition);
-    }
+  .info-btn { background: none; border: none; color: #58a6ff; cursor: pointer; font-size: 0.8em; padding: 0.2em 0.4em; border-radius: 3px; margin-left: 0.3em; }
+  .info-btn:hover { background: rgba(88, 166, 255, 0.15); }
 
-    .pack-check.checked {
-      background: var(--color-secondary);
-      border-color: var(--color-secondary);
-      color: var(--color-white);
-    }
+  .meta-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
 
-    .planning-grid {
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 2rem;
-      align-items: start;
-    }
+  .meta-overlay.open { display: flex; }
 
-    @media (max-width: 900px) {
-      .planning-grid { grid-template-columns: 1fr; }
-    }
+  .meta-modal {
+    background: #1e2330;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 1.5em;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #e0e0e0;
+  }
+
+  .meta-modal h3 { margin: 0 0 1em 0; color: #58a6ff; font-size: 1.1em; }
+
+  .meta-modal label {
+    display: block;
+    font-size: 0.85em;
+    color: #aaa;
+    margin-bottom: 0.3em;
+    margin-top: 0.8em;
+  }
+
+  .meta-modal input[type="text"],
+  .meta-modal textarea {
+    width: 100%;
+    padding: 0.5em;
+    background: #252a34;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 0.9em;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .meta-modal input[type="text"]:focus,
+  .meta-modal textarea:focus { outline: none; border-color: #58a6ff; }
+  .meta-modal textarea { resize: vertical; min-height: 60px; }
+
+  .meta-modal .meta-actions { margin-top: 1.2em; display: flex; gap: 0.5em; justify-content: flex-end; }
+  .meta-modal .meta-link { color: #58a6ff; text-decoration: none; word-break: break-all; }
+  .meta-modal .meta-link:hover { text-decoration: underline; }
+  .meta-modal .meta-view-value { font-size: 0.95em; margin-bottom: 0.2em; color: #e0e0e0; }
+  .meta-modal .meta-view-value.empty { color: #666; font-style: italic; }
+
+  .file-pick-label {
+    display: inline-block;
+    padding: 0.5em 1em;
+    background: #252a34;
+    border: 1px solid #58a6ff;
+    border-radius: 4px;
+    color: #58a6ff;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 0.8em;
+  }
+  .file-pick-label:hover { background: rgba(88, 166, 255, 0.1); }
+
+  #map-loading {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(20, 24, 33, 0.85);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: opacity 0.4s ease;
+  }
+
+  #map-loading.fade-out { opacity: 0; pointer-events: none; }
+  #map-loading .loading-text { color: #aaa; font-size: 0.9em; margin-bottom: 0.8em; }
+  #map-loading .progress-bar { width: 200px; height: 4px; background: #333; border-radius: 2px; overflow: hidden; }
+  #map-loading .progress-fill { height: 100%; width: 0%; background: #58a6ff; border-radius: 2px; transition: width 0.3s ease; }
+  #map-wrapper { position: relative; }
+
+  .marker-cluster-small { background-color: rgba(88, 166, 255, 0.6); }
+  .marker-cluster-small div { background-color: rgba(88, 166, 255, 0.8); }
+  .marker-cluster-medium { background-color: rgba(241, 196, 15, 0.6); }
+  .marker-cluster-medium div { background-color: rgba(241, 196, 15, 0.8); }
+  .marker-cluster-large { background-color: rgba(231, 76, 60, 0.6); }
+  .marker-cluster-large div { background-color: rgba(231, 76, 60, 0.8); }
+
+  .planning-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) { .planning-grid { grid-template-columns: 1fr; } }
+
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: .5rem; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--color-secondary), var(--color-accent));
+    border-radius: 2px;
+  }
+
+  .timeline-item { position: relative; margin-bottom: 1.5rem; }
+  .timeline-dot {
+    position: absolute;
+    left: -1.625rem; top: .35rem;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--color-secondary);
+    border: 3px solid var(--color-white);
+    box-shadow: 0 0 0 2px var(--color-secondary);
+  }
+
+  .timeline-content {
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-gray-200);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .timeline-date { font-size: .75rem; font-weight: 700; color: var(--color-secondary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem; }
+  .timeline-content h4 { font-size: 1rem; margin-bottom: .25rem; }
+  .timeline-content p { font-size: .85rem; color: var(--color-gray-600); margin: 0; }
+
+  .pack-list { list-style: none; padding: 0; }
+  .pack-list li { display: flex; align-items: center; gap: .75rem; padding: .6rem 0; border-bottom: 1px solid var(--color-gray-100); font-size: .9rem; }
+  .pack-list li:last-child { border-bottom: none; }
+
+  .pack-check {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    border: 2px solid var(--color-gray-300);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition);
+  }
+
+  .pack-check.checked { background: var(--color-secondary); border-color: var(--color-secondary); color: var(--color-white); }
   </style>
 </head>
 <body>
@@ -157,8 +295,7 @@
     <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="planning.html">Planning</a></li>
-      <li><a href="roots.html">Roots</a></li>
+      <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
       <li><a href="journal.html">Journal</a></li>
@@ -177,8 +314,7 @@
 <!-- Mobile Menu -->
 <div class="mobile-menu">
   <a href="index.html">🏠 Home</a>
-  <a href="planning.html">🗺️ Planning</a>
-  <a href="roots.html">🚵 Roots</a>
+  <a href="planning.html">🗺️ Map</a>
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
   <a href="journal.html">📔 Journal</a>
@@ -203,62 +339,124 @@
 <!-- Page Hero -->
 <div class="page-hero">
   <div class="container">
-    <div class="hero-badge" style="margin-bottom:.75rem">🗺️ Route Planning</div>
-    <h1>Our Adventure Map</h1>
-    <p>Interactive route planner, trip waypoints, and timeline overview</p>
+    <div class="hero-badge" style="margin-bottom:.75rem">🗺️ Interactive Map</div>
+    <h1>Map</h1>
+    <p>Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning</p>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════
-     PLANNING CONTENT
+     MAP CONTENT
 ════════════════════════════════════════════ -->
-<section class="section">
+<section class="section" style="padding-top:2rem">
   <div class="container">
     <div class="planning-grid">
 
       <!-- Left: Map -->
       <div>
-        <div class="map-controls">
-          <input type="text" class="map-search" id="mapSearch" placeholder="🔍 Search a city or country..." />
-          <div class="filter-group">
-            <span class="filter-label">Show:</span>
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="planned">Planned</button>
-            <button class="filter-btn" data-filter="visited">Visited</button>
+        <p style="color:var(--color-gray-600);margin-bottom:1rem;font-size:.9rem">
+          Use <strong>Add Route(s)</strong> to upload GPX files and visualise bike routes, or <strong>Add Point(s)</strong>
+          to add GPS waypoints from a CSV file. Toggle point types on/off with the filters below.
+        </p>
+
+        <!-- Map action buttons and filters -->
+        <div class="roots-controls">
+          <button class="roots-btn" id="add-routes-btn" title="Load GPX route files">+ Add Route(s)</button>
+          <button class="roots-btn" id="add-points-btn" title="Load a CSV file with GPS points">+ Add Point(s)</button>
+          <button class="roots-btn" id="add-gmaps-btn" title="Add a point from Google Maps URL">+ Add Google Maps Point</button>
+          <span id="type-filters"></span>
+          <button class="roots-btn" id="fit-bounds-btn" title="Zoom to fit all routes">Fit All</button>
+        </div>
+
+        <!-- Admin bar: auth status + upload area (visible when signed in as admin) -->
+        <div id="admin-bar">
+          <span id="auth-status" style="font-size:0.8em; color:#888;"></span>
+        </div>
+
+        <div id="upload-area">
+          <strong>Drop GPX or CSV files here</strong> or click to select<br>
+          <input type="file" id="firebase-file-input" accept=".gpx,.csv" multiple style="display:none;">
+          <div id="upload-status"></div>
+        </div>
+
+        <!-- Add Routes modal -->
+        <div class="meta-overlay" id="add-routes-overlay">
+          <div class="meta-modal">
+            <h3>Add Route(s)</h3>
+            <p style="font-size:0.9em;color:#aaa;margin:0 0 0.5em 0;">
+              Upload one or more <code>.gpx</code> files to visualise bike routes on the map.
+            </p>
+            <label class="file-pick-label" for="add-routes-file-input">📂 Choose GPX file(s)</label>
+            <input type="file" id="add-routes-file-input" accept=".gpx" multiple style="display:none;">
+            <div id="add-routes-status" style="font-size:0.85em;margin-top:0.5em;color:#58a6ff;"></div>
+            <div class="meta-actions">
+              <button class="roots-btn" id="add-routes-close-btn">Close</button>
+            </div>
           </div>
         </div>
 
-        <div class="map-wrapper">
+        <!-- Add Points modal -->
+        <div class="meta-overlay" id="add-points-overlay">
+          <div class="meta-modal">
+            <h3>Add Point(s)</h3>
+            <p style="font-size:0.9em;color:#aaa;margin:0 0 0.5em 0;">
+              Upload a CSV file with columns: <code>name</code>, <code>latitude</code>, <code>longitude</code>,
+              and optionally <code>url</code> and <code>Type</code>
+              (Onsen, Campsite, Roadside Station, Must See, Hotel, Other).
+            </p>
+            <label class="file-pick-label" for="add-points-file-input">📂 Choose CSV file(s)</label>
+            <input type="file" id="add-points-file-input" accept=".csv" multiple style="display:none;">
+            <div id="add-points-status" style="font-size:0.85em;margin-top:0.5em;color:#58a6ff;"></div>
+            <div class="meta-actions">
+              <button class="roots-btn" id="add-points-close-btn">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metadata modal (for Firebase route info) -->
+        <div class="meta-overlay" id="meta-overlay">
+          <div class="meta-modal" id="meta-modal">
+            <h3 id="meta-title">Route Info</h3>
+            <div id="meta-body"></div>
+            <div class="meta-actions">
+              <button class="roots-btn" id="meta-save-btn" style="display:none;">Save</button>
+              <button class="roots-btn" id="meta-close-btn">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Maps Point modal -->
+        <div class="meta-overlay" id="gmaps-overlay">
+          <div class="meta-modal">
+            <h3>Add Google Maps Point</h3>
+            <div id="gmaps-body">
+              <label for="gmaps-url-input">Google Maps URL</label>
+              <input type="text" id="gmaps-url-input" placeholder="Paste Google Maps URL here..." />
+              <label for="gmaps-type-input">Point Type</label>
+              <select id="gmaps-type-input" style="width:100%;padding:0.5em;background:#252a34;border:1px solid #444;border-radius:4px;color:#e0e0e0;font-size:0.9em;font-family:inherit;box-sizing:border-box;">
+                <option value="Campsite">Campsite</option>
+                <option value="Onsen">Onsen</option>
+                <option value="Roadside Station">Roadside Station</option>
+                <option value="Must See">Must See</option>
+                <option value="Hotel">Hotel</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="meta-actions">
+              <button class="roots-btn" id="gmaps-add-btn">Add Point</button>
+              <button class="roots-btn" id="gmaps-close-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="map-wrapper">
+          <div id="map-loading">
+            <div class="loading-text" id="loading-text">Loading routes &amp; points...</div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          </div>
           <div id="map"></div>
         </div>
-
-        <div class="map-legend">
-          <h4>Map Legend</h4>
-          <div class="legend-items">
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#2A9D8F"></div>
-              <span>Planned waypoint</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#E9C46A"></div>
-              <span>Visited ✅</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#E76F51"></div>
-              <span>Must-see 🌟</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#264653;width:30px;height:3px;border-radius:2px"></div>
-              <span>Planned route</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Destination Cards -->
-        <div class="trip-list">
-          <h3 style="margin-bottom:1.25rem">Planned Destinations</h3>
-          <div id="destinationList"></div>
-        </div>
+        <div id="route-stats"></div>
       </div>
 
       <!-- Right: Sidebar -->
@@ -339,7 +537,7 @@
           <ul class="pack-list" id="packList">
             <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Touring bike + panniers</li>
             <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Tent + sleeping bag</li>
-            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Repair kit & spare tubes</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Repair kit &amp; spare tubes</li>
             <li><div class="pack-check" onclick="toggleCheck(this)"></div> Waterproof panniers</li>
             <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> GPS device</li>
             <li><div class="pack-check" onclick="toggleCheck(this)"></div> First aid kit</li>
@@ -349,20 +547,6 @@
             <li><div class="pack-check" onclick="toggleCheck(this)"></div> Visas sorted</li>
           </ul>
           <div style="margin-top:1rem;font-size:.8rem;color:var(--color-gray-600)" id="packProgress"></div>
-        </div>
-
-        <!-- Add Waypoint -->
-        <div class="sidebar-widget">
-          <h3>Add Waypoint</h3>
-          <div class="form-group">
-            <label>Location Name</label>
-            <input type="text" class="form-control" id="wpName" placeholder="e.g. Vienna, Austria" />
-          </div>
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea class="form-control" id="wpNotes" rows="2" placeholder="Things to do, see, eat..."></textarea>
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="addWaypointFromForm()">📍 Add to Map</button>
         </div>
       </div>
     </div>
@@ -375,163 +559,807 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
-        <p>A cycling adventure blog documenting our journey across continents.</p>
+        <p>A cycling adventure blog documenting our journey across continents. Planning routes, collecting stories, and sharing every beautiful moment.</p>
+        <div class="social-links">
+          <a class="social-link" title="Instagram" aria-label="Instagram">📸</a>
+          <a class="social-link" title="Twitter" aria-label="Twitter">🐦</a>
+          <a class="social-link" title="YouTube" aria-label="YouTube">▶️</a>
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
       </div>
-      <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="planning.html">Planning</a><a href="blog.html">Blog</a><a href="photos.html">Photos</a></div>
-      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a><a href="admin.html">Admin</a><a href="#" data-auth>Sign In</a></div>
-      <div class="footer-col"><h4>Info</h4><a href="#">About</a><a href="#">Contact</a></div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="index.html">Home</a>
+        <a href="planning.html">Map</a>
+        <a href="blog.html">Blog</a>
+        <a href="photos.html">Photos</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="journal.html">Private Journal</a>
+        <a href="admin.html">Admin Panel</a>
+        <a href="#" data-auth>Sign In</a>
+      </div>
+      <div class="footer-col">
+        <h4>Info</h4>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">tomika.bikes</a>
+      </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 tomika.bikes</span>
-      <span>Made with ❤️ and 🚴</span>
+      <span>© 2026 tomika.bikes – All rights reserved</span>
+      <span>Made with ❤️ and 🚴 by Tomika &amp; Partner</span>
     </div>
   </div>
 </footer>
 
-<!-- Leaflet JS -->
+<!-- Firebase SDK — app + firestore loaded upfront (auth & storage lazy-loaded on sign-in) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
 <script src="js/main.js"></script>
 <script>
-  // ── Waypoints data ───────────────────────────
-  const waypoints = [
-    { id: 1,  lat: 51.5074,  lng: -0.1278, name: 'London, UK',         notes: 'Start point',                    type: 'visited',  emoji: '🇬🇧' },
-    { id: 2,  lat: 48.8566,  lng:  2.3522, name: 'Paris, France',      notes: 'Eiffel Tower + croissants!',     type: 'planned',  emoji: '🇫🇷' },
-    { id: 3,  lat: 47.3769,  lng:  8.5417, name: 'Zurich, Switzerland',notes: 'Alps entry point',               type: 'planned',  emoji: '🇨🇭' },
-    { id: 4,  lat: 45.4642,  lng:  9.1900, name: 'Milan, Italy',       notes: 'Fashion capital & good pasta',   type: 'planned',  emoji: '🇮🇹' },
-    { id: 5,  lat: 43.7696,  lng: 11.2558, name: 'Florence, Italy',    notes: 'Must-see museums',               type: 'mustSee',  emoji: '🎨' },
-    { id: 6,  lat: 41.9028,  lng: 12.4964, name: 'Rome, Italy',        notes: 'Colosseum & Vatican',            type: 'mustSee',  emoji: '🏛️' },
-    { id: 7,  lat: 40.6401,  lng: 22.9444, name: 'Thessaloniki, Greece',notes: 'Great seafood',                 type: 'planned',  emoji: '🇬🇷' },
-    { id: 8,  lat: 37.9838,  lng: 23.7275, name: 'Athens, Greece',     notes: 'Acropolis + islands hop start', type: 'mustSee',  emoji: '🏺' },
-    { id: 9,  lat: 41.0082,  lng: 28.9784, name: 'Istanbul, Turkey',   notes: 'Final destination! 🎉',          type: 'mustSee',  emoji: '🕌' },
-  ];
+(function() {
+  // ── Map & Route Logic ──────────────────────────────────────
+  const ROUTE_COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a29bfe','#fd79a8','#00b894','#e17055','#0984e3','#6c5ce7','#fdcb6e'];
+  const routes = [];
+  const points = [];
+  let colorIdx = 0;
 
-  const typeColors = { visited: '#E9C46A', planned: '#2A9D8F', mustSee: '#E76F51' };
+  const POINT_ICON_SIZE = [18, 18];
+  const POINT_ICON_ANCHOR = [9, 9];
+  const POINT_POPUP_ANCHOR = [0, -10];
 
-  // ── Initialise map ───────────────────────────
-  const map = L.map('map', { zoomControl: true }).setView([46, 14], 5);
+  const POINT_TYPE_ICONS = {
+    'Onsen': {
+      color: '#e74c3c',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#fff" stroke-width="1.5"/><path d="M8 13c0-2.2 1.8-4 4-4s4 1.8 4 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M9.5 8.5c0.3-1 0.7-1.5 0.5-2.5M12 7.5c0.3-1 0.7-1.5 0.5-2.5M14.5 8.5c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
+    },
+    'Campsite': {
+      color: '#27ae60',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#27ae60" stroke="#fff" stroke-width="1.5"/><path d="M12 6L6 17h12L12 6z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 17v-3h4v3" fill="none" stroke="#fff" stroke-width="1" stroke-linejoin="round"/></svg>'
+    },
+    'Roadside Station': {
+      color: '#3498db',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#3498db" stroke="#fff" stroke-width="1.5"/><rect x="7" y="9" width="10" height="7" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M7 12h10" stroke="#fff" stroke-width="1"/><path d="M10 9V7h4v2" fill="none" stroke="#fff" stroke-width="1.2"/></svg>'
+    },
+    'Must See': {
+      color: '#f1c40f',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#f1c40f" stroke="#fff" stroke-width="1.5"/><polygon points="12,5 13.8,10.2 19.4,10.2 14.8,13.4 16.6,18.6 12,15.4 7.4,18.6 9.2,13.4 4.6,10.2 10.2,10.2" fill="#fff"/></svg>'
+    },
+    'Hotel': {
+      color: '#9b59b6',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#9b59b6" stroke="#fff" stroke-width="1.5"/><rect x="7" y="8" width="10" height="9" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M7 11h10" stroke="#fff" stroke-width="1"/><rect x="9" y="13" width="2" height="3" fill="#fff"/><rect x="13" y="13" width="2" height="3" fill="#fff"/></svg>'
+    },
+    'Other': {
+      color: '#95a5a6',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#95a5a6" stroke="#fff" stroke-width="1.5"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
+    },
+    '_default': {
+      color: '#7f8c8d',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#7f8c8d" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg>'
+    }
+  };
+
+  function getPointIcon(type) {
+    const key = normalizePointType(type);
+    const iconDef = POINT_TYPE_ICONS[key];
+    return L.divIcon({ html: iconDef.svg, className: 'point-type-icon', iconSize: POINT_ICON_SIZE, iconAnchor: POINT_ICON_ANCHOR, popupAnchor: POINT_POPUP_ANCHOR });
+  }
+
+  function normalizePointType(type) {
+    const rawType = type ? String(type).trim() : '';
+    if (!rawType) return '_default';
+    if (/onsen/i.test(rawType)) return 'Onsen';
+    if (/camp/i.test(rawType)) return 'Campsite';
+    if (/roadside\s*station/i.test(rawType)) return 'Roadside Station';
+    if (/must\s*see/i.test(rawType)) return 'Must See';
+    if (/hotel/i.test(rawType)) return 'Hotel';
+    if (/other/i.test(rawType)) return 'Other';
+    return POINT_TYPE_ICONS[rawType] ? rawType : 'Other';
+  }
+
+  function getPointType(pointData) {
+    const rawType = pointData && pointData.metadata
+      ? (pointData.metadata.Type || pointData.metadata.type || pointData.type || null)
+      : (pointData ? pointData.type : null);
+    const normalized = normalizePointType(rawType);
+    return normalized === '_default' ? 'Other' : normalized;
+  }
+
+  const map = L.map('map').setView([49.25, -123.1], 11);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
   }).addTo(map);
 
-  // Draw route polyline
-  const routeCoords = waypoints.map(w => [w.lat, w.lng]);
-  L.polyline(routeCoords, { color: '#264653', weight: 3, opacity: .7, dashArray: '8 6' }).addTo(map);
-
-  // Add markers
-  waypoints.forEach(wp => {
-    const color = typeColors[wp.type] || '#2A9D8F';
-    const icon = L.divIcon({
-      className: '',
-      html: `<div style="
-        background:${color};
-        width:34px;height:34px;
-        border-radius:50% 50% 50% 0;
-        transform:rotate(-45deg);
-        border:3px solid #fff;
-        box-shadow:0 3px 10px rgba(0,0,0,.25);
-        display:flex;align-items:center;justify-content:center;
-      "><span style="transform:rotate(45deg);font-size:14px">${wp.emoji}</span></div>`,
-      iconSize: [34, 34],
-      iconAnchor: [17, 34],
-      popupAnchor: [0, -38],
-    });
-
-    L.marker([wp.lat, wp.lng], { icon })
-      .addTo(map)
-      .bindPopup(`
-        <div class="waypoint-popup">
-          <h4>${wp.emoji} ${wp.name}</h4>
-          <p>${wp.notes}</p>
-          <p style="margin-top:4px;font-size:.75rem;color:${color};font-weight:600;text-transform:uppercase">${wp.type}</p>
-        </div>
-      `);
-  });
-
-  // ── Render destination cards ─────────────────
-  const listEl = document.getElementById('destinationList');
-  waypoints.forEach(wp => {
-    const color = typeColors[wp.type] || '#2A9D8F';
-    const card = document.createElement('div');
-    card.className = 'trip-card';
-    card.dataset.type = wp.type;
-    card.innerHTML = `
-      <div class="trip-card-icon">${wp.emoji}</div>
-      <div class="trip-card-body">
-        <h4>${wp.name}</h4>
-        <p>${wp.notes}</p>
-      </div>
-      <div class="trip-card-meta">
-        <span style="display:inline-block;background:${color}22;color:${color};padding:.2rem .6rem;border-radius:999px;font-weight:600;font-size:.72rem;text-transform:uppercase">${wp.type}</span>
-      </div>
-    `;
-    card.addEventListener('click', () => {
-      map.flyTo([wp.lat, wp.lng], 10, { duration: 1.5 });
-    });
-    listEl.appendChild(card);
-  });
-
-  // ── Filter buttons ───────────────────────────
-  document.querySelectorAll('[data-filter]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const filter = btn.dataset.filter;
-      document.querySelectorAll('.trip-card').forEach(card => {
-        card.style.display = (filter === 'all' || card.dataset.type === filter) ? 'flex' : 'none';
+  const markerClusterGroup = L.markerClusterGroup({
+    maxClusterRadius: function(zoom) {
+      if (zoom >= 14) return 24;
+      if (zoom >= 12) return 40;
+      return 60;
+    },
+    disableClusteringAtZoom: 15,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    iconCreateFunction: function(cluster) {
+      const count = cluster.getChildCount();
+      let clusterClass = 'marker-cluster-small';
+      if (count > 100) clusterClass = 'marker-cluster-large';
+      else if (count > 10) clusterClass = 'marker-cluster-medium';
+      return L.divIcon({
+        html: '<div><span>' + count + '</span></div>',
+        className: 'marker-cluster ' + clusterClass,
+        iconSize: L.point(40, 40)
       });
+    }
+  });
+  markerClusterGroup.addTo(map);
+
+  function parseGPX(xmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlString, 'application/xml');
+    const pts = [];
+    doc.querySelectorAll('trkpt, rtept').forEach(pt => {
+      const lat = parseFloat(pt.getAttribute('lat'));
+      const lon = parseFloat(pt.getAttribute('lon'));
+      const eleEl = pt.querySelector('ele');
+      const ele = eleEl ? parseFloat(eleEl.textContent) : null;
+      if (!isNaN(lat) && !isNaN(lon)) pts.push({ lat, lon, ele });
     });
+    const nameEl = doc.querySelector('trk > name, rte > name, metadata > name');
+    return { points: pts, name: nameEl ? nameEl.textContent : null };
+  }
+
+  function computeStats(pts) {
+    let distance = 0, elevGain = 0, elevLoss = 0, minEle = Infinity, maxEle = -Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      if (pts[i].ele !== null) { minEle = Math.min(minEle, pts[i].ele); maxEle = Math.max(maxEle, pts[i].ele); }
+      if (i === 0) continue;
+      const R = 6371000;
+      const dLat = (pts[i].lat - pts[i-1].lat) * Math.PI / 180;
+      const dLon = (pts[i].lon - pts[i-1].lon) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(pts[i-1].lat*Math.PI/180)*Math.cos(pts[i].lat*Math.PI/180)*Math.sin(dLon/2)**2;
+      distance += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      if (pts[i].ele !== null && pts[i-1].ele !== null) {
+        const diff = pts[i].ele - pts[i-1].ele;
+        if (diff > 0) elevGain += diff; else elevLoss += Math.abs(diff);
+      }
+    }
+    return {
+      distanceKm: (distance/1000).toFixed(1),
+      elevGain: Math.round(elevGain),
+      elevLoss: Math.round(elevLoss),
+      minEle: minEle === Infinity ? '—' : Math.round(minEle),
+      maxEle: maxEle === -Infinity ? '—' : Math.round(maxEle)
+    };
+  }
+
+  function addRoute(gpxText, fileName, firebaseDocId, metadata) {
+    const { points: pts, name } = parseGPX(gpxText);
+    if (pts.length === 0) { alert('No track points found in ' + fileName); return; }
+    const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
+    colorIdx++;
+    const latlngs = pts.map(p => [p.lat, p.lon]);
+    const polyline = L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
+    const startMarker = L.circleMarker(latlngs[0], { radius: 6, color, fillColor: '#fff', fillOpacity: 1, weight: 2 }).addTo(map);
+    const endMarker = L.circleMarker(latlngs[latlngs.length-1], { radius: 6, color, fillColor: color, fillOpacity: 1, weight: 2 }).addTo(map);
+    const routeName = name || fileName.replace(/\.gpx$/i, '');
+    const stats = computeStats(pts);
+    const meta = metadata || {};
+    routes.push({ routeName, color, polyline, startMarker, endMarker, stats, visible: true, firebaseDocId: firebaseDocId||null, metadata: meta });
+    let popupHtml = '<b>' + escapeHtml(routeName) + '</b><br>' + stats.distanceKm + ' km';
+    if (meta.description) popupHtml += '<br><span style="color:#ccc;font-size:0.92em;">' + escapeHtml(meta.description) + '</span>';
+    if (meta.sourceUrl) popupHtml += '<br><a href="' + escapeAttr(meta.sourceUrl) + '" target="_blank" rel="noopener" style="color:#4fc3f7;">Source</a>';
+    polyline.bindPopup(popupHtml);
+    startMarker.bindTooltip('Start: ' + routeName);
+    endMarker.bindTooltip('End: ' + routeName);
+    map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+    renderToggles();
+    renderStats();
+  }
+
+  function removeRouteFromMap(idx) {
+    const r = routes[idx];
+    map.removeLayer(r.polyline); map.removeLayer(r.startMarker); map.removeLayer(r.endMarker);
+    routes.splice(idx, 1);
+    renderToggles(); renderStats();
+  }
+
+  function renderToggles() {
+    const container = document.getElementById('route-toggles');
+    if (!container) return;
+    container.innerHTML = '';
+    routes.forEach((r, i) => {
+      const lbl = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = r.visible;
+      cb.addEventListener('change', () => toggleRoute(i));
+      const dot = document.createElement('span');
+      dot.className = 'route-color-dot'; dot.style.background = r.color;
+      lbl.appendChild(cb); lbl.appendChild(dot); lbl.appendChild(document.createTextNode(r.routeName));
+      if (r.firebaseDocId) {
+        const info = document.createElement('button');
+        info.className = 'info-btn'; info.textContent = 'ℹ'; info.title = 'Route info';
+        info.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openMetadataModal(i); });
+        lbl.appendChild(info);
+      }
+      if (r.firebaseDocId && isAdmin()) {
+        const del = document.createElement('button');
+        del.className = 'delete-btn'; del.textContent = '✕'; del.title = 'Delete from Firebase';
+        del.addEventListener('click', (e) => { e.preventDefault(); deleteFirebaseRoute(i); });
+        lbl.appendChild(del);
+      }
+      container.appendChild(lbl);
+    });
+  }
+
+  function toggleRoute(idx) {
+    const r = routes[idx]; r.visible = !r.visible;
+    if (r.visible) { r.polyline.addTo(map); r.startMarker.addTo(map); r.endMarker.addTo(map); }
+    else { map.removeLayer(r.polyline); map.removeLayer(r.startMarker); map.removeLayer(r.endMarker); }
+    renderStats();
+  }
+
+  function renderStats() {
+    const statsDiv = document.getElementById('route-stats');
+    const visible = routes.filter(r => r.visible);
+    if (visible.length === 0) { statsDiv.style.display = 'none'; return; }
+    statsDiv.style.display = 'block';
+    let html = '<table><tr><th>Route</th><th>Distance</th><th>Elev Gain</th><th>Elev Loss</th><th>Min Elev</th><th>Max Elev</th></tr>';
+    visible.forEach(r => {
+      html += '<tr><td><span class="route-color-dot" style="background:' + r.color + '"></span>' + r.routeName + '</td>';
+      html += '<td>' + r.stats.distanceKm + ' km</td><td>' + r.stats.elevGain + ' m</td><td>' + r.stats.elevLoss + ' m</td><td>' + r.stats.minEle + ' m</td><td>' + r.stats.maxEle + ' m</td></tr>';
+    });
+    statsDiv.innerHTML = html + '</table>';
+  }
+
+  function loadBundledRoutes() {
+    fetch('assets/gpx/routes.json')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(files => {
+        if (files.length === 0) { markLoaded('bundled'); return; }
+        let loaded = 0;
+        files.forEach(f => {
+          fetch('assets/gpx/' + f).then(r => r.text()).then(txt => { addRoute(txt, f); })
+            .finally(() => { loaded++; if (loaded >= files.length) markLoaded('bundled'); });
+        });
+      })
+      .catch(() => { markLoaded('bundled'); });
+  }
+
+  // ── Add Routes modal ────────────────────────────────────────
+  const addRoutesOverlay = document.getElementById('add-routes-overlay');
+  const addRoutesFileInput = document.getElementById('add-routes-file-input');
+  const addRoutesStatus = document.getElementById('add-routes-status');
+
+  document.getElementById('add-routes-btn').addEventListener('click', () => {
+    addRoutesStatus.textContent = ''; addRoutesOverlay.classList.add('open');
+  });
+  document.getElementById('add-routes-close-btn').addEventListener('click', () => addRoutesOverlay.classList.remove('open'));
+  addRoutesOverlay.addEventListener('click', (e) => { if (e.target === addRoutesOverlay) addRoutesOverlay.classList.remove('open'); });
+  addRoutesFileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    files.forEach(file => {
+      if (firebaseReady && isAdmin()) { uploadToFirebase(file); }
+      else { const reader = new FileReader(); reader.onload = (ev) => addRoute(ev.target.result, file.name); reader.readAsText(file); }
+    });
+    addRoutesStatus.textContent = files.length + ' file(s) loaded.';
+    addRoutesFileInput.value = '';
   });
 
-  // ── Packing checklist progress ───────────────
+  // ── Add Points modal ────────────────────────────────────────
+  const addPointsOverlay = document.getElementById('add-points-overlay');
+  const addPointsFileInput = document.getElementById('add-points-file-input');
+  const addPointsStatus = document.getElementById('add-points-status');
+
+  document.getElementById('add-points-btn').addEventListener('click', () => {
+    addPointsStatus.textContent = ''; addPointsOverlay.classList.add('open');
+  });
+  document.getElementById('add-points-close-btn').addEventListener('click', () => addPointsOverlay.classList.remove('open'));
+  addPointsOverlay.addEventListener('click', (e) => { if (e.target === addPointsOverlay) addPointsOverlay.classList.remove('open'); });
+  addPointsFileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    files.forEach(file => {
+      if (firebaseReady && isAdmin()) { uploadToFirebase(file); }
+      else { const reader = new FileReader(); reader.onload = (ev) => addPointsFromCSV(ev.target.result, file.name); reader.readAsText(file); }
+    });
+    addPointsStatus.textContent = files.length + ' file(s) loaded.';
+    addPointsFileInput.value = '';
+  });
+
+  document.getElementById('fit-bounds-btn').addEventListener('click', () => {
+    const visible = routes.filter(r => r.visible);
+    const layers = visible.map(r => r.polyline);
+    if (markerClusterGroup.getLayers().length > 0) layers.push(markerClusterGroup);
+    if (!layers.length) return;
+    map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [30, 30] });
+  });
+
+  // ── CSV Point Logic ─────────────────────────────────────────
+  function parseCSV(csvText) {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) return [];
+    function parseCSVLine(line) {
+      const result = []; let current = '', inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else inQuotes = !inQuotes; }
+        else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+        else current += char;
+      }
+      result.push(current.trim()); return result;
+    }
+    const headers = parseCSVLine(lines[0]);
+    const nameIdx = headers.findIndex(h => h.toLowerCase() === 'name');
+    const latIdx = headers.findIndex(h => h.toLowerCase() === 'latitude' || h.toLowerCase() === 'lat');
+    const lonIdx = headers.findIndex(h => h.toLowerCase() === 'longitude' || h.toLowerCase() === 'lon' || h.toLowerCase() === 'lng');
+    const urlIdx = headers.findIndex(h => { const k = h.toLowerCase().trim(); return k==='url'||k==='link'||k==='page'||k==='website'; });
+    if (latIdx === -1 || lonIdx === -1) { alert('CSV must have latitude and longitude columns'); return []; }
+    const parsedPoints = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length < 2) continue;
+      const lat = parseFloat(values[latIdx]), lon = parseFloat(values[lonIdx]);
+      if (isNaN(lat) || isNaN(lon)) continue;
+      const metadata = {};
+      headers.forEach((header, idx) => { if (idx!==latIdx&&idx!==lonIdx&&idx!==nameIdx&&idx!==urlIdx&&values[idx]) metadata[header]=values[idx]; });
+      parsedPoints.push({ name: nameIdx!==-1&&values[nameIdx]?values[nameIdx]:'Point '+i, lat, lon, url: urlIdx!==-1&&values[urlIdx]?values[urlIdx]:null, metadata });
+    }
+    return parsedPoints;
+  }
+
+  function resolvePointUrl(data, metadata) {
+    const fromData = data && (data.url||data.URL||data.link||data.Link||data.website||data.Website||data.page||data.Page);
+    if (fromData) return String(fromData).trim();
+    const fromMeta = metadata && (metadata.url||metadata.URL||metadata.link||metadata.Link||metadata.website||metadata.Website||metadata.page||metadata.Page);
+    return fromMeta ? String(fromMeta).trim() : null;
+  }
+
+  let _toggleTimer = null;
+  function scheduleRenderPointToggles() { if (_toggleTimer) clearTimeout(_toggleTimer); _toggleTimer = setTimeout(renderPointToggles, 50); }
+
+  const pointTypeFilters = new Set();
+
+  function getAvailablePointTypes() {
+    const available = new Set();
+    points.forEach(p => available.add(p.type||'Other'));
+    if (available.size === 0) ['Onsen','Campsite','Roadside Station','Must See','Hotel','Other'].forEach(t => available.add(t));
+    return Array.from(available);
+  }
+
+  function applyPointTypeFilters() {
+    points.forEach(p => {
+      const type = p.type||'Other';
+      if (p.visible !== false && pointTypeFilters.has(type)) markerClusterGroup.addLayer(p.marker);
+      else markerClusterGroup.removeLayer(p.marker);
+    });
+  }
+
+  function createPointMarker(pointData) {
+    const pointType = getPointType(pointData);
+    const pointUrl = resolvePointUrl(pointData, pointData.metadata);
+    const marker = L.marker([pointData.lat, pointData.lon], { icon: getPointIcon(pointType) });
+    let popupContent = '<b>' + escapeHtml(pointData.name) + '</b>';
+    if (pointData.metadata) {
+      const desc = pointData.metadata.description||pointData.metadata.Description||'';
+      if (desc) popupContent += '<br><span style="color:#ccc;font-size:0.92em;">' + escapeHtml(desc) + '</span>';
+      const notes = pointData.metadata.notes||pointData.metadata.Notes||'';
+      if (notes) popupContent += '<br><span style="color:#aaa;font-size:0.88em;font-style:italic;">' + escapeHtml(notes) + '</span>';
+    }
+    if (pointUrl) popupContent += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';
+    marker.bindPopup(popupContent);
+    return marker;
+  }
+
+  function addPoint(pointData, fileName, firebaseDocId) {
+    const marker = createPointMarker(pointData);
+    markerClusterGroup.addLayer(marker);
+    points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
+    scheduleRenderPointToggles();
+  }
+
+  function addPointsBatch(pointDataArray) {
+    const markers = [];
+    pointDataArray.forEach(({ pointData, fileName, firebaseDocId }) => {
+      const marker = createPointMarker(pointData);
+      markers.push(marker);
+      points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
+    });
+    if (markers.length > 0) markerClusterGroup.addLayers(markers);
+    renderPointToggles();
+  }
+
+  function addPointsFromCSV(csvText, fileName, docIdMap) {
+    const parsedPoints = parseCSV(csvText);
+    if (!parsedPoints.length) { alert('No valid points found in ' + fileName); return; }
+    addPointsBatch(parsedPoints.map((p, idx) => ({ pointData: p, fileName, firebaseDocId: docIdMap ? docIdMap[idx] : null })));
+    if (markerClusterGroup.getLayers().length > 0) map.fitBounds(markerClusterGroup.getBounds(), { padding: [30, 30] });
+  }
+
+  function removePointFromMap(idx) { markerClusterGroup.removeLayer(points[idx].marker); points.splice(idx, 1); renderPointToggles(); }
+
+  function renderPointToggles() {
+    const container = document.getElementById('type-filters');
+    if (!container) return;
+    container.innerHTML = '';
+    const availableTypes = getAvailablePointTypes();
+    if (pointTypeFilters.size === 0) availableTypes.forEach(t => pointTypeFilters.add(t));
+    else availableTypes.forEach(t => { if (!pointTypeFilters.has(t)) pointTypeFilters.add(t); });
+    availableTypes.forEach(type => {
+      const count = points.filter(p => (p.type||'Other') === type).length;
+      const lbl = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = pointTypeFilters.has(type);
+      cb.addEventListener('change', () => togglePointType(type, cb.checked));
+      lbl.appendChild(cb); lbl.appendChild(document.createTextNode(type + ' (' + count + ')'));
+      container.appendChild(lbl);
+    });
+    applyPointTypeFilters();
+  }
+
+  function togglePointType(type, isChecked) { if (isChecked) pointTypeFilters.add(type); else pointTypeFilters.delete(type); applyPointTypeFilters(); }
+
+  // ── Google Maps Point Input ────────────────────────────────
+  const gmapsOverlay = document.getElementById('gmaps-overlay');
+  const gmapsUrlInput = document.getElementById('gmaps-url-input');
+  const gmapsTypeInput = document.getElementById('gmaps-type-input');
+
+  document.getElementById('add-gmaps-btn').addEventListener('click', () => {
+    gmapsUrlInput.value = ''; gmapsTypeInput.value = 'Campsite';
+    gmapsOverlay.classList.add('open'); gmapsUrlInput.focus();
+  });
+  document.getElementById('gmaps-close-btn').addEventListener('click', () => gmapsOverlay.classList.remove('open'));
+  gmapsOverlay.addEventListener('click', (e) => { if (e.target === gmapsOverlay) gmapsOverlay.classList.remove('open'); });
+
+  function parseGoogleMapsUrl(url) {
+    const placeMatch = url.match(/\/place\/([^/@]+)/);
+    const name = placeMatch ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')) : 'Unnamed Location';
+    const coordMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (!coordMatch) {
+      const alt = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+      if (!alt) throw new Error('Could not extract coordinates from URL');
+      return { name, lat: parseFloat(alt[1]), lon: parseFloat(alt[2]) };
+    }
+    return { name, lat: parseFloat(coordMatch[1]), lon: parseFloat(coordMatch[2]) };
+  }
+
+  document.getElementById('gmaps-add-btn').addEventListener('click', () => {
+    const url = gmapsUrlInput.value.trim();
+    if (!url) { alert('Please enter a Google Maps URL'); return; }
+    try {
+      const parsed = parseGoogleMapsUrl(url);
+      const pointData = { name: parsed.name, lat: parsed.lat, lon: parsed.lon, url, metadata: { Type: gmapsTypeInput.value } };
+      if (firebaseReady && isAdmin()) { uploadGoogleMapsPointToFirebase(pointData); }
+      else { addPoint(pointData, 'Google Maps - ' + parsed.name, null); map.setView([parsed.lat, parsed.lon], 14); }
+      gmapsOverlay.classList.remove('open');
+    } catch (err) { alert('Error parsing Google Maps URL: ' + err.message); }
+  });
+
+  function uploadGoogleMapsPointToFirebase(pointData) {
+    const statusEl = document.getElementById('upload-status');
+    statusEl.textContent = 'Adding point to Firebase...';
+    db.collection('points').add({
+      name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: pointData.url,
+      metadata: pointData.metadata, fileName: 'Google Maps - ' + pointData.name,
+      storagePath: null, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(docRef => {
+      addPoint(pointData, 'Google Maps - ' + pointData.name, docRef.id);
+      map.setView([pointData.lat, pointData.lon], 14);
+      statusEl.textContent = 'Point added successfully ✓';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    })
+    .catch(err => {
+      console.error('Firebase upload error:', err);
+      statusEl.textContent = 'Upload failed: ' + err.message;
+      alert('Failed to upload to Firebase. Point added locally only.');
+      addPoint(pointData, 'Google Maps - ' + pointData.name, null);
+      map.setView([pointData.lat, pointData.lon], 14);
+    });
+  }
+
+  // ── Firebase Integration ───────────────────────────────────
+  let currentUser = null;
+  let db = null;
+  let storage = null;
+  let firebaseReady = false;
+  const loadedFirebaseIds = new Set();
+  const loadedFirebasePointIds = new Set();
+  let metaPointIdx = null;
+
+  const _loadTasks = { routes: false, points: false, bundled: false };
+  function markLoaded(task) {
+    _loadTasks[task] = true;
+    const done = Object.values(_loadTasks).filter(Boolean).length;
+    const total = Object.keys(_loadTasks).length;
+    const pct = Math.round((done/total)*100);
+    const fill = document.getElementById('progress-fill');
+    const text = document.getElementById('loading-text');
+    if (fill) fill.style.width = pct + '%';
+    if (text) text.textContent = done < total ? 'Loading data... ' + pct + '%' : 'Done';
+    if (done >= total) {
+      const overlay = document.getElementById('map-loading');
+      if (overlay) { overlay.classList.add('fade-out'); setTimeout(() => overlay.remove(), 500); }
+    }
+  }
+
+  let authLoaded = false;
+  function loadAuthAndStorage() {
+    if (authLoaded) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const as = document.createElement('script');
+      as.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js';
+      as.onload = () => {
+        const ss = document.createElement('script');
+        ss.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js';
+        ss.onload = () => { authLoaded = true; storage = firebase.storage(); resolve(); };
+        ss.onerror = reject; document.head.appendChild(ss);
+      };
+      as.onerror = reject; document.head.appendChild(as);
+    });
+  }
+
+  let _authSetupDone = false;
+  function setupAuth() {
+    if (_authSetupDone) return; _authSetupDone = true;
+    firebase.auth().onAuthStateChanged(user => {
+      currentUser = user;
+      updateAuthUI();
+      loadFirebaseRoutes();
+      loadFirebasePoints();
+    });
+  }
+
+  function initFirebase() {
+    if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+      console.log('Map: Firebase not configured — running in local-only mode.');
+      markLoaded('routes'); markLoaded('points'); return;
+    }
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore persistence error:', err);
+      });
+      firebaseReady = true;
+      loadFirebaseRoutes(); loadFirebasePoints();
+      loadAuthAndStorage().then(setupAuth).catch(err => console.warn('Auth load:', err));
+    } catch (err) { console.error('Firebase init error:', err); }
+  }
+
+  function isAdmin() { return currentUser && typeof ADMIN_EMAIL !== 'undefined' && currentUser.email === ADMIN_EMAIL; }
+
+  function updateAuthUI() {
+    const authStatus = document.getElementById('auth-status');
+    const uploadArea = document.getElementById('upload-area');
+    if (currentUser) {
+      if (isAdmin()) {
+        authStatus.textContent = 'Signed in as ' + currentUser.email + ' (admin)';
+        uploadArea.style.display = 'block';
+        let adminLink = document.getElementById('admin-link');
+        if (!adminLink) {
+          adminLink = document.createElement('a');
+          adminLink.id = 'admin-link'; adminLink.href = 'admin.html';
+          adminLink.className = 'roots-btn'; adminLink.textContent = 'Admin Editor';
+          adminLink.style.textDecoration = 'none';
+          document.getElementById('admin-bar').appendChild(adminLink);
+        }
+        adminLink.style.display = '';
+      } else {
+        authStatus.textContent = 'Signed in as ' + currentUser.email;
+        uploadArea.style.display = 'none';
+        const adminLink = document.getElementById('admin-link');
+        if (adminLink) adminLink.style.display = 'none';
+      }
+    } else {
+      authStatus.textContent = ''; uploadArea.style.display = 'none';
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) adminLink.style.display = 'none';
+    }
+    renderToggles();
+  }
+
+  function loadFirebaseRoutes() {
+    if (!firebaseReady) return;
+    db.collection('routes').orderBy('uploadedAt', 'desc').get()
+      .then(snapshot => {
+        snapshot.forEach(doc => {
+          if (loadedFirebaseIds.has(doc.id)) return;
+          loadedFirebaseIds.add(doc.id);
+          const data = doc.data(); const meta = data.metadata||{};
+          if (data.gpxContent) { addRoute(data.gpxContent, data.fileName, doc.id, meta); }
+          else {
+            storage.ref(data.storagePath).getDownloadURL()
+              .then(url => fetch(url)).then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+              .then(gpxText => { addRoute(gpxText, data.fileName, doc.id, meta); doc.ref.update({ gpxContent: gpxText }).catch(() => {}); })
+              .catch(err => console.error('Error loading route ' + data.fileName + ':', err));
+          }
+        });
+        markLoaded('routes');
+      })
+      .catch(err => { console.error('Firestore read error:', err); markLoaded('routes'); });
+  }
+
+  function loadFirebasePoints() {
+    if (!firebaseReady) return;
+    db.collection('points').orderBy('uploadedAt', 'desc').get()
+      .then(snapshot => {
+        const batch = [];
+        snapshot.forEach(doc => {
+          if (loadedFirebasePointIds.has(doc.id)) return;
+          loadedFirebasePointIds.add(doc.id);
+          const data = doc.data();
+          batch.push({ pointData: { name: data.name, lat: data.lat, lon: data.lon, url: resolvePointUrl(data, data.metadata), metadata: data.metadata||{} }, fileName: data.fileName, firebaseDocId: doc.id });
+        });
+        if (batch.length > 0) {
+          addPointsBatch(batch);
+          if (markerClusterGroup.getLayers().length > 0) map.fitBounds(markerClusterGroup.getBounds(), { padding: [30, 30] });
+        }
+        markLoaded('points');
+      })
+      .catch(err => { console.error('Firestore points read error:', err); markLoaded('points'); });
+  }
+
+  function uploadToFirebase(file) {
+    if (!isAdmin()) return;
+    const statusEl = document.getElementById('upload-status');
+    statusEl.textContent = 'Uploading ' + file.name + '...';
+    const isCSV = file.name.toLowerCase().endsWith('.csv');
+    const storagePath = (isCSV?'csv/':'gpx/') + Date.now() + '_' + file.name;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const fileText = ev.target.result;
+      storage.ref(storagePath).put(file)
+        .then(() => isCSV
+          ? uploadCSVToFirestore(file.name, storagePath, fileText)
+          : db.collection('routes').add({ fileName: file.name, storagePath, gpxContent: fileText, uploadedAt: firebase.firestore.FieldValue.serverTimestamp() })
+              .then(docRef => { addRoute(fileText, file.name, docRef.id); }))
+        .then(() => { statusEl.textContent = 'Uploaded ' + file.name + ' ✓'; setTimeout(() => { statusEl.textContent = ''; }, 3000); })
+        .catch(err => { console.error('Upload error:', err); statusEl.textContent = 'Upload failed: ' + err.message; });
+    };
+    reader.readAsText(file);
+  }
+
+  function uploadCSVToFirestore(fileName, storagePath, csvText) {
+    const parsedPoints = parseCSV(csvText);
+    if (!parsedPoints.length) throw new Error('No valid points found in CSV');
+    const batch = db.batch(); const docIds = [];
+    parsedPoints.forEach(p => {
+      const docRef = db.collection('points').doc();
+      batch.set(docRef, { name: p.name, lat: p.lat, lon: p.lon, url: p.url, metadata: p.metadata, fileName, storagePath, uploadedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      docIds.push(docRef.id);
+    });
+    return batch.commit().then(() => { addPointsFromCSV(csvText, fileName, docIds); });
+  }
+
+  function deleteFirebaseRoute(routeIdx) {
+    const route = routes[routeIdx];
+    if (!route.firebaseDocId || !isAdmin()) return;
+    if (!confirm('Delete "' + route.routeName + '" from Firebase?')) return;
+    db.collection('routes').doc(route.firebaseDocId).get()
+      .then(doc => { const data = doc.data(); return storage.ref(data.storagePath).delete().then(() => db.collection('routes').doc(route.firebaseDocId).delete()); })
+      .then(() => { removeRouteFromMap(routeIdx); })
+      .catch(err => { console.error('Delete error:', err); alert('Delete failed: ' + err.message); });
+  }
+
+  function deleteFirebasePoints(fileName) {
+    if (!isAdmin()) return;
+    if (!confirm('Delete all points from "' + fileName + '" from Firebase?')) return;
+    const toDelete = points.filter(p => p.fileName === fileName && p.firebaseDocId);
+    if (!toDelete.length) return;
+    db.collection('points').doc(toDelete[0].firebaseDocId).get()
+      .then(doc => {
+        const storagePath = doc.data().storagePath;
+        const batch = db.batch();
+        toDelete.forEach(p => batch.delete(db.collection('points').doc(p.firebaseDocId)));
+        return batch.commit().then(() => storagePath);
+      })
+      .then(storagePath => { if (storagePath) return storage.ref(storagePath).delete(); })
+      .then(() => {
+        const idxs = [];
+        points.forEach((p, i) => { if (p.fileName === fileName) idxs.push(i); });
+        idxs.reverse().forEach(i => removePointFromMap(i));
+      })
+      .catch(err => { console.error('Delete error:', err); alert('Delete failed: ' + err.message); });
+  }
+
+  // ── Metadata modal ──────────────────────────────────────────
+  let metaRouteIdx = null;
+  const metaOverlay = document.getElementById('meta-overlay');
+  const metaTitle = document.getElementById('meta-title');
+  const metaBody = document.getElementById('meta-body');
+  const metaSaveBtn = document.getElementById('meta-save-btn');
+  const metaCloseBtn = document.getElementById('meta-close-btn');
+
+  metaCloseBtn.addEventListener('click', () => { metaOverlay.classList.remove('open'); metaRouteIdx = null; metaPointIdx = null; });
+  metaOverlay.addEventListener('click', (e) => { if (e.target === metaOverlay) { metaOverlay.classList.remove('open'); metaRouteIdx = null; metaPointIdx = null; } });
+
+  function openMetadataModal(idx) {
+    const route = routes[idx]; if (!route.firebaseDocId) return;
+    metaRouteIdx = idx; metaTitle.textContent = route.routeName;
+    metaBody.innerHTML = '<span style="color:#888;">Loading...</span>'; metaSaveBtn.style.display = 'none'; metaOverlay.classList.add('open');
+    db.collection('routes').doc(route.firebaseDocId).get()
+      .then(doc => { const meta = (doc.data()||{}).metadata||{}; if (isAdmin()) renderMetadataEdit(meta); else renderMetadataView(meta); })
+      .catch(err => { metaBody.innerHTML = '<span style="color:#ff6b6b;">Failed to load metadata.</span>'; console.error('Metadata load error:', err); });
+  }
+
+  function renderMetadataView(meta) {
+    let html = '<label>Source Link</label>';
+    html += meta.sourceUrl ? '<div class="meta-view-value"><a class="meta-link" href="' + escapeAttr(meta.sourceUrl) + '" target="_blank" rel="noopener">' + escapeHtml(meta.sourceUrl) + '</a></div>' : '<div class="meta-view-value empty">Not provided</div>';
+    html += '<label>Description</label><div class="meta-view-value' + (meta.description ? '' : ' empty') + '">' + (meta.description ? escapeHtml(meta.description) : 'No description') + '</div>';
+    html += '<label>Notes</label><div class="meta-view-value' + (meta.notes ? '' : ' empty') + '">' + (meta.notes ? escapeHtml(meta.notes) : 'No notes') + '</div>';
+    metaBody.innerHTML = html; metaSaveBtn.style.display = 'none';
+  }
+
+  function renderMetadataEdit(meta) {
+    metaBody.innerHTML =
+      '<label for="meta-source-url">Source Link</label><input type="text" id="meta-source-url" placeholder="https://example.com/route-page" value="' + escapeAttr(meta.sourceUrl||'') + '">' +
+      '<label for="meta-description">Description</label><textarea id="meta-description" placeholder="Brief description of this route">' + escapeHtml(meta.description||'') + '</textarea>' +
+      '<label for="meta-notes">Notes</label><textarea id="meta-notes" placeholder="Any additional notes">' + escapeHtml(meta.notes||'') + '</textarea>';
+    metaSaveBtn.style.display = ''; metaSaveBtn.onclick = saveMetadata;
+  }
+
+  function saveMetadata() {
+    if (metaRouteIdx === null) return;
+    const route = routes[metaRouteIdx]; if (!route.firebaseDocId || !isAdmin()) return;
+    const metadata = { sourceUrl: document.getElementById('meta-source-url').value.trim(), description: document.getElementById('meta-description').value.trim(), notes: document.getElementById('meta-notes').value.trim() };
+    metaSaveBtn.disabled = true; metaSaveBtn.textContent = 'Saving...';
+    db.collection('routes').doc(route.firebaseDocId).update({ metadata })
+      .then(() => { metaSaveBtn.textContent = 'Saved!'; setTimeout(() => { metaSaveBtn.textContent = 'Save'; metaSaveBtn.disabled = false; }, 1500); })
+      .catch(err => { console.error('Metadata save error:', err); metaSaveBtn.textContent = 'Save'; metaSaveBtn.disabled = false; alert('Failed to save metadata: ' + err.message); });
+  }
+
+  function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+  function escapeAttr(str) { return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ── Upload area drag & drop + click ────────────────────────
+  const uploadArea = document.getElementById('upload-area');
+  const firebaseFileInput = document.getElementById('firebase-file-input');
+  uploadArea.addEventListener('click', () => firebaseFileInput.click());
+  firebaseFileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(file => uploadToFirebase(file)); firebaseFileInput.value = ''; });
+  uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault(); uploadArea.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => { const n = f.name.toLowerCase(); return n.endsWith('.gpx')||n.endsWith('.csv'); });
+    if (!files.length) { alert('Please drop .gpx or .csv files only.'); return; }
+    files.forEach(file => uploadToFirebase(file));
+  });
+
+  // ── Packing checklist ───────────────────────────────────────
   function updatePackProgress() {
     const items = document.querySelectorAll('.pack-check');
     const checked = document.querySelectorAll('.pack-check.checked').length;
     const el = document.getElementById('packProgress');
-    if (el) el.textContent = `${checked} of ${items.length} items packed`;
+    if (el) el.textContent = checked + ' of ' + items.length + ' items packed';
   }
   updatePackProgress();
 
-  function toggleCheck(el) {
-    el.classList.toggle('checked');
-    el.textContent = el.classList.contains('checked') ? '✓' : '';
-    updatePackProgress();
-  }
+  // ── Initialise ─────────────────────────────────────────────
+  loadBundledRoutes();
+  initFirebase();
+})();
 
-  // ── Add waypoint from form ───────────────────
-  function addWaypointFromForm() {
-    const name = document.getElementById('wpName').value.trim();
-    const notes = document.getElementById('wpNotes').value.trim();
-    if (!name) { TomikaBikes.showToast('Please enter a location name', 'error'); return; }
-
-    // Simple geocode placeholder – open a popup at map center
-    const center = map.getCenter();
-    const icon = L.divIcon({
-      className: '',
-      html: `<div style="background:#E76F51;width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:14px">📍</span></div>`,
-      iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -38],
-    });
-
-    L.marker([center.lat, center.lng], { icon })
-      .addTo(map)
-      .bindPopup(`<div class="waypoint-popup"><h4>📍 ${name}</h4><p>${notes || 'No notes'}</p></div>`)
-      .openPopup();
-
-    document.getElementById('wpName').value = '';
-    document.getElementById('wpNotes').value = '';
-    TomikaBikes.showToast(`Added waypoint: ${name}`, 'success');
-  }
-
-  // ── Map search (basic filter of cards) ───────
-  document.getElementById('mapSearch').addEventListener('input', function() {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('.trip-card').forEach(card => {
-      const text = card.textContent.toLowerCase();
-      card.style.display = text.includes(q) ? 'flex' : 'none';
-    });
-  });
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✓' : '';
+  const items = document.querySelectorAll('.pack-check');
+  const checked = document.querySelectorAll('.pack-check.checked').length;
+  const prog = document.getElementById('packProgress');
+  if (prog) prog.textContent = checked + ' of ' + items.length + ' items packed';
+}
 </script>
 </body>
 </html>
