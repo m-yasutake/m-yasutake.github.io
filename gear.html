@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bike – Gear list and packing checklist for our cycling adventure." />
+  <title>Gear – Tomika Bike</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    .gear-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .gear-grid { grid-template-columns: 1fr; } }
+
+    .gear-category {
+      background: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .gear-category-header {
+      background: linear-gradient(135deg, var(--color-primary), #2a7a6e);
+      color: var(--color-white);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .gear-category-header h3 { margin: 0; font-size: 1.1rem; }
+    .gear-category-icon { font-size: 1.4rem; }
+
+    .gear-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .gear-table th {
+      background: var(--color-gray-100);
+      color: var(--color-primary);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.6rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--color-gray-200);
+    }
+
+    .gear-table td {
+      padding: 0.7rem 1rem;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--color-gray-100);
+      vertical-align: middle;
+    }
+
+    .gear-table tr:last-child td { border-bottom: none; }
+    .gear-table tr:hover td { background: rgba(42,157,143,0.04); }
+
+    .gear-weight {
+      color: var(--color-gray-600);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .gear-notes {
+      color: var(--color-gray-600);
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+
+    .gear-tag {
+      display: inline-block;
+      padding: 0.15rem 0.6rem;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .gear-tag.owned { background: rgba(42,157,143,0.12); color: #1a7a6e; }
+    .gear-tag.needed { background: rgba(244,162,97,0.15); color: #c26a10; }
+    .gear-tag.optional { background: rgba(173,181,189,0.2); color: var(--color-gray-600); }
+
+    /* Packing checklist */
+    .pack-list { list-style: none; padding: 0; }
+    .pack-list li {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem 0;
+      border-bottom: 1px solid var(--color-gray-100);
+      font-size: .9rem;
+    }
+    .pack-list li:last-child { border-bottom: none; }
+
+    .pack-check {
+      width: 20px; height: 20px;
+      border-radius: 4px;
+      border: 2px solid var(--color-gray-300);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+    .pack-check.checked { background: var(--color-secondary); border-color: var(--color-secondary); color: var(--color-white); }
+
+    .pack-progress-bar {
+      height: 6px;
+      background: var(--color-gray-200);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-top: 0.75rem;
+    }
+    .pack-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
+      border-radius: var(--radius-full);
+      transition: width 0.4s ease;
+    }
+
+    .weight-summary {
+      background: linear-gradient(135deg, var(--color-primary), #2a7a6e);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      color: var(--color-white);
+      margin-bottom: 1.5rem;
+    }
+    .weight-summary h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; margin-bottom: 0.5rem; }
+    .weight-big { font-size: 2.5rem; font-weight: 700; font-family: var(--font-heading); }
+    .weight-sub { font-size: 0.85rem; opacity: 0.75; }
+  </style>
+</head>
+<body>
+
+<!-- Page Loader -->
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Map</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="journal.html">Journal</a></li>
+      <li><a href="gear.html">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-login-btn" data-auth>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign In
+      </button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Map</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="journal.html">📔 Journal</a>
+  <a href="gear.html">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+</div>
+
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access your journal and admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">🎒 Gear &amp; Packing</div>
+    <h1>Gear List</h1>
+    <p>Everything we're bringing on the road – gear list, specs, and the essential packing checklist.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     GEAR CONTENT
+════════════════════════════════════════════ -->
+<section class="section" style="padding-top:2rem">
+  <div class="container">
+    <div class="gear-grid">
+
+      <!-- Left: Gear Tables -->
+      <div>
+
+        <!-- Bikes & Bags -->
+        <div class="gear-category">
+          <div class="gear-category-header">
+            <span class="gear-category-icon">🚲</span>
+            <h3>Bikes &amp; Bags</h3>
+          </div>
+          <table class="gear-table">
+            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Touring bike (each)</td><td class="gear-weight">10.5 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Steel frame, 700c wheels</td></tr>
+              <tr><td>Rear panniers (pair)</td><td class="gear-weight">1.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Ortlieb Back-Roller Classic</td></tr>
+              <tr><td>Front panniers (pair)</td><td class="gear-weight">1.1 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Ortlieb Front-Roller</td></tr>
+              <tr><td>Handlebar bag</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Quick access for snacks &amp; map</td></tr>
+              <tr><td>Frame bag</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag optional">Optional</span></td><td class="gear-notes">Tools &amp; spares</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Shelter & Sleep -->
+        <div class="gear-category">
+          <div class="gear-category-header">
+            <span class="gear-category-icon">⛺</span>
+            <h3>Shelter &amp; Sleep</h3>
+          </div>
+          <table class="gear-table">
+            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Tent (2-person)</td><td class="gear-weight">1.6 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">MSR Hubba Hubba NX</td></tr>
+              <tr><td>Sleeping bag (each)</td><td class="gear-weight">0.9 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Down, comfort to 5°C</td></tr>
+              <tr><td>Sleeping mat (each)</td><td class="gear-weight">0.5 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Thermarest NeoAir</td></tr>
+              <tr><td>Camping pillow (each)</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag optional">Optional</span></td><td class="gear-notes">Inflatable</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Navigation & Tech -->
+        <div class="gear-category">
+          <div class="gear-category-header">
+            <span class="gear-category-icon">📡</span>
+            <h3>Navigation &amp; Tech</h3>
+          </div>
+          <table class="gear-table">
+            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>GPS device</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Garmin Edge 530</td></tr>
+              <tr><td>Smartphone (each)</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Offline maps downloaded</td></tr>
+              <tr><td>Solar charging panel</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">BigBlue 28W</td></tr>
+              <tr><td>Power bank (each)</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">20,000 mAh</td></tr>
+              <tr><td>Camera + lenses</td><td class="gear-weight">1.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Sony A6400 + 16-50 kit</td></tr>
+              <tr><td>Laptop (shared)</td><td class="gear-weight">1.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">For blog &amp; work on the road</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Bike Maintenance -->
+        <div class="gear-category">
+          <div class="gear-category-header">
+            <span class="gear-category-icon">🔧</span>
+            <h3>Bike Maintenance</h3>
+          </div>
+          <table class="gear-table">
+            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Repair kit &amp; multi-tool</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Leatherman + Park Tool</td></tr>
+              <tr><td>Spare tubes (×4)</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">700×35c</td></tr>
+              <tr><td>Tyre levers + patches</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">—</td></tr>
+              <tr><td>Mini pump</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Topeak Road Morph G</td></tr>
+              <tr><td>Chain lube &amp; cleaner</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Clothing -->
+        <div class="gear-category">
+          <div class="gear-category-header">
+            <span class="gear-category-icon">👕</span>
+            <h3>Clothing (per person)</h3>
+          </div>
+          <table class="gear-table">
+            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Cycling jerseys (×3)</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Merino wool preferred</td></tr>
+              <tr><td>Bib shorts (×2)</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Padded</td></tr>
+              <tr><td>Rain jacket</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Lightweight packable</td></tr>
+              <tr><td>Thermal base layers</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">For cold mornings</td></tr>
+              <tr><td>Casual clothes (×2 sets)</td><td class="gear-weight">0.8 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Off-bike wear</td></tr>
+              <tr><td>Cycling shoes (each)</td><td class="gear-weight">0.6 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">SPD compatible</td></tr>
+              <tr><td>Sandals/flip-flops</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Camp &amp; casual</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Safety & Health -->
+        <div class="gear-category">
+          <div class="gear-category-header">
+            <span class="gear-category-icon">🩺</span>
+            <h3>Safety &amp; Health</h3>
+          </div>
+          <table class="gear-table">
+            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Helmets (each)</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">MIPS rated</td></tr>
+              <tr><td>Lights front + rear (each)</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Rechargeable</td></tr>
+              <tr><td>High-vis vest</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Some countries require by law</td></tr>
+              <tr><td>First aid kit</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Compact travel kit</td></tr>
+              <tr><td>Sun cream + lip balm</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">SPF 50+</td></tr>
+              <tr><td>Travel insurance docs</td><td class="gear-weight">—</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Covering bike touring</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Right: Sidebar -->
+      <div>
+
+        <!-- Weight Summary -->
+        <div class="weight-summary">
+          <h4>Estimated Pack Weight</h4>
+          <div class="weight-big">~22 kg</div>
+          <div class="weight-sub">Per bike (loaded) · Target: &lt;25 kg</div>
+        </div>
+
+        <!-- Packing Checklist -->
+        <div class="sidebar-widget">
+          <h3>Packing Checklist</h3>
+          <ul class="pack-list" id="packList">
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Touring bike + panniers</li>
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Tent + sleeping bag</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Repair kit &amp; spare tubes</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Waterproof panniers</li>
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> GPS device</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> First aid kit</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Solar charging panel</li>
+            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Camera + lenses</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Travel insurance</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Visas sorted</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Spare tubes (×4)</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Chain lube</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> High-vis vests</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Power banks charged</li>
+            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Offline maps downloaded</li>
+          </ul>
+          <div class="pack-progress-bar"><div class="pack-progress-fill" id="packProgressFill" style="width:0%"></div></div>
+          <div style="margin-top:.5rem;font-size:.8rem;color:var(--color-gray-600)" id="packProgress"></div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="sidebar-widget" style="margin-top:1.5rem">
+          <h3>By the Numbers</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">~22</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">kg per bike</div>
+            </div>
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-accent);font-family:var(--font-heading)">40+</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">items each</div>
+            </div>
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">4</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">panniers</div>
+            </div>
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-warm);font-family:var(--font-heading)">180</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">days on road</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
+        <p>A cycling adventure blog documenting our journey across continents. Planning routes, collecting stories, and sharing every beautiful moment.</p>
+        <div class="social-links">
+          <a class="social-link" title="Instagram" aria-label="Instagram">📸</a>
+          <a class="social-link" title="Twitter" aria-label="Twitter">🐦</a>
+          <a class="social-link" title="YouTube" aria-label="YouTube">▶️</a>
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="index.html">Home</a>
+        <a href="planning.html">Map</a>
+        <a href="blog.html">Blog</a>
+        <a href="photos.html">Photos</a>
+        <a href="gear.html">Gear</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="journal.html">Private Journal</a>
+        <a href="#" data-auth>Sign In</a>
+      </div>
+      <div class="footer-col">
+        <h4>Info</h4>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">tomika.bike</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bike – All rights reserved</span>
+      <span>Made with ❤️ and 🚴 by Tomika &amp; Partner</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✓' : '';
+  updatePackProgress();
+}
+
+function updatePackProgress() {
+  const items = document.querySelectorAll('.pack-check');
+  const checked = document.querySelectorAll('.pack-check.checked').length;
+  const total = items.length;
+  const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+  const prog = document.getElementById('packProgress');
+  const fill = document.getElementById('packProgressFill');
+  if (prog) prog.textContent = checked + ' of ' + total + ' items packed (' + pct + '%)';
+  if (fill) fill.style.width = pct + '%';
+}
+
+updatePackProgress();
+</script>
+</body>
+</html>

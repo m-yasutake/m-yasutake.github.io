@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bikes – Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning." />
-  <title>Map – Tomika Bikes</title>
+  <meta name="description" content="Tomika Bike – Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning." />
+  <title>Map – Tomika Bike</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -266,7 +266,7 @@
 <!-- Page Loader -->
 <div class="page-loader">
   <div class="loader-inner">
-    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
     <div class="loader-dots">
       <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
     </div>
@@ -276,14 +276,15 @@
 <!-- Navigation -->
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
       <li><a href="journal.html">Journal</a></li>
-      <li><a href="admin.html">Admin</a></li>
+      <li><a href="gear.html">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
     <div class="nav-actions">
       <button class="nav-login-btn" data-auth>
@@ -302,7 +303,8 @@
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
   <a href="journal.html">📔 Journal</a>
-  <a href="admin.html">⚙️ Admin</a>
+  <a href="gear.html">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
 </div>
 
@@ -362,8 +364,6 @@
             <label class="file-pick-label" for="add-routes-file-input">📂 Choose GPX file(s)</label>
             <input type="file" id="add-routes-file-input" accept=".gpx" multiple style="display:none;">
             <div id="add-routes-file-list" style="font-size:0.85em;margin-top:0.5em;color:var(--color-gray-600);min-height:1.2em;"></div>
-            <label style="display:block;font-size:0.85em;color:var(--color-gray-600);margin-top:0.8em;margin-bottom:0.3em;">Source URL (optional)</label>
-            <input type="text" id="add-routes-source-url" placeholder="https://example.com/route-page" style="width:100%;padding:0.5em;background:var(--color-gray-100);border:1px solid var(--color-gray-200);border-radius:4px;color:var(--color-dark);font-size:0.9em;font-family:inherit;box-sizing:border-box;">
             <div id="add-routes-status" style="font-size:0.85em;margin-top:0.5em;color:var(--color-secondary);"></div>
             <div class="meta-actions">
               <button class="roots-btn" id="add-routes-upload-btn" disabled>Upload</button>
@@ -511,22 +511,10 @@
           </div>
         </div>
 
-        <!-- Packing List -->
+        <!-- Packing list has moved to the Gear page -->
         <div class="sidebar-widget">
           <h3>Packing Checklist</h3>
-          <ul class="pack-list" id="packList">
-            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Touring bike + panniers</li>
-            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Tent + sleeping bag</li>
-            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Repair kit &amp; spare tubes</li>
-            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Waterproof panniers</li>
-            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> GPS device</li>
-            <li><div class="pack-check" onclick="toggleCheck(this)"></div> First aid kit</li>
-            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Solar charging panel</li>
-            <li><div class="pack-check checked" onclick="toggleCheck(this)">✓</div> Camera + lenses</li>
-            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Travel insurance</li>
-            <li><div class="pack-check" onclick="toggleCheck(this)"></div> Visas sorted</li>
-          </ul>
-          <div style="margin-top:1rem;font-size:.8rem;color:var(--color-gray-600)" id="packProgress"></div>
+          <p style="font-size:.9rem;color:var(--color-gray-600)">The packing list has moved to the <a href="gear.html" style="color:var(--color-secondary)">Gear page</a>.</p>
         </div>
       </div>
     </div>
@@ -538,7 +526,7 @@
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
+        <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
         <p>A cycling adventure blog documenting our journey across continents. Planning routes, collecting stories, and sharing every beautiful moment.</p>
         <div class="social-links">
           <a class="social-link" title="Instagram" aria-label="Instagram">📸</a>
@@ -557,7 +545,6 @@
       <div class="footer-col">
         <h4>Account</h4>
         <a href="journal.html">Private Journal</a>
-        <a href="admin.html">Admin Panel</a>
         <a href="#" data-auth>Sign In</a>
       </div>
       <div class="footer-col">
@@ -565,11 +552,11 @@
         <a href="#">About Us</a>
         <a href="#">Contact</a>
         <a href="#">Privacy Policy</a>
-        <a href="#">tomika.bikes</a>
+        <a href="#">tomika.bike</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 tomika.bikes – All rights reserved</span>
+      <span>© 2026 tomika.bike – All rights reserved</span>
       <span>Made with ❤️ and 🚴 by Tomika &amp; Partner</span>
     </div>
   </div>
@@ -902,8 +889,7 @@
 
   document.getElementById('add-routes-btn').addEventListener('click', () => {
     addRoutesStatus.textContent = '';
-    document.getElementById('add-routes-file-list').textContent = '';
-    document.getElementById('add-routes-source-url').value = '';
+    document.getElementById('add-routes-file-list').innerHTML = '';
     document.getElementById('add-routes-upload-btn').disabled = true;
     pendingRouteFiles = [];
     addRoutesOverlay.classList.add('open');
@@ -912,14 +898,27 @@
   addRoutesOverlay.addEventListener('click', (e) => { if (e.target === addRoutesOverlay) { addRoutesOverlay.classList.remove('open'); pendingRouteFiles = []; } });
   addRoutesFileInput.addEventListener('change', (e) => {
     pendingRouteFiles = Array.from(e.target.files);
-    document.getElementById('add-routes-file-list').textContent = pendingRouteFiles.map(f => f.name).join(', ');
+    const fileListEl = document.getElementById('add-routes-file-list');
+    if (pendingRouteFiles.length === 0) {
+      fileListEl.innerHTML = '';
+    } else {
+      let html = '';
+      pendingRouteFiles.forEach((f, i) => {
+        html += '<div style="margin-top:0.7em">';
+        html += '<div style="font-size:0.85em;font-weight:600;color:var(--color-dark);margin-bottom:0.2em">📄 ' + escapeHtml(f.name) + '</div>';
+        html += '<input type="text" class="route-source-url-input" data-idx="' + i + '" placeholder="Source URL (optional)" style="width:100%;padding:0.4em 0.6em;background:var(--color-gray-100);border:1px solid var(--color-gray-200);border-radius:4px;color:var(--color-dark);font-size:0.85em;font-family:inherit;box-sizing:border-box;">';
+        html += '</div>';
+      });
+      fileListEl.innerHTML = html;
+    }
     document.getElementById('add-routes-upload-btn').disabled = pendingRouteFiles.length === 0;
     addRoutesFileInput.value = '';
   });
   document.getElementById('add-routes-upload-btn').addEventListener('click', () => {
     if (!pendingRouteFiles.length) return;
-    const sourceUrl = document.getElementById('add-routes-source-url').value.trim();
-    pendingRouteFiles.forEach(file => {
+    const urlInputs = document.querySelectorAll('#add-routes-file-list .route-source-url-input');
+    pendingRouteFiles.forEach((file, i) => {
+      const sourceUrl = (urlInputs[i] ? urlInputs[i].value.trim() : '');
       if (firebaseReady && isAdmin()) { uploadToFirebase(file, sourceUrl); }
       else {
         const reader = new FileReader();
@@ -930,7 +929,7 @@
     addRoutesStatus.textContent = pendingRouteFiles.length + ' file(s) uploaded.';
     pendingRouteFiles = [];
     document.getElementById('add-routes-upload-btn').disabled = true;
-    document.getElementById('add-routes-file-list').textContent = '';
+    document.getElementById('add-routes-file-list').innerHTML = '';
     setTimeout(() => { addRoutesOverlay.classList.remove('open'); addRoutesStatus.textContent = ''; }, 1200);
   });
 
@@ -1431,26 +1430,10 @@
 
   // ── Packing checklist ───────────────────────────────────────
   function updatePackProgress() {
-    const items = document.querySelectorAll('.pack-check');
-    const checked = document.querySelectorAll('.pack-check.checked').length;
-    const el = document.getElementById('packProgress');
-    if (el) el.textContent = checked + ' of ' + items.length + ' items packed';
-  }
-  updatePackProgress();
-
   // ── Initialise ─────────────────────────────────────────────
   loadBundledRoutes();
   initFirebase();
 })();
-
-function toggleCheck(el) {
-  el.classList.toggle('checked');
-  el.textContent = el.classList.contains('checked') ? '✓' : '';
-  const items = document.querySelectorAll('.pack-check');
-  const checked = document.querySelectorAll('.pack-check.checked').length;
-  const prog = document.getElementById('packProgress');
-  if (prog) prog.textContent = checked + ' of ' + items.length + ' items packed';
-}
 </script>
 </body>
 </html>

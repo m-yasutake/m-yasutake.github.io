@@ -167,6 +167,26 @@ function _onAuthStateChanged(user) {
     }
   });
   if (user) closeAuth();
+
+  // Show Admin nav link only when signed in as the admin
+  const adminEmail = (typeof ADMIN_EMAIL !== 'undefined') ? ADMIN_EMAIL : null;
+  const isAdmin = user && adminEmail && user.email === adminEmail;
+  document.querySelectorAll('.admin-only-link').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+
+  // On admin page: auto-show/hide dashboard based on admin status
+  const adminGate = document.getElementById('adminGate');
+  const adminDashboard = document.getElementById('adminDashboard');
+  if (adminGate && adminDashboard) {
+    if (isAdmin) {
+      adminGate.style.display = 'none';
+      adminDashboard.style.display = 'grid';
+    } else {
+      adminGate.style.display = '';
+      adminDashboard.style.display = 'none';
+    }
+  }
 }
 
 // Attach login buttons
@@ -218,3 +238,8 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 
 // Expose helpers globally
 window.TomikaBikes = { showToast, openAuth, closeAuth, ensureFirebaseAuth };
+
+// ── Eager auth state restore ─────────────────
+// If Firebase is already loaded on this page (e.g. admin/planning), or if we
+// can lazy-load it, restore the previous sign-in state so the nav reflects it.
+ensureFirebaseAuth().catch(() => {});
