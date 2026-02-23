@@ -800,7 +800,6 @@
     polyline.bindPopup(buildPopupContent(routeIdx), { maxWidth: 280 });
     startMarker.bindTooltip('Start: ' + routeName);
     endMarker.bindTooltip('End: ' + routeName);
-    scheduleFitAll();
     renderToggles();
     renderStats();
   }
@@ -1067,7 +1066,6 @@
     const parsedPoints = parseCSV(csvText);
     if (!parsedPoints.length) { alert('No valid points found in ' + fileName); return; }
     addPointsBatch(parsedPoints.map((p, idx) => ({ pointData: p, fileName, firebaseDocId: docIdMap ? docIdMap[idx] : null })));
-    scheduleFitAll();
   }
 
   function removePointFromMap(idx) { markerClusterGroup.removeLayer(points[idx].marker); points.splice(idx, 1); renderPointToggles(); }
