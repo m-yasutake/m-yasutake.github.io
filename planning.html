@@ -644,7 +644,7 @@
     clearTimeout(_fitAllTimer);
     _fitAllTimer = setTimeout(() => {
       map.invalidateSize();
-      const visibleLayers = routes.filter(r => r.visible).map(r => r.polyline);
+      const visibleLayers = routes.filter(r => r.visible && r.polyline).map(r => r.polyline);
       if (markerClusterGroup && markerClusterGroup.getLayers().length > 0) visibleLayers.push(markerClusterGroup);
       if (visibleLayers.length > 0) map.fitBounds(L.featureGroup(visibleLayers).getBounds(), { padding: [30, 30] });
     }, 600);
@@ -686,10 +686,10 @@
 
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
-      if (zoom >= 10) return 0; // disable clustering at zoom 10+
-      return 50;
+      if (zoom >= 16) return 0; // disable clustering at zoom 16+ (also overridden by disableClusteringAtZoom: 18)
+      return Math.max(0, 80 - (zoom * 3));
     },
-    disableClusteringAtZoom: 15,
+    disableClusteringAtZoom: 18,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
@@ -746,47 +746,75 @@
     };
   }
 
-  function addRoute(gpxText, fileName, firebaseDocId, metadata) {
-    const { points: pts, name } = parseGPX(gpxText);
-    if (pts.length === 0) { alert('No track points found in ' + fileName); return; }
-    const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
-    colorIdx++;
-    const latlngs = pts.map(p => [p.lat, p.lon]);
-    const polyline = L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
-    const routeName = name || fileName.replace(/\.gpx$/i, '');
-    const routeIdx = routes.length; // index this route will have after push
-    const stats = computeStats(pts);
-    const meta = metadata || {};
-    routes.push({ routeName, color, polyline, stats, visible: true, firebaseDocId: firebaseDocId||null, metadata: meta });
+  // ── Web Worker for GPX parsing (Change 5) ──────────────────
+  let _gpxWorker = null;
+  let _workerCallbacks = new Map();
+  let _workerMsgId = 0;
 
-    function buildPopupContent(idx) {
-      const r = routes[idx];
-      let html = '<div style="min-width:210px">';
-      html += '<div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.6em">';
-      html += '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + r.color + ';flex-shrink:0"></span>';
-      html += '<strong style="font-size:1em;color:var(--color-primary,#264653)">' + escapeHtml(r.routeName) + '</strong>';
-      html += '</div>';
+  (function initGpxWorker() {
+    try {
+      _gpxWorker = new Worker('js/gpx-worker.js');
+      _gpxWorker.onmessage = function(e) {
+        const { id, latlngs, stats, name, error } = e.data;
+        const cb = _workerCallbacks.get(id);
+        if (cb) { _workerCallbacks.delete(id); cb(error ? null : { latlngs, stats, name }, error || null); }
+      };
+      _gpxWorker.onerror = function(e) { console.warn('GPX Worker error:', e); _gpxWorker = null; }; // disable on error
+    } catch(e) {
+      _gpxWorker = null; // Web Workers unavailable — will parse on main thread
+    }
+  })();
+
+  function parseGpxAsync(gpxText) {
+    return new Promise((resolve, reject) => {
+      if (!_gpxWorker) {
+        // Fallback: main-thread parsing
+        try {
+          const { points: pts, name } = parseGPX(gpxText);
+          const latlngs = pts.map(p => [p.lat, p.lon]);
+          const stats = computeStats(pts);
+          resolve({ latlngs, stats, name });
+        } catch(e) { reject(e); }
+        return;
+      }
+      const id = ++_workerMsgId;
+      _workerCallbacks.set(id, (result, err) => { if (err) reject(new Error(err)); else resolve(result); });
+      _gpxWorker.postMessage({ id, gpxText });
+    });
+  }
+
+  // ── Route popup content (hoisted so loadFullGpxForRoute can use it) ──
+  function buildRoutePopupContent(idx) {
+    const r = routes[idx];
+    let html = '<div style="min-width:210px">';
+    html += '<div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.6em">';
+    html += '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + r.color + ';flex-shrink:0"></span>';
+    html += '<strong style="font-size:1em;color:var(--color-primary,#264653)">' + escapeHtml(r.routeName) + '</strong>';
+    html += '</div>';
+    if (r.stats) {
       html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;margin-bottom:0.4em">';
       html += '<tr><td style="color:#6c757d;padding:2px 8px 2px 0">Distance</td><td style="font-weight:600">' + r.stats.distanceKm + ' km</td></tr>';
       html += '<tr><td style="color:#6c757d;padding:2px 8px 2px 0">Elev Gain</td><td style="font-weight:600">↑ ' + r.stats.elevGain + ' m</td></tr>';
       html += '<tr><td style="color:#6c757d;padding:2px 8px 2px 0">Elev Loss</td><td style="font-weight:600">↓ ' + r.stats.elevLoss + ' m</td></tr>';
       html += '<tr><td style="color:#6c757d;padding:2px 8px 2px 0">Min / Max</td><td style="font-weight:600">' + r.stats.minEle + ' / ' + r.stats.maxEle + ' m</td></tr>';
       html += '</table>';
-      if (r.metadata.description) html += '<p style="font-size:0.85em;color:#6c757d;margin:0.3em 0">' + escapeHtml(r.metadata.description) + '</p>';
-      if (r.metadata.sourceUrl) html += '<a href="' + escapeAttr(r.metadata.sourceUrl) + '" target="_blank" rel="noopener" style="font-size:0.85em;color:#2A9D8F">🔗 Source</a>';
-      if (r.firebaseDocId) {
-        html += '<div style="margin-top:0.6em;display:flex;gap:0.4em;flex-wrap:wrap">';
-        html += '<button class="roots-btn popup-info-btn" data-ridx="' + idx + '" style="font-size:0.8em;padding:0.25em 0.6em">ℹ Info</button>';
-        if (isAdmin()) html += '<button class="roots-btn popup-del-btn" data-ridx="' + idx + '" style="font-size:0.8em;padding:0.25em 0.6em;color:var(--color-coral,#E76F51)">✕ Delete</button>';
-        html += '</div>';
-      }
-      html += '</div>';
-      return html;
     }
+    if (r.metadata.description) html += '<p style="font-size:0.85em;color:#6c757d;margin:0.3em 0">' + escapeHtml(r.metadata.description) + '</p>';
+    if (r.metadata.sourceUrl) html += '<a href="' + escapeAttr(r.metadata.sourceUrl) + '" target="_blank" rel="noopener" style="font-size:0.85em;color:#2A9D8F">🔗 Source</a>';
+    if (r.firebaseDocId) {
+      html += '<div style="margin-top:0.6em;display:flex;gap:0.4em;flex-wrap:wrap">';
+      html += '<button class="roots-btn popup-info-btn" data-ridx="' + idx + '" style="font-size:0.8em;padding:0.25em 0.6em">ℹ Info</button>';
+      if (isAdmin()) html += '<button class="roots-btn popup-del-btn" data-ridx="' + idx + '" style="font-size:0.8em;padding:0.25em 0.6em;color:var(--color-coral,#E76F51)">✕ Delete</button>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
 
+  function _bindPolylinePopup(polyline, routeRef) {
     polyline.on('popupopen', () => {
-      const idx = routes.indexOf(routes.find(r => r.polyline === polyline));
-      polyline.setPopupContent(buildPopupContent(idx));
+      const idx = routes.indexOf(routeRef);
+      polyline.setPopupContent(buildRoutePopupContent(idx));
       const popup = polyline.getPopup().getElement();
       if (!popup) return;
       const infoBtn = popup.querySelector('.popup-info-btn');
@@ -794,17 +822,121 @@
       if (infoBtn) infoBtn.addEventListener('click', () => { map.closePopup(); openMetadataModal(parseInt(infoBtn.dataset.ridx)); });
       if (delBtn)  delBtn.addEventListener('click',  () => { map.closePopup(); deleteFirebaseRoute(parseInt(delBtn.dataset.ridx)); });
     });
+    polyline.bindPopup(buildRoutePopupContent(routes.indexOf(routeRef)), { maxWidth: 280 });
+  }
 
-    polyline.bindPopup(buildPopupContent(routeIdx), { maxWidth: 280 });
-    renderToggles();
+  // ── addRoute: supports preview (gpxText=null) and full mode ───────────
+  function addRoute(gpxText, fileName, firebaseDocId, metadata, storagePath, cachedGpx) {
+    if (!gpxText) {
+      // Preview mode: only metadata, no polyline on map yet
+      const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
+      colorIdx++;
+      const routeName = (metadata && metadata.name) || fileName.replace(/\.gpx$/i, '');
+      routes.push({ routeName, color, polyline: null, stats: null, visible: false,
+                    firebaseDocId: firebaseDocId || null, metadata: metadata || {},
+                    _loading: false, _gpxCached: cachedGpx || null,
+                    _storagePath: storagePath || null, _fileName: fileName });
+      scheduleRenderToggles();
+      return;
+    }
+    // Full mode: parse GPX immediately and render polyline
+    const { points: pts, name } = parseGPX(gpxText);
+    if (pts.length === 0) { alert('No track points found in ' + fileName); return; }
+    const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
+    colorIdx++;
+    const latlngs = pts.map(p => [p.lat, p.lon]);
+    const polyline = L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
+    const routeName = name || fileName.replace(/\.gpx$/i, '');
+    const stats = computeStats(pts);
+    const meta = metadata || {};
+    const routeObj = { routeName, color, polyline, stats, visible: true,
+                       firebaseDocId: firebaseDocId || null, metadata: meta,
+                       _loading: false, _gpxCached: gpxText,
+                       _storagePath: storagePath || null, _fileName: fileName };
+    routes.push(routeObj);
+    _bindPolylinePopup(polyline, routeObj);
+    scheduleRenderToggles();
     renderStats();
   }
 
+  // ── Load full GPX on demand (Change 1) ───────────────────────────────
+  function loadFullGpxForRoute(idx) {
+    const r = routes[idx];
+    if (r.polyline || r._loading) {
+      // Already loaded: ensure it's on the map if visible and in viewport
+      if (r.polyline && r.visible && !map.hasLayer(r.polyline)) {
+        const b = r.polyline.getBounds();
+        if (!b.isValid() || map.getBounds().intersects(b)) r.polyline.addTo(map);
+      }
+      return;
+    }
+    r._loading = true;
+
+    function onParsed(result) {
+      if (!result || !result.latlngs || !result.latlngs.length) { r._loading = false; return; }
+      r.polyline = L.polyline(result.latlngs, { color: r.color, weight: 4, opacity: 0.85 });
+      // Only update the route name from GPX if the current name is still the default
+      // (derived from the file name) — avoids clobbering names set by the user.
+      if (result.name && r.routeName === (r._fileName || '').replace(/\.gpx$/i, '')) r.routeName = result.name;
+      r.stats = result.stats;
+      r._loading = false;
+      _bindPolylinePopup(r.polyline, r);
+      if (r.visible) {
+        const b = r.polyline.getBounds();
+        if (!b.isValid() || map.getBounds().intersects(b)) r.polyline.addTo(map);
+      }
+      renderToggles();
+      renderStats();
+    }
+
+    function fetchAndParse(gpxText) {
+      parseGpxAsync(gpxText).then(onParsed).catch(err => {
+        console.error('GPX parse error for ' + r.routeName + ':', err);
+        r._loading = false;
+      });
+    }
+
+    if (r._gpxCached) { fetchAndParse(r._gpxCached); return; }
+    if (!storage || !r._storagePath) { r._loading = false; return; }
+    storage.ref(r._storagePath).getDownloadURL()
+      .then(url => fetch(url))
+      .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+      .then(gpxText => {
+        r._gpxCached = gpxText;
+        // Cache inline for next load (backward-compat with existing data structure)
+        if (r.firebaseDocId) db.collection('routes').doc(r.firebaseDocId).update({ gpxContent: gpxText }).catch(err => console.warn('Failed to cache GPX content:', err));
+        fetchAndParse(gpxText);
+      })
+      .catch(err => { console.error('Error loading route ' + r.routeName + ':', err); r._loading = false; });
+  }
+
+  // ── Viewport-based route rendering (Change 4) ────────────────────────
+  function updateRouteVisibilityByViewport() {
+    const mapBounds = map.getBounds();
+    routes.forEach(r => {
+      if (!r.polyline || !r.visible) return;
+      const b = r.polyline.getBounds();
+      if (!b.isValid()) return;
+      const inView = mapBounds.intersects(b);
+      const onMap  = map.hasLayer(r.polyline);
+      if (inView && !onMap)  r.polyline.addTo(map);
+      else if (!inView && onMap) map.removeLayer(r.polyline);
+    });
+  }
+  map.on('moveend', updateRouteVisibilityByViewport);
+
   function removeRouteFromMap(idx) {
     const r = routes[idx];
-    map.removeLayer(r.polyline);
+    if (r.polyline) map.removeLayer(r.polyline);
     routes.splice(idx, 1);
     renderToggles(); renderStats();
+  }
+
+  // ── Debounced renderToggles (Change 6) ───────────────────────────────
+  let _routeToggleTimer = null;
+  function scheduleRenderToggles() {
+    if (_routeToggleTimer) clearTimeout(_routeToggleTimer);
+    _routeToggleTimer = setTimeout(renderToggles, 100);
   }
 
   function renderToggles() {
@@ -818,7 +950,7 @@
       cb.addEventListener('change', () => toggleRoute(i));
       const dot = document.createElement('span');
       dot.className = 'route-color-dot'; dot.style.background = r.color;
-      lbl.appendChild(cb); lbl.appendChild(dot); lbl.appendChild(document.createTextNode(r.routeName));
+      lbl.appendChild(cb); lbl.appendChild(dot); lbl.appendChild(document.createTextNode(r.routeName + (r._loading ? ' ⏳' : '')));
       if (r.firebaseDocId) {
         const info = document.createElement('button');
         info.className = 'info-btn'; info.textContent = 'ℹ'; info.title = 'Route info';
@@ -837,15 +969,23 @@
 
   function toggleRoute(idx) {
     const r = routes[idx]; r.visible = !r.visible;
-    if (r.visible) r.polyline.addTo(map);
-    else map.removeLayer(r.polyline);
+    if (r.visible) {
+      if (r.polyline) {
+        const b = r.polyline.getBounds();
+        if (!b.isValid() || map.getBounds().intersects(b)) r.polyline.addTo(map);
+      } else {
+        loadFullGpxForRoute(idx);
+      }
+    } else {
+      if (r.polyline && map.hasLayer(r.polyline)) map.removeLayer(r.polyline);
+    }
     renderStats();
   }
 
   function renderStats() {
     const statsDiv = document.getElementById('route-stats');
     if (!statsDiv) return;
-    const visible = routes.filter(r => r.visible);
+    const visible = routes.filter(r => r.visible && r.stats);
     if (visible.length === 0) { statsDiv.style.display = 'none'; return; }
     statsDiv.style.display = 'block';
     let html = '<table><tr><th>Route</th><th>Distance</th><th>Elev Gain</th><th>Elev Loss</th><th>Min Elev</th><th>Max Elev</th></tr>';
@@ -957,8 +1097,7 @@
   });
 
   document.getElementById('fit-bounds-btn').addEventListener('click', () => {
-    const visible = routes.filter(r => r.visible);
-    const layers = visible.map(r => r.polyline);
+    const layers = routes.filter(r => r.visible && r.polyline).map(r => r.polyline);
     if (markerClusterGroup.getLayers().length > 0) layers.push(markerClusterGroup);
     if (!layers.length) return;
     map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [30, 30] });
@@ -1253,6 +1392,8 @@
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       db = firebase.firestore();
+      // Note: persistence caches all Firestore data to IndexedDB. With lazy-loading
+      // (no gpxContent written back until a route is first opened), the cache stays small.
       db.enablePersistence().catch(err => {
         if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore persistence error:', err);
       });
@@ -1274,34 +1415,34 @@
     renderToggles();
   }
 
+  // Change 1: Lazy-load routes — only fetch metadata on initial load.
+  // gpxContent (which can be ~1 MB per route) is not processed until user clicks.
   function loadFirebaseRoutes() {
     if (!firebaseReady) return;
     db.collection('routes').orderBy('uploadedAt', 'desc').get()
       .then(snapshot => {
         snapshot.forEach(doc => {
           if (loadedFirebaseIds.has(doc.id)) return;
-          const data = doc.data(); const meta = data.metadata||{};
-          if (data.gpxContent) {
-            loadedFirebaseIds.add(doc.id);
-            addRoute(data.gpxContent, data.fileName, doc.id, meta);
-          } else if (storage) {
-            loadedFirebaseIds.add(doc.id);
-            storage.ref(data.storagePath).getDownloadURL()
-              .then(url => fetch(url)).then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
-              .then(gpxText => { addRoute(gpxText, data.fileName, doc.id, meta); doc.ref.update({ gpxContent: gpxText }).catch(() => {}); })
-              .catch(err => console.error('Error loading route ' + data.fileName + ':', err));
-          }
-          // If gpxContent absent and storage not ready, skip without marking loaded
-          // so a later call (after storage initialises) can retry these routes.
+          loadedFirebaseIds.add(doc.id);
+          const data = doc.data();
+          const meta = data.metadata || {};
+          // Pass storagePath for on-demand fetch; pass gpxContent as cached value
+          // only if it's already in the snapshot (avoids re-fetching from Firestore
+          // but doesn't eagerly parse or render it).
+          addRoute(null, data.fileName, doc.id, meta, data.storagePath, data.gpxContent || null);
         });
         markLoaded('routes');
       })
       .catch(err => { console.error('Firestore read error:', err); markLoaded('routes'); });
   }
 
-  function loadFirebasePoints() {
+  // Change 2: Load points in batches of 500 to keep the UI responsive.
+  const POINTS_BATCH_SIZE = 500;
+  function loadFirebasePoints(lastDoc) {
     if (!firebaseReady) return;
-    db.collection('points').orderBy('uploadedAt', 'desc').get()
+    let query = db.collection('points').orderBy('uploadedAt', 'desc').limit(POINTS_BATCH_SIZE);
+    if (lastDoc) query = query.startAfter(lastDoc);
+    query.get()
       .then(snapshot => {
         const batch = [];
         snapshot.forEach(doc => {
@@ -1314,7 +1455,18 @@
           addPointsBatch(batch);
           scheduleFitAll();
         }
-        markLoaded('points');
+        if (snapshot.size === POINTS_BATCH_SIZE) {
+          // More pages may exist — schedule next batch during idle time
+          const nextLast = snapshot.docs[snapshot.docs.length - 1];
+          // Schedule next batch during idle time; 2000 ms timeout ensures progress
+          // even on busy pages where idle callbacks may be delayed indefinitely.
+          const scheduleNext = typeof requestIdleCallback === 'function'
+            ? (fn) => requestIdleCallback(fn, { timeout: 2000 })
+            : (fn) => setTimeout(fn, 0);
+          scheduleNext(() => loadFirebasePoints(nextLast));
+        } else {
+          markLoaded('points');
+        }
       })
       .catch(err => { console.error('Firestore points read error:', err); markLoaded('points'); });
   }
