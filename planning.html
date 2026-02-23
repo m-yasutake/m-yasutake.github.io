@@ -686,7 +686,7 @@
 
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
-      if (zoom >= 16) return 0; // disable clustering at zoom 16+
+      if (zoom >= 16) return 0; // disable clustering at zoom 16+ (also overridden by disableClusteringAtZoom: 18)
       return Math.max(0, 80 - (zoom * 3));
     },
     disableClusteringAtZoom: 18,
@@ -759,7 +759,7 @@
         const cb = _workerCallbacks.get(id);
         if (cb) { _workerCallbacks.delete(id); cb(error ? null : { latlngs, stats, name }, error || null); }
       };
-      _gpxWorker.onerror = function() { _gpxWorker = null; }; // disable on error
+      _gpxWorker.onerror = function(e) { console.warn('GPX Worker error:', e); _gpxWorker = null; }; // disable on error
     } catch(e) {
       _gpxWorker = null; // Web Workers unavailable — will parse on main thread
     }
@@ -875,7 +875,9 @@
     function onParsed(result) {
       if (!result || !result.latlngs || !result.latlngs.length) { r._loading = false; return; }
       r.polyline = L.polyline(result.latlngs, { color: r.color, weight: 4, opacity: 0.85 });
-      if (result.name && !routes.some(x => x !== r && x.routeName === result.name)) r.routeName = result.name;
+      // Only update the route name from GPX if the current name is still the default
+      // (derived from the file name) — avoids clobbering names set by the user.
+      if (result.name && r.routeName === (r._fileName || '').replace(/\.gpx$/i, '')) r.routeName = result.name;
       r.stats = result.stats;
       r._loading = false;
       _bindPolylinePopup(r.polyline, r);
@@ -902,7 +904,7 @@
       .then(gpxText => {
         r._gpxCached = gpxText;
         // Cache inline for next load (backward-compat with existing data structure)
-        if (r.firebaseDocId) db.collection('routes').doc(r.firebaseDocId).update({ gpxContent: gpxText }).catch(() => {});
+        if (r.firebaseDocId) db.collection('routes').doc(r.firebaseDocId).update({ gpxContent: gpxText }).catch(err => console.warn('Failed to cache GPX content:', err));
         fetchAndParse(gpxText);
       })
       .catch(err => { console.error('Error loading route ' + r.routeName + ':', err); r._loading = false; });
@@ -1456,6 +1458,8 @@
         if (snapshot.size === POINTS_BATCH_SIZE) {
           // More pages may exist — schedule next batch during idle time
           const nextLast = snapshot.docs[snapshot.docs.length - 1];
+          // Schedule next batch during idle time; 2000 ms timeout ensures progress
+          // even on busy pages where idle callbacks may be delayed indefinitely.
           const scheduleNext = typeof requestIdleCallback === 'function'
             ? (fn) => requestIdleCallback(fn, { timeout: 2000 })
             : (fn) => setTimeout(fn, 0);
