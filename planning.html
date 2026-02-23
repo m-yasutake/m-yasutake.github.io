@@ -564,6 +564,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
 
 <script src="js/main.js"></script>
 <script>
@@ -682,7 +684,7 @@
     })
   };
 
-  L.control.layers(baseLayers, overlayLayers, { position: 'topright', collapsed: true }).addTo(map);
+  const layerControl = L.control.layers(baseLayers, overlayLayers, { position: 'topright', collapsed: true }).addTo(map);
 
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
@@ -924,6 +926,69 @@
     });
   }
   map.on('moveend', updateRouteVisibilityByViewport);
+
+  // ── PMTiles route layer ─────────────────────────────────────
+  // Attempts to load routes.pmtiles from Firebase Storage and render all routes
+  // instantly as a vector tile layer. Gracefully skips if the file is not found.
+  function initPMTilesLayer() {
+    if (typeof pmtiles === 'undefined' || typeof L.vectorGrid === 'undefined') return;
+    const directUrl = 'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Froutes.pmtiles?alt=media';
+
+    function buildLayer(pmtilesUrl) {
+      const p = new pmtiles.PMTiles(pmtilesUrl);
+      return p.getHeader().then(function(header) {
+        // Intercept fetch for pmtiles:// tile requests from L.vectorGrid.protobuf.
+        // Only URLs starting with 'pmtiles://' are affected; all other requests pass through.
+        // The override is removed when the layer is taken off the map.
+        const _origFetch = window.fetch;
+        function pmtilesFetch(resource, options) {
+          const u = typeof resource === 'string' ? resource
+            : (resource && typeof resource === 'object' ? resource.url : '');
+          if (u && u.startsWith('pmtiles://')) {
+            const m = u.match(/\/(\d+)\/(\d+)\/(\d+)$/);
+            if (m) {
+              const z = parseInt(m[1], 10), x = parseInt(m[2], 10), y = parseInt(m[3], 10);
+              return p.getZxy(z, x, y).then(function(result) {
+                if (!result || !result.data) return new Response(new ArrayBuffer(0), { status: 200 });
+                return new Response(result.data, { status: 200 });
+              });
+            }
+          }
+          return _origFetch.apply(window, arguments);
+        }
+        window.fetch = pmtilesFetch;
+        const layer = L.vectorGrid.protobuf('pmtiles://routes/{z}/{x}/{y}', {
+          vectorTileLayerStyles: {
+            routes: { weight: 2, color: '#2A9D8F', opacity: 0.8, fill: false }
+          },
+          interactive: false,
+          maxNativeZoom: header.maxZoom || 14,
+          minNativeZoom: header.minZoom || 2
+        });
+        layer.on('remove', function() { window.fetch = _origFetch; });
+        layer.on('add', function() { window.fetch = pmtilesFetch; });
+        return layer;
+      });
+    }
+
+    function tryLoad(url) {
+      return buildLayer(url).then(function(layer) {
+        layer.addTo(map);
+        layerControl.addOverlay(layer, 'All Routes (tiles)');
+      });
+    }
+
+    // Try Firebase Storage SDK URL first (available after sign-in), fall back to direct URL.
+    const storagePromise = storage
+      ? storage.ref('tiles/routes.pmtiles').getDownloadURL().then(tryLoad)
+      : Promise.reject(new Error('storage not ready'));
+
+    storagePromise.catch(function() {
+      tryLoad(directUrl).catch(function(err) {
+        console.warn('PMTiles routes layer unavailable:', err && err.message || err);
+      });
+    });
+  }
 
   function removeRouteFromMap(idx) {
     const r = routes[idx];
@@ -1483,7 +1548,13 @@
         .then(() => isCSV
           ? uploadCSVToFirestore(file.name, storagePath, fileText)
           : db.collection('routes').add({ fileName: file.name, storagePath, gpxContent: fileText, metadata, uploadedAt: firebase.firestore.FieldValue.serverTimestamp() })
-              .then(docRef => { addRoute(fileText, file.name, docRef.id, metadata); }))
+              .then(docRef => {
+                addRoute(fileText, file.name, docRef.id, metadata);
+                // TODO: After uploading a new GPX route, regenerate routes.pmtiles so the
+                // "All Routes (tiles)" layer reflects the new route. Trigger the GitHub Actions
+                // workflow manually via Actions > "Generate PMTiles Tiles" > Run workflow, or
+                // dispatch the 'regenerate-tiles' repository_dispatch event via the GitHub API.
+              }))
         .then(() => { if (typeof showToast === 'function') showToast('Uploaded ' + file.name + ' ✓'); })
         .catch(err => { console.error('Upload error:', err); if (typeof showToast === 'function') showToast('Upload failed: ' + err.message, 'error'); });
     };
@@ -1594,6 +1665,7 @@
   // ── Initialise ─────────────────────────────────────────────
   loadBundledRoutes();
   initFirebase();
+  initPMTilesLayer();
 })();
 
 function toggleCheck(el) {

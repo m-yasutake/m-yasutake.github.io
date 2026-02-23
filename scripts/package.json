@@ -1,0 +1,17 @@
+{
+  "name": "generate-pmtiles",
+  "version": "1.0.0",
+  "description": "Generate PMTiles from Firebase Storage GPX files",
+  "main": "generate-pmtiles.js",
+  "scripts": {
+    "start": "node generate-pmtiles.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@tmcw/togeojson": "^5.8.0",
+    "@xmldom/xmldom": "^0.8.10",
+    "firebase-admin": "^12.0.0"
+  }
+}
