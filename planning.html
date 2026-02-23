@@ -753,13 +753,11 @@
     colorIdx++;
     const latlngs = pts.map(p => [p.lat, p.lon]);
     const polyline = L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
-    const startMarker = L.circleMarker(latlngs[0], { radius: 6, color, fillColor: '#fff', fillOpacity: 1, weight: 2 }).addTo(map);
-    const endMarker = L.circleMarker(latlngs[latlngs.length-1], { radius: 6, color, fillColor: color, fillOpacity: 1, weight: 2 }).addTo(map);
     const routeName = name || fileName.replace(/\.gpx$/i, '');
     const routeIdx = routes.length; // index this route will have after push
     const stats = computeStats(pts);
     const meta = metadata || {};
-    routes.push({ routeName, color, polyline, startMarker, endMarker, stats, visible: true, firebaseDocId: firebaseDocId||null, metadata: meta });
+    routes.push({ routeName, color, polyline, stats, visible: true, firebaseDocId: firebaseDocId||null, metadata: meta });
 
     function buildPopupContent(idx) {
       const r = routes[idx];
@@ -798,15 +796,13 @@
     });
 
     polyline.bindPopup(buildPopupContent(routeIdx), { maxWidth: 280 });
-    startMarker.bindTooltip('Start: ' + routeName);
-    endMarker.bindTooltip('End: ' + routeName);
     renderToggles();
     renderStats();
   }
 
   function removeRouteFromMap(idx) {
     const r = routes[idx];
-    map.removeLayer(r.polyline); map.removeLayer(r.startMarker); map.removeLayer(r.endMarker);
+    map.removeLayer(r.polyline);
     routes.splice(idx, 1);
     renderToggles(); renderStats();
   }
@@ -841,8 +837,8 @@
 
   function toggleRoute(idx) {
     const r = routes[idx]; r.visible = !r.visible;
-    if (r.visible) { r.polyline.addTo(map); r.startMarker.addTo(map); r.endMarker.addTo(map); }
-    else { map.removeLayer(r.polyline); map.removeLayer(r.startMarker); map.removeLayer(r.endMarker); }
+    if (r.visible) r.polyline.addTo(map);
+    else map.removeLayer(r.polyline);
     renderStats();
   }
 
@@ -1121,11 +1117,21 @@
   }
 
   function expandShortUrl(shortUrl) {
+    // maps.app.goo.gl uses Firebase Dynamic Links which serve an HTML page with a JS
+    // redirect rather than a plain HTTP redirect. We therefore fetch the page content
+    // via a CORS proxy and look for the embedded Google Maps URL in the HTML.
     return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(shortUrl), { cache: 'no-store' })
       .then(res => { if (!res.ok) throw new Error('Proxy request failed'); return res.json(); })
       .then(data => {
+        // 1. Try the final URL reported by the proxy (works for plain HTTP redirects)
         const finalUrl = data && data.status && data.status.url ? data.status.url : null;
-        if (finalUrl && finalUrl !== shortUrl) return finalUrl;
+        if (finalUrl && /google\.com\/maps/.test(finalUrl) && finalUrl !== shortUrl) return finalUrl;
+
+        // 2. Parse the HTML body for any embedded google.com/maps URL
+        const html = data && data.contents ? data.contents : '';
+        const mapsUrlMatch = html.match(/https:\/\/www\.google\.com\/maps\/[^\s"'<>\\]+/);
+        if (mapsUrlMatch) return mapsUrlMatch[0].replace(/\\u003d/g, '=').replace(/\\u0026/g, '&');
+
         throw new Error('Could not resolve URL');
       });
   }
