@@ -1,0 +1,55 @@
+# .github/workflows/generate-tiles.yml
+#
+# Workflow: Generate PMTiles Tiles
+#
+# Regenerates routes.pmtiles from all GPX files in Firebase Storage and uploads
+# the result to tiles/routes.pmtiles in the same bucket, making all routes
+# instantly visible on the planning.html map via the "All Routes (tiles)" overlay.
+#
+# Required secrets (add in Settings > Secrets and variables > Actions):
+#   FIREBASE_SERVICE_ACCOUNT: JSON string of a Firebase service account key
+#     with Storage Object Admin permissions on the roots-eddf5 bucket.
+#
+# Triggers:
+#   - Manual: Actions tab > "Generate PMTiles Tiles" > Run workflow
+#   - Automatic: Send a repository_dispatch event with type "regenerate-tiles"
+#     (e.g., from a Firebase Cloud Function after a new GPX upload).
+
+name: Generate PMTiles Tiles
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [regenerate-tiles]
+
+jobs:
+  generate-tiles:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install tippecanoe
+        run: |
+          git clone https://github.com/felt/tippecanoe.git
+          cd tippecanoe
+          make -j$(nproc)
+          sudo make install
+
+      - name: Install script dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Generate and upload PMTiles
+        working-directory: scripts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node generate-pmtiles.js
