@@ -143,6 +143,98 @@
     .weight-summary h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; margin-bottom: 0.5rem; }
     .weight-big { font-size: 2.5rem; font-weight: 700; font-family: var(--font-heading); }
     .weight-sub { font-size: 0.85rem; opacity: 0.75; }
+
+    /* ── Admin editing ───────────────────────────────── */
+    .gear-admin-bar {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: var(--radius-md);
+      padding: 0.65rem 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.9rem;
+      color: #6d4c00;
+    }
+    .gear-admin-bar strong { flex: 1; }
+    .gear-admin-btn {
+      padding: 0.4rem 1rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .gear-admin-btn:hover { opacity: 0.85; }
+    .gear-admin-btn.edit  { background: var(--color-primary); color: #fff; }
+    .gear-admin-btn.save  { background: #1a7a1a; color: #fff; }
+    .gear-admin-btn.cancel{ background: var(--color-gray-300); color: var(--color-gray-800); }
+
+    /* Edit-mode cell styles */
+    .gear-category[data-editing] td[contenteditable] {
+      background: #f0faf9;
+      outline: 1px dashed var(--color-primary);
+      border-radius: 3px;
+      min-width: 4rem;
+      cursor: text;
+    }
+    .gear-category[data-editing] td[contenteditable]:focus {
+      outline: 2px solid var(--color-primary);
+      background: #fff;
+    }
+    .gear-category[data-editing] .gear-category-header h3[contenteditable],
+    .gear-category[data-editing] .gear-category-header span[contenteditable] {
+      outline: 1px dashed rgba(255,255,255,0.7);
+      border-radius: 3px;
+      padding: 0 3px;
+      cursor: text;
+    }
+    .gear-status-select {
+      border: 1px solid var(--color-gray-300);
+      border-radius: var(--radius-sm);
+      padding: 0.2rem 0.4rem;
+      font-size: 0.8rem;
+      background: #fff;
+      cursor: pointer;
+    }
+    .gear-row-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      opacity: 0.5;
+      padding: 0.2rem;
+      transition: opacity 0.15s;
+    }
+    .gear-row-delete:hover { opacity: 1; }
+    .gear-cat-delete {
+      margin-left: auto;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+    }
+    .gear-cat-delete:hover { background: rgba(255,0,0,0.3); }
+    .gear-add-row-btn, .gear-add-cat-btn {
+      background: none;
+      border: 1px dashed var(--color-primary);
+      color: var(--color-primary);
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 1rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      width: 100%;
+      transition: background 0.15s;
+    }
+    .gear-add-row-btn:hover, .gear-add-cat-btn:hover { background: rgba(42,157,143,0.07); }
+    .gear-add-cat-btn { margin-top: 0.75rem; }
   </style>
 </head>
 <body>
@@ -218,118 +310,20 @@
   <div class="container">
     <div class="gear-grid">
 
-      <!-- Left: Gear Tables -->
+      <!-- Left: Gear Tables (rendered by JS) -->
       <div>
 
-        <!-- Bikes & Bags -->
-        <div class="gear-category">
-          <div class="gear-category-header">
-            <span class="gear-category-icon">🚲</span>
-            <h3>Bikes &amp; Bags</h3>
-          </div>
-          <table class="gear-table">
-            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr><td>Touring bike (each)</td><td class="gear-weight">10.5 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Steel frame, 700c wheels</td></tr>
-              <tr><td>Rear panniers (pair)</td><td class="gear-weight">1.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Ortlieb Back-Roller Classic</td></tr>
-              <tr><td>Front panniers (pair)</td><td class="gear-weight">1.1 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Ortlieb Front-Roller</td></tr>
-              <tr><td>Handlebar bag</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Quick access for snacks &amp; map</td></tr>
-              <tr><td>Frame bag</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag optional">Optional</span></td><td class="gear-notes">Tools &amp; spares</td></tr>
-            </tbody>
-          </table>
+        <!-- Admin editing toolbar (only visible when signed in as admin) -->
+        <div class="gear-admin-bar" id="gearAdminBar">
+          <strong>✏️ Admin: you can edit this gear list</strong>
+          <button class="gear-admin-btn edit" id="gearEditBtn">✏️ Edit Gear</button>
+          <button class="gear-admin-btn save" id="gearSaveBtn" style="display:none">💾 Save</button>
+          <button class="gear-admin-btn cancel" id="gearCancelBtn" style="display:none">✕ Cancel</button>
         </div>
 
-        <!-- Shelter & Sleep -->
-        <div class="gear-category">
-          <div class="gear-category-header">
-            <span class="gear-category-icon">⛺</span>
-            <h3>Shelter &amp; Sleep</h3>
-          </div>
-          <table class="gear-table">
-            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr><td>Tent (2-person)</td><td class="gear-weight">1.6 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">MSR Hubba Hubba NX</td></tr>
-              <tr><td>Sleeping bag (each)</td><td class="gear-weight">0.9 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Down, comfort to 5°C</td></tr>
-              <tr><td>Sleeping mat (each)</td><td class="gear-weight">0.5 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Thermarest NeoAir</td></tr>
-              <tr><td>Camping pillow (each)</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag optional">Optional</span></td><td class="gear-notes">Inflatable</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Navigation & Tech -->
-        <div class="gear-category">
-          <div class="gear-category-header">
-            <span class="gear-category-icon">📡</span>
-            <h3>Navigation &amp; Tech</h3>
-          </div>
-          <table class="gear-table">
-            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr><td>GPS device</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Garmin Edge 530</td></tr>
-              <tr><td>Smartphone (each)</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Offline maps downloaded</td></tr>
-              <tr><td>Solar charging panel</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">BigBlue 28W</td></tr>
-              <tr><td>Power bank (each)</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">20,000 mAh</td></tr>
-              <tr><td>Camera + lenses</td><td class="gear-weight">1.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Sony A6400 + 16-50 kit</td></tr>
-              <tr><td>Laptop (shared)</td><td class="gear-weight">1.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">For blog &amp; work on the road</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Bike Maintenance -->
-        <div class="gear-category">
-          <div class="gear-category-header">
-            <span class="gear-category-icon">🔧</span>
-            <h3>Bike Maintenance</h3>
-          </div>
-          <table class="gear-table">
-            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr><td>Repair kit &amp; multi-tool</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Leatherman + Park Tool</td></tr>
-              <tr><td>Spare tubes (×4)</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">700×35c</td></tr>
-              <tr><td>Tyre levers + patches</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">—</td></tr>
-              <tr><td>Mini pump</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Topeak Road Morph G</td></tr>
-              <tr><td>Chain lube &amp; cleaner</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">—</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Clothing -->
-        <div class="gear-category">
-          <div class="gear-category-header">
-            <span class="gear-category-icon">👕</span>
-            <h3>Clothing (per person)</h3>
-          </div>
-          <table class="gear-table">
-            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr><td>Cycling jerseys (×3)</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Merino wool preferred</td></tr>
-              <tr><td>Bib shorts (×2)</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Padded</td></tr>
-              <tr><td>Rain jacket</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Lightweight packable</td></tr>
-              <tr><td>Thermal base layers</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">For cold mornings</td></tr>
-              <tr><td>Casual clothes (×2 sets)</td><td class="gear-weight">0.8 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Off-bike wear</td></tr>
-              <tr><td>Cycling shoes (each)</td><td class="gear-weight">0.6 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">SPD compatible</td></tr>
-              <tr><td>Sandals/flip-flops</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Camp &amp; casual</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Safety & Health -->
-        <div class="gear-category">
-          <div class="gear-category-header">
-            <span class="gear-category-icon">🩺</span>
-            <h3>Safety &amp; Health</h3>
-          </div>
-          <table class="gear-table">
-            <thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr><td>Helmets (each)</td><td class="gear-weight">0.3 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">MIPS rated</td></tr>
-              <tr><td>Lights front + rear (each)</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">Rechargeable</td></tr>
-              <tr><td>High-vis vest</td><td class="gear-weight">0.1 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Some countries require by law</td></tr>
-              <tr><td>First aid kit</td><td class="gear-weight">0.4 kg</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Compact travel kit</td></tr>
-              <tr><td>Sun cream + lip balm</td><td class="gear-weight">0.2 kg</td><td><span class="gear-tag owned">Owned</span></td><td class="gear-notes">SPF 50+</td></tr>
-              <tr><td>Travel insurance docs</td><td class="gear-weight">—</td><td><span class="gear-tag needed">Needed</span></td><td class="gear-notes">Covering bike touring</td></tr>
-            </tbody>
-          </table>
+        <!-- Gear tables injected here by GearManager.init() -->
+        <div id="gearContent">
+          <p style="padding:2rem;color:var(--color-gray-600)">Loading gear list…</p>
         </div>
 
       </div>
@@ -440,6 +434,7 @@
 
 <script src="js/main.js"></script>
 <script>
+// ── Packing checklist ─────────────────────────────────────────
 function toggleCheck(el) {
   el.classList.toggle('checked');
   el.textContent = el.classList.contains('checked') ? '✓' : '';
@@ -456,8 +451,277 @@ function updatePackProgress() {
   if (prog) prog.textContent = checked + ' of ' + total + ' items packed (' + pct + '%)';
   if (fill) fill.style.width = pct + '%';
 }
-
 updatePackProgress();
+
+// ── Gear List Manager ─────────────────────────────────────────
+(function () {
+  const GEAR_COLLECTION = 'gear_categories';
+
+  let _gearData = [];
+  let _editMode = false;
+  let _isAdmin  = false;
+  let _fsLoaded = false;
+  let _origData = null; // snapshot for cancel
+
+  // ── Default / seed data ──────────────────────────────────
+  const GEAR_DEFAULT = [
+    { id: 'bikes-bags', icon: '🚲', name: 'Bikes & Bags', order: 0, items: [
+      { id: 'bb1', name: 'Touring bike (each)',   weight: '10.5 kg', status: 'owned',    notes: 'Steel frame, 700c wheels' },
+      { id: 'bb2', name: 'Rear panniers (pair)',  weight: '1.4 kg',  status: 'owned',    notes: 'Ortlieb Back-Roller Classic' },
+      { id: 'bb3', name: 'Front panniers (pair)', weight: '1.1 kg',  status: 'needed',   notes: 'Ortlieb Front-Roller' },
+      { id: 'bb4', name: 'Handlebar bag',         weight: '0.4 kg',  status: 'owned',    notes: 'Quick access for snacks & map' },
+      { id: 'bb5', name: 'Frame bag',             weight: '0.2 kg',  status: 'optional', notes: 'Tools & spares' },
+    ]},
+    { id: 'shelter-sleep', icon: '⛺', name: 'Shelter & Sleep', order: 1, items: [
+      { id: 'ss1', name: 'Tent (2-person)',       weight: '1.6 kg',  status: 'owned',    notes: 'MSR Hubba Hubba NX' },
+      { id: 'ss2', name: 'Sleeping bag (each)',   weight: '0.9 kg',  status: 'owned',    notes: 'Down, comfort to 5°C' },
+      { id: 'ss3', name: 'Sleeping mat (each)',   weight: '0.5 kg',  status: 'owned',    notes: 'Thermarest NeoAir' },
+      { id: 'ss4', name: 'Camping pillow (each)', weight: '0.1 kg',  status: 'optional', notes: 'Inflatable' },
+    ]},
+    { id: 'nav-tech', icon: '📡', name: 'Navigation & Tech', order: 2, items: [
+      { id: 'nt1', name: 'GPS device',           weight: '0.1 kg',  status: 'owned',  notes: 'Garmin Edge 530' },
+      { id: 'nt2', name: 'Smartphone (each)',    weight: '0.2 kg',  status: 'owned',  notes: 'Offline maps downloaded' },
+      { id: 'nt3', name: 'Solar charging panel', weight: '0.3 kg',  status: 'needed', notes: 'BigBlue 28W' },
+      { id: 'nt4', name: 'Power bank (each)',    weight: '0.2 kg',  status: 'owned',  notes: '20,000 mAh' },
+      { id: 'nt5', name: 'Camera + lenses',      weight: '1.2 kg',  status: 'owned',  notes: 'Sony A6400 + 16-50 kit' },
+      { id: 'nt6', name: 'Laptop (shared)',      weight: '1.3 kg',  status: 'owned',  notes: 'For blog & work on the road' },
+    ]},
+    { id: 'bike-maintenance', icon: '🔧', name: 'Bike Maintenance', order: 3, items: [
+      { id: 'bm1', name: 'Repair kit & multi-tool', weight: '0.4 kg', status: 'owned',  notes: 'Leatherman + Park Tool' },
+      { id: 'bm2', name: 'Spare tubes (×4)',         weight: '0.4 kg', status: 'needed', notes: '700×35c' },
+      { id: 'bm3', name: 'Tyre levers + patches',    weight: '0.1 kg', status: 'owned',  notes: '—' },
+      { id: 'bm4', name: 'Mini pump',                weight: '0.2 kg', status: 'owned',  notes: 'Topeak Road Morph G' },
+      { id: 'bm5', name: 'Chain lube & cleaner',     weight: '0.2 kg', status: 'needed', notes: '—' },
+    ]},
+    { id: 'clothing', icon: '👕', name: 'Clothing (per person)', order: 4, items: [
+      { id: 'cl1', name: 'Cycling jerseys (×3)',      weight: '0.4 kg', status: 'owned', notes: 'Merino wool preferred' },
+      { id: 'cl2', name: 'Bib shorts (×2)',           weight: '0.3 kg', status: 'owned', notes: 'Padded' },
+      { id: 'cl3', name: 'Rain jacket',               weight: '0.4 kg', status: 'owned', notes: 'Lightweight packable' },
+      { id: 'cl4', name: 'Thermal base layers',       weight: '0.3 kg', status: 'owned', notes: 'For cold mornings' },
+      { id: 'cl5', name: 'Casual clothes (×2 sets)',  weight: '0.8 kg', status: 'owned', notes: 'Off-bike wear' },
+      { id: 'cl6', name: 'Cycling shoes (each)',      weight: '0.6 kg', status: 'owned', notes: 'SPD compatible' },
+      { id: 'cl7', name: 'Sandals/flip-flops',        weight: '0.3 kg', status: 'owned', notes: 'Camp & casual' },
+    ]},
+    { id: 'safety-health', icon: '🩺', name: 'Safety & Health', order: 5, items: [
+      { id: 'sh1', name: 'Helmets (each)',              weight: '0.3 kg', status: 'owned',  notes: 'MIPS rated' },
+      { id: 'sh2', name: 'Lights front + rear (each)', weight: '0.2 kg', status: 'owned',  notes: 'Rechargeable' },
+      { id: 'sh3', name: 'High-vis vest',               weight: '0.1 kg', status: 'needed', notes: 'Some countries require by law' },
+      { id: 'sh4', name: 'First aid kit',               weight: '0.4 kg', status: 'needed', notes: 'Compact travel kit' },
+      { id: 'sh5', name: 'Sun cream + lip balm',        weight: '0.2 kg', status: 'owned',  notes: 'SPF 50+' },
+      { id: 'sh6', name: 'Travel insurance docs',       weight: '—',       status: 'needed', notes: 'Covering bike touring' },
+    ]},
+  ];
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+  // ── Firestore helpers ─────────────────────────────────────
+  async function ensureFirestore() {
+    if (_fsLoaded) return;
+    await window.TomikaBikes.ensureFirebaseAuth();
+    await new Promise((resolve, reject) => {
+      const ver = '10.12.2';
+      const src = 'https://www.gstatic.com/firebasejs/' + ver + '/firebase-firestore-compat.js';
+      if ([...document.scripts].some(s => s.getAttribute('src') === src)) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    _fsLoaded = true;
+  }
+
+  async function fetchFromFirestore() {
+    const snap = await firebase.firestore().collection(GEAR_COLLECTION).orderBy('order').get();
+    if (snap.empty) return null;
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  async function saveToFirestore(data) {
+    const db    = firebase.firestore();
+    const batch = db.batch();
+    const existing = await db.collection(GEAR_COLLECTION).get();
+    existing.docs.forEach(doc => batch.delete(doc.ref));
+    data.forEach((cat, idx) => {
+      batch.set(db.collection(GEAR_COLLECTION).doc(cat.id),
+        { icon: cat.icon, name: cat.name, order: idx, items: cat.items });
+    });
+    await batch.commit();
+  }
+
+  // ── Rendering ─────────────────────────────────────────────
+  function statusTag(status, editable) {
+    if (editable) {
+      return '<select class="gear-status-select" data-field="status">' +
+        ['owned', 'needed', 'optional'].map(v =>
+          '<option value="' + v + '"' + (status === v ? ' selected' : '') + '>' +
+          v.charAt(0).toUpperCase() + v.slice(1) + '</option>'
+        ).join('') + '</select>';
+    }
+    const labels = { owned: 'Owned', needed: 'Needed', optional: 'Optional' };
+    return '<span class="gear-tag ' + status + '">' + (labels[status] || status) + '</span>';
+  }
+
+  function renderGear(data, editMode) {
+    const content = document.getElementById('gearContent');
+    if (!content) return;
+    let html = '';
+    data.forEach(cat => {
+      const cid = cat.id;
+      html += '<div class="gear-category"' + (editMode ? ' data-editing="1"' : '') + ' data-cat-id="' + cid + '">';
+      html += '<div class="gear-category-header">';
+      html += '<span class="gear-category-icon"' + (editMode ? ' contenteditable="true" data-field="icon"' : '') + '>' + cat.icon + '</span>';
+      html += '<h3' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + cat.name + '</h3>';
+      if (editMode) html += '<button class="gear-cat-delete" onclick="GearManager.deleteCategory(\'' + cid + '\')" title="Remove category">✕ Remove</button>';
+      html += '</div>';
+      html += '<table class="gear-table"><thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th>' + (editMode ? '<th></th>' : '') + '</tr></thead><tbody>';
+      cat.items.forEach(item => {
+        const iid = item.id;
+        html += '<tr data-item-id="' + iid + '">';
+        html += '<td' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + item.name + '</td>';
+        html += '<td class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
+        html += '<td>' + statusTag(item.status, editMode) + '</td>';
+        html += '<td class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
+        if (editMode) html += '<td><button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody>';
+      if (editMode) {
+        html += '<tfoot><tr><td colspan="5"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
+      }
+      html += '</table></div>';
+    });
+    if (editMode) {
+      html += '<button class="gear-add-cat-btn" onclick="GearManager.addCategory()">＋ Add category</button>';
+    }
+    content.innerHTML = html;
+  }
+
+  function collectFromDOM() {
+    const cats = [];
+    document.querySelectorAll('#gearContent .gear-category').forEach(catEl => {
+      const catId  = catEl.dataset.catId;
+      const header = catEl.querySelector('.gear-category-header');
+      const icon   = (header.querySelector('[data-field="icon"]') || {}).textContent || '';
+      const name   = (header.querySelector('[data-field="name"]') || {}).textContent || '';
+      const items  = [];
+      catEl.querySelectorAll('tbody tr').forEach(row => {
+        const nameEl   = row.querySelector('[data-field="name"]');
+        const weightEl = row.querySelector('[data-field="weight"]');
+        const statusEl = row.querySelector('[data-field="status"]');
+        const notesEl  = row.querySelector('[data-field="notes"]');
+        if (!nameEl) return;
+        items.push({
+          id:     row.dataset.itemId || uid(),
+          name:   nameEl.textContent.trim(),
+          weight: weightEl ? weightEl.textContent.trim() : '',
+          status: statusEl ? statusEl.value : 'owned',
+          notes:  notesEl  ? notesEl.textContent.trim()  : '',
+        });
+      });
+      cats.push({ id: catId, icon: icon.trim(), name: name.trim(), items });
+    });
+    return cats;
+  }
+
+  // ── Public API (called by onclick in generated HTML) ──────
+  window.GearManager = {
+    deleteCategory(catId) {
+      _gearData = collectFromDOM();
+      _gearData = _gearData.filter(c => c.id !== catId);
+      renderGear(_gearData, true);
+    },
+    deleteItem(catId, itemId) {
+      _gearData = collectFromDOM();
+      const cat = _gearData.find(c => c.id === catId);
+      if (cat) cat.items = cat.items.filter(i => i.id !== itemId);
+      renderGear(_gearData, true);
+    },
+    addItem(catId) {
+      _gearData = collectFromDOM();
+      const cat = _gearData.find(c => c.id === catId);
+      if (cat) cat.items.push({ id: uid(), name: 'New item', weight: '0.0 kg', status: 'needed', notes: '' });
+      renderGear(_gearData, true);
+    },
+    addCategory() {
+      _gearData = collectFromDOM();
+      _gearData.push({ id: uid(), icon: '📦', name: 'New Category', order: _gearData.length, items: [] });
+      renderGear(_gearData, true);
+    },
+  };
+
+  // ── Edit mode toggle ──────────────────────────────────────
+  function setEditMode(on) {
+    _editMode = on;
+    document.getElementById('gearEditBtn').style.display   = on ? 'none' : '';
+    document.getElementById('gearSaveBtn').style.display   = on ? '' : 'none';
+    document.getElementById('gearCancelBtn').style.display = on ? '' : 'none';
+    renderGear(_gearData, on);
+  }
+
+  document.getElementById('gearEditBtn').addEventListener('click', () => {
+    _origData = deepClone(_gearData);
+    setEditMode(true);
+  });
+
+  document.getElementById('gearSaveBtn').addEventListener('click', async () => {
+    _gearData = collectFromDOM();
+    const btn = document.getElementById('gearSaveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      await ensureFirestore();
+      await saveToFirestore(_gearData);
+      _origData = null;
+      setEditMode(false);
+      window.TomikaBikes.showToast('Gear list saved!', 'success');
+    } catch (e) {
+      console.error('Gear save failed:', e);
+      window.TomikaBikes.showToast('Save failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Save';
+    }
+  });
+
+  document.getElementById('gearCancelBtn').addEventListener('click', () => {
+    if (_origData) { _gearData = _origData; _origData = null; }
+    setEditMode(false);
+  });
+
+  // ── Watch auth state to show/hide admin bar ───────────────
+  function watchAdminState() {
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+      setTimeout(watchAdminState, 400);
+      return;
+    }
+    firebase.auth().onAuthStateChanged(user => {
+      const adminEmail = (typeof ADMIN_EMAIL !== 'undefined') ? ADMIN_EMAIL : null;
+      _isAdmin = !!(user && adminEmail && user.email === adminEmail);
+      document.getElementById('gearAdminBar').style.display = _isAdmin ? 'flex' : 'none';
+      if (!_isAdmin && _editMode) setEditMode(false);
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  async function init() {
+    try {
+      await window.TomikaBikes.ensureFirebaseAuth();
+      await ensureFirestore();
+      const data = await fetchFromFirestore();
+      _gearData = data || GEAR_DEFAULT;
+      if (!data) await saveToFirestore(_gearData); // seed Firestore on first visit
+    } catch (e) {
+      console.warn('Firestore unavailable, using built-in gear data:', e);
+      _gearData = GEAR_DEFAULT;
+    }
+    renderGear(_gearData, false);
+    watchAdminState();
+  }
+
+  init();
+})();
 </script>
 </body>
 </html>
