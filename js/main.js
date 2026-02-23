@@ -105,7 +105,14 @@ if (authOverlay) {
       googleBtn.disabled = true;
       googleBtn.textContent = 'Signing in…';
       ensureFirebaseAuth()
-        .then(() => firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()))
+        .then(() => {
+          const p = new firebase.auth.GoogleAuthProvider();
+          // Mobile browsers block popups; use redirect flow instead
+          if (/Mobi|Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            return firebase.auth().signInWithRedirect(p);
+          }
+          return firebase.auth().signInWithPopup(p);
+        })
         .catch(err => {
           console.error('Sign-in error:', err);
           showToast('Sign-in failed: ' + err.message, 'error');
@@ -148,6 +155,13 @@ function ensureFirebaseAuth() {
       if (!_authListenerSet) {
         _authListenerSet = true;
         firebase.auth().onAuthStateChanged(_onAuthStateChanged);
+        // Handle errors that may have occurred during a signInWithRedirect flow
+        firebase.auth().getRedirectResult().catch(err => {
+          if (err.code && err.code !== 'auth/no-current-user') {
+            console.error('Redirect sign-in error:', err);
+            if (typeof showToast === 'function') showToast('Sign-in failed: ' + err.message, 'error');
+          }
+        });
       }
     });
 }

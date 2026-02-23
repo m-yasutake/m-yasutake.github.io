@@ -1282,15 +1282,19 @@
       .then(snapshot => {
         snapshot.forEach(doc => {
           if (loadedFirebaseIds.has(doc.id)) return;
-          loadedFirebaseIds.add(doc.id);
           const data = doc.data(); const meta = data.metadata||{};
-          if (data.gpxContent) { addRoute(data.gpxContent, data.fileName, doc.id, meta); }
-          else {
+          if (data.gpxContent) {
+            loadedFirebaseIds.add(doc.id);
+            addRoute(data.gpxContent, data.fileName, doc.id, meta);
+          } else if (storage) {
+            loadedFirebaseIds.add(doc.id);
             storage.ref(data.storagePath).getDownloadURL()
               .then(url => fetch(url)).then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
               .then(gpxText => { addRoute(gpxText, data.fileName, doc.id, meta); doc.ref.update({ gpxContent: gpxText }).catch(() => {}); })
               .catch(err => console.error('Error loading route ' + data.fileName + ':', err));
           }
+          // If gpxContent absent and storage not ready, skip without marking loaded
+          // so a later call (after storage initialises) can retry these routes.
         });
         markLoaded('routes');
       })
