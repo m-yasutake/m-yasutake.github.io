@@ -21,6 +21,9 @@ const admin = require('firebase-admin');
 const { gpx: gpxToGeoJSON } = require('@tmcw/togeojson');
 const { DOMParser } = require('@xmldom/xmldom');
 
+// Must match ROUTE_COLORS in planning.html exactly
+const ROUTE_COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a29bfe','#fd79a8','#00b894','#e17055','#0984e3','#6c5ce7','#fdcb6e'];
+
 // ── Credentials ───────────────────────────────────────────────────────────────
 let serviceAccount;
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -56,7 +59,24 @@ async function main() {
   console.log('Working directory:', tmpDir);
 
   try {
-    // 1. List all GPX files under the gpx/ prefix
+    // 1. Fetch Firestore route order to assign colors matching planning.html
+    //    Routes are loaded orderBy('uploadedAt', 'desc') and colors assigned by index.
+    console.log('Fetching route order from Firestore...');
+    const db = admin.firestore();
+    const snapshot = await db.collection('routes').orderBy('uploadedAt', 'desc').get();
+    // Build map: storagePath (and fileName fallback) → color
+    const colorMap = {};
+    let colorIdx = 0;
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
+      colorIdx++;
+      if (data.storagePath) colorMap[data.storagePath] = { color, name: (data.metadata && data.metadata.name) || data.fileName };
+      if (data.fileName)    colorMap[data.fileName]    = { color, name: (data.metadata && data.metadata.name) || data.fileName };
+    });
+    console.log(`Loaded ${colorIdx} route(s) from Firestore.`);
+
+    // 2. List all GPX files under the gpx/ prefix
     console.log('Listing GPX files in Firebase Storage...');
     const [files] = await bucket.getFiles({ prefix: 'gpx/' });
     const gpxFiles = files.filter(f => f.name.toLowerCase().endsWith('.gpx'));
@@ -67,7 +87,7 @@ async function main() {
       return;
     }
 
-    // 2. Download each GPX file and convert to GeoJSON LineString features
+    // 3. Download each GPX file and convert to GeoJSON LineString features
     const parser = new DOMParser();
     const features = [];
 
@@ -78,9 +98,16 @@ async function main() {
         const xmlStr = content.toString('utf8');
         const doc = parser.parseFromString(xmlStr, 'application/xml');
         const geojson = gpxToGeoJSON(doc);
+        const fileName = path.basename(file.name);
+        // Look up color by storagePath first, then by fileName
+        const meta = colorMap[file.name] || colorMap[fileName] || {};
+        const featureColor = meta.color || '#2A9D8F';
+        const featureName  = meta.name  || fileName.replace(/\.gpx$/i, '');
         geojson.features.forEach(feat => {
           feat.properties = feat.properties || {};
-          feat.properties.filename = path.basename(file.name);
+          feat.properties.filename = fileName;
+          feat.properties.color    = featureColor;
+          feat.properties.name     = featureName;
           features.push(feat);
         });
       } catch (err) {
@@ -95,12 +122,12 @@ async function main() {
       return;
     }
 
-    // 3. Write combined GeoJSON to a temp file
+    // 4. Write combined GeoJSON to a temp file
     const geojsonPath = path.join(tmpDir, 'routes.geojson');
     fs.writeFileSync(geojsonPath, JSON.stringify({ type: 'FeatureCollection', features }));
     console.log('Wrote combined GeoJSON to:', geojsonPath);
 
-    // 4. Run tippecanoe to produce routes.pmtiles
+    // 5. Run tippecanoe to produce routes.pmtiles
     //    -zg              auto-select max zoom based on data density
     //    -Z2              minimum zoom level 2
     //    --drop-densest-as-needed  thin points at lower zooms to keep tiles small
@@ -124,7 +151,7 @@ async function main() {
     execSync(tippecanoeCmd, { stdio: 'inherit' });
     console.log('Generated routes.pmtiles at:', outputPath);
 
-    // 5. Upload routes.pmtiles to Firebase Storage at tiles/routes.pmtiles
+    // 6. Upload routes.pmtiles to Firebase Storage at tiles/routes.pmtiles
     console.log('Uploading routes.pmtiles to Firebase Storage...');
     await bucket.upload(outputPath, {
       destination: 'tiles/routes.pmtiles',
@@ -136,7 +163,7 @@ async function main() {
     console.log('Successfully uploaded tiles/routes.pmtiles.');
 
   } finally {
-    // 6. Clean up temp directory
+    // 7. Clean up temp directory
     fs.rmSync(tmpDir, { recursive: true, force: true });
     console.log('Cleaned up temp directory.');
   }

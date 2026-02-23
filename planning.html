@@ -954,16 +954,50 @@
               });
             }
           }
-          return _origFetch.apply(window, arguments);
+          // Add cache: 'no-store' to prevent ERR_CACHE_OPERATION_NOT_SUPPORTED
+          // which occurs when the browser tries to cache Range responses (used by PMTiles)
+          const opts = Object.assign({}, options, { cache: 'no-store' });
+          return _origFetch.call(window, resource, opts);
         }
         window.fetch = pmtilesFetch;
         const layer = L.vectorGrid.protobuf('pmtiles://routes/{z}/{x}/{y}', {
           vectorTileLayerStyles: {
-            routes: { weight: 2, color: '#2A9D8F', opacity: 0.8, fill: false }
+            routes: function(properties) {
+              return {
+                weight: 3,
+                color: properties.color || '#2A9D8F',
+                opacity: 0.85,
+                fill: false
+              };
+            }
           },
-          interactive: false,
+          interactive: true,
+          getFeatureId: function(f) { return f.properties.name || f.properties.filename; },
           maxNativeZoom: header.maxZoom || 14,
           minNativeZoom: header.minZoom || 2
+        });
+        layer.on('click', function(e) {
+          const props = e.layer.properties;
+          if (!props) return;
+          const name = props.name || props.filename || 'Route';
+          L.popup()
+            .setLatLng(e.latlng)
+            .setContent(
+              '<div style="min-width:160px">' +
+              '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + (props.color || '#2A9D8F') + ';margin-right:6px;vertical-align:middle"></span>' +
+              '<strong>' + name + '</strong>' +
+              '<br><span style="color:#888;font-size:0.8em;font-style:italic">Toggle in route list for full details</span>' +
+              '</div>'
+            )
+            .openOn(map);
+        });
+        layer.on('mouseover', function(e) {
+          const props = e.layer.properties || {};
+          if (e.layer.setStyle) e.layer.setStyle({ weight: 5, color: props.color || '#2A9D8F', opacity: 1 });
+        });
+        layer.on('mouseout', function(e) {
+          const props = e.layer.properties || {};
+          if (e.layer.setStyle) e.layer.setStyle({ weight: 3, color: props.color || '#2A9D8F', opacity: 0.85 });
         });
         layer.on('remove', function() { window.fetch = _origFetch; });
         layer.on('add', function() { window.fetch = pmtilesFetch; });
