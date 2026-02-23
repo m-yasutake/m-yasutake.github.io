@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bikes – Private journal. Sign in to read and write entries." />
-  <title>Journal – Tomika Bikes</title>
+  <meta name="description" content="Tomika Bike – Private journal. Sign in to read and write entries." />
+  <title>Journal – Tomika Bike</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -74,7 +74,7 @@
 
 <div class="page-loader">
   <div class="loader-inner">
-    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
     <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
   </div>
 </div>
@@ -82,14 +82,15 @@
 <!-- Navigation -->
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
       <li><a href="journal.html">Journal</a></li>
-      <li><a href="admin.html">Admin</a></li>
+      <li><a href="gear.html">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
     <div class="nav-actions">
       <button class="nav-login-btn" data-auth>
@@ -107,7 +108,8 @@
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
   <a href="journal.html">📔 Journal</a>
-  <a href="admin.html">⚙️ Admin</a>
+  <a href="gear.html">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
 </div>
 
@@ -228,15 +230,15 @@
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <div class="footer-logo">🚴 tomika<span class="accent">.bikes</span></div>
+        <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
         <p>A cycling adventure blog.</p>
       </div>
       <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="planning.html">Map</a><a href="blog.html">Blog</a><a href="photos.html">Photos</a></div>
-      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a><a href="admin.html">Admin</a></div>
+      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a></div>
       <div class="footer-col"><h4>Info</h4><a href="#">About</a><a href="#">Contact</a></div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 tomika.bikes</span>
+      <span>© 2026 tomika.bike</span>
       <span>Made with ❤️ and 🚴</span>
     </div>
   </div>

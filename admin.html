@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bikes – Admin dashboard. Manage posts, photos, and settings." />
-  <title>Admin – Tomika Bikes</title>
+  <meta name="description" content="Tomika Bike – Admin dashboard. Manage posts, photos, and settings." />
+  <title>Admin – Tomika Bike</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -522,7 +522,7 @@
 
 <div class="page-loader">
   <div class="loader-inner">
-    <div class="loader-logo">tomika<span class="accent">.bikes</span></div>
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
     <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
   </div>
 </div>
@@ -530,14 +530,15 @@
 <!-- Navigation -->
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span>tomika<span class="accent">.bikes</span></a>
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
       <li><a href="journal.html">Journal</a></li>
-      <li><a href="admin.html">Admin</a></li>
+      <li><a href="gear.html">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
     <div class="nav-actions">
       <button class="nav-login-btn" data-auth>
@@ -555,7 +556,8 @@
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
   <a href="journal.html">📔 Journal</a>
-  <a href="admin.html">⚙️ Admin</a>
+  <a href="gear.html">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
 </div>
 
@@ -581,7 +583,6 @@
     <h2>Admin Access Only</h2>
     <p>This panel is restricted to site admins. Sign in with your Google account to continue.</p>
     <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:1rem" data-auth>Sign In with Google</button>
-    <button class="btn btn-outline" style="width:100%;justify-content:center;color:var(--color-secondary);border-color:var(--color-secondary)" onclick="unlockAdmin()">👁️ Preview Demo Dashboard</button>
   </div>
 </div>
 
@@ -593,7 +594,7 @@
   <!-- Sidebar -->
   <div class="admin-sidebar">
     <div class="admin-sidebar-header">
-      <div class="footer-logo" style="font-size:1.1rem;margin-bottom:.25rem">🚴 tomika<span style="color:var(--color-accent)">.bikes</span></div>
+      <div class="footer-logo" style="font-size:1.1rem;margin-bottom:.25rem">🚴 tomika<span style="color:var(--color-accent)">.bike</span></div>
       <h3>Admin Panel</h3>
     </div>
     <nav class="admin-nav">
@@ -838,7 +839,7 @@
         <h3 style="margin-bottom:1.5rem">Site Settings</h3>
         <div class="form-group">
           <label>Site Name</label>
-          <input type="text" class="form-control" value="tomika.bikes" />
+          <input type="text" class="form-control" value="tomika.bike" />
         </div>
         <div class="form-group">
           <label>Site Tagline</label>
@@ -902,6 +903,7 @@
           <select id="roots-bulk-field"></select>
           <input type="text" id="roots-bulk-value" placeholder="New value...">
           <button class="roots-btn primary" id="roots-bulk-apply-btn">Apply</button>
+          <button class="roots-btn danger" id="roots-bulk-delete-btn">🗑 Delete Selected</button>
           <button class="roots-btn" id="roots-bulk-clear-btn">Clear Selection</button>
         </div>
 
@@ -968,12 +970,6 @@
 
 <script src="js/main.js"></script>
 <script>
-  function unlockAdmin() {
-    document.getElementById('adminGate').style.display = 'none';
-    document.getElementById('adminDashboard').style.display = 'grid';
-    TomikaBikes.showToast('Demo admin dashboard – sign in for full access', 'info');
-  }
-
   function showSection(name, linkEl) {
     // Hide all sections
     document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
@@ -986,16 +982,6 @@
       linkEl.classList.add('active');
     }
   }
-
-  // Attach auth unlock to sign-in buttons inside gate
-  document.querySelectorAll('[data-auth]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      // If on admin page, also show preview
-      if (document.getElementById('adminGate') && document.getElementById('adminGate').style.display !== 'none') {
-        unlockAdmin();
-      }
-    });
-  });
 </script>
 
 <script>
@@ -1076,7 +1062,9 @@
 
     const authBtn = document.getElementById('roots-admin-auth-btn');
 
-    // Lazy-load Auth SDK only when user clicks Sign In
+    // Eagerly load Auth SDK and check existing sign-in state
+    loadAuthSDK().then(() => { setupAuth(); }).catch(() => {});
+
     authBtn.addEventListener('click', () => {
       if (authLoaded && currentUser) {
         firebase.auth().signOut();
@@ -1675,6 +1663,73 @@
     return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // ── Delete selected documents ──────────────────────────
+  let _storageLoaded = false;
+
+  function loadStorageSDK() {
+    if (_storageLoaded) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js';
+      s.onload = () => { _storageLoaded = true; resolve(); };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  function deleteSelected() {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!confirm('Delete ' + count + ' selected record' + (count > 1 ? 's' : '') + ' from Firestore and Firebase Storage? This cannot be undone.')) return;
+
+    const deleteBtn = document.getElementById('roots-bulk-delete-btn');
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'Deleting...';
+
+    const idsToDelete = Array.from(selectedIds);
+    const docsToDelete = idsToDelete.map(id => allDocs.find(d => d.id === id)).filter(Boolean);
+
+    loadStorageSDK()
+      .then(() => {
+        const storage = firebase.storage();
+        const batch = db.batch();
+        const storageDeletes = [];
+
+        docsToDelete.forEach(doc => {
+          batch.delete(db.collection(currentCollection).doc(doc.id));
+          const sp = doc.data.storagePath;
+          if (sp) {
+            storageDeletes.push(storage.ref(sp).delete().catch(err => console.warn('Storage delete failed for', sp, ':', err)));
+          }
+        });
+
+        return batch.commit().then(() => Promise.all(storageDeletes));
+      })
+      .then(() => {
+        // Remove from local data
+        idsToDelete.forEach(id => {
+          const idx = allDocs.findIndex(d => d.id === id);
+          if (idx !== -1) allDocs.splice(idx, 1);
+          delete changes[id];
+        });
+        selectedIds.clear();
+        detectColumns();
+        populateGroupFilter();
+        applyFilters();
+        updateBulkBar();
+        updateSaveButtons();
+        deleteBtn.textContent = 'Deleted!';
+        document.getElementById('roots-table-status').textContent = allDocs.length + ' documents loaded';
+        setTimeout(() => { deleteBtn.textContent = '🗑 Delete Selected'; deleteBtn.disabled = false; }, 2000);
+      })
+      .catch(err => {
+        console.error('Delete error:', err);
+        alert('Delete failed: ' + err.message);
+        deleteBtn.textContent = '🗑 Delete Selected';
+        deleteBtn.disabled = false;
+      });
+  }
+
   // ── Event Binding ─────────────────────────────────────
   // Collection tabs
   document.querySelectorAll('.collection-tab').forEach(tab => {
@@ -1699,6 +1754,7 @@
 
   // Bulk edit
   document.getElementById('roots-bulk-apply-btn').addEventListener('click', applyBulkEdit);
+  document.getElementById('roots-bulk-delete-btn').addEventListener('click', deleteSelected);
   document.getElementById('roots-bulk-clear-btn').addEventListener('click', () => {
     selectedIds.clear();
     updateBulkBar();
