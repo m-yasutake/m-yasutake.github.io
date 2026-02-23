@@ -1434,10 +1434,26 @@
 
   // ── Packing checklist ───────────────────────────────────────
   function updatePackProgress() {
+    const items = document.querySelectorAll('.pack-check');
+    const checked = document.querySelectorAll('.pack-check.checked').length;
+    const el = document.getElementById('packProgress');
+    if (el) el.textContent = checked + ' of ' + items.length + ' items packed';
+  }
+  updatePackProgress();
+
   // ── Initialise ─────────────────────────────────────────────
   loadBundledRoutes();
   initFirebase();
 })();
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✓' : '';
+  const items = document.querySelectorAll('.pack-check');
+  const checked = document.querySelectorAll('.pack-check.checked').length;
+  const prog = document.getElementById('packProgress');
+  if (prog) prog.textContent = checked + ' of ' + items.length + ' items packed';
+}
 </script>
 </body>
 </html>
