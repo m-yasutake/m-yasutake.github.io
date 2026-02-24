@@ -59,20 +59,26 @@ async function main() {
   console.log('Working directory:', tmpDir);
 
   try {
-    // 1. Fetch Firestore route order to assign colors matching planning.html
-    //    Routes are loaded orderBy('uploadedAt', 'desc') and colors assigned by index.
+    // 1. Fetch ALL route documents from Firestore (same ordering as planning.html so
+    //    colors are assigned consistently).
     console.log('Fetching route order from Firestore...');
     const db = admin.firestore();
     const snapshot = await db.collection('routes').orderBy('uploadedAt', 'desc').get();
-    // Build map: storagePath (and fileName fallback) → color
+
+    // Build two structures:
+    //   colorMap       – storagePath / fileName → { color, name }  (for Storage-backed routes)
+    //   firestoreOnlyRoutes – docs that have gpxContent but no Storage file yet resolved
     const colorMap = {};
+    const firestoreRoutes = []; // all docs, in order
     let colorIdx = 0;
     snapshot.forEach(doc => {
       const data = doc.data();
       const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
       colorIdx++;
-      if (data.storagePath) colorMap[data.storagePath] = { color, name: (data.metadata && data.metadata.name) || data.fileName };
-      if (data.fileName)    colorMap[data.fileName]    = { color, name: (data.metadata && data.metadata.name) || data.fileName };
+      const meta = { color, name: (data.metadata && data.metadata.name) || data.fileName, gpxContent: data.gpxContent || null, storagePath: data.storagePath || null, fileName: data.fileName || null };
+      firestoreRoutes.push(meta);
+      if (data.storagePath) colorMap[data.storagePath] = meta;
+      if (data.fileName)    colorMap[data.fileName]    = meta;
     });
     console.log(`Loaded ${colorIdx} route(s) from Firestore.`);
 
@@ -80,42 +86,81 @@ async function main() {
     console.log('Listing GPX files in Firebase Storage...');
     const [files] = await bucket.getFiles({ prefix: 'gpx/' });
     const gpxFiles = files.filter(f => f.name.toLowerCase().endsWith('.gpx'));
-    console.log(`Found ${gpxFiles.length} GPX file(s).`);
+    console.log(`Found ${gpxFiles.length} GPX file(s) in Storage.`);
 
-    if (gpxFiles.length === 0) {
-      console.warn('No GPX files found. Exiting without generating tiles.');
+    // Identify Firestore docs whose Storage file is missing — we'll fall back to the
+    // gpxContent field that the browser caches inline after first load.
+    const storageFileNames = new Set(gpxFiles.map(f => f.name));
+    const firestoreOnlyRoutes = firestoreRoutes.filter(r => {
+      const inStorage = (r.storagePath && storageFileNames.has(r.storagePath)) ||
+                        (!r.storagePath && false);
+      return !inStorage && r.gpxContent;
+    });
+    if (firestoreOnlyRoutes.length > 0) {
+      console.warn(`  ⚠ ${firestoreOnlyRoutes.length} route(s) have no Storage file — will use inline gpxContent from Firestore:`);
+      firestoreOnlyRoutes.forEach(r => console.warn(`      • ${r.fileName || '(unknown)'} (storagePath: ${r.storagePath || 'null'})`));
+    }
+    const missingAndNoContent = firestoreRoutes.filter(r => {
+      const inStorage = r.storagePath && storageFileNames.has(r.storagePath);
+      return !inStorage && !r.gpxContent;
+    });
+    if (missingAndNoContent.length > 0) {
+      console.warn(`  ⚠ ${missingAndNoContent.length} route(s) have no Storage file AND no cached gpxContent — these will be MISSING from tiles:`);
+      missingAndNoContent.forEach(r => console.warn(`      • ${r.fileName || '(unknown)'} (storagePath: ${r.storagePath || 'null'})`));
+    }
+
+    if (gpxFiles.length === 0 && firestoreOnlyRoutes.length === 0) {
+      console.warn('No GPX files found anywhere. Exiting without generating tiles.');
       return;
     }
 
-    // 3. Download each GPX file and convert to GeoJSON LineString features
+    // 3. Download each Storage GPX file and convert to GeoJSON LineString features
     const parser = new DOMParser();
     const features = [];
 
+    function gpxTextToFeatures(xmlStr, storagePath, fallbackFileName) {
+      const doc = parser.parseFromString(xmlStr, 'application/xml');
+      const geojson = gpxToGeoJSON(doc);
+      const fileName = path.basename(storagePath || fallbackFileName || 'unknown.gpx');
+      const meta = colorMap[storagePath] || colorMap[fileName] || {};
+      const featureColor = meta.color || '#2A9D8F';
+      const featureName  = meta.name  || fileName.replace(/\.gpx$/i, '');
+      const produced = [];
+      geojson.features.forEach(feat => {
+        feat.properties = feat.properties || {};
+        feat.properties.filename = fileName;
+        feat.properties.color    = featureColor;
+        feat.properties.name     = featureName;
+        produced.push(feat);
+      });
+      if (produced.length === 0) {
+        console.warn(`  ⚠ Zero features produced from ${storagePath || fallbackFileName} — file may contain only waypoints (no <trk> or <rte> elements).`);
+      }
+      return produced;
+    }
+
     for (const file of gpxFiles) {
-      console.log(`  Processing: ${file.name}`);
+      console.log(`  Processing Storage file: ${file.name}`);
       try {
         const [content] = await file.download();
         const xmlStr = content.toString('utf8');
-        const doc = parser.parseFromString(xmlStr, 'application/xml');
-        const geojson = gpxToGeoJSON(doc);
-        const fileName = path.basename(file.name);
-        // Look up color by storagePath first, then by fileName
-        const meta = colorMap[file.name] || colorMap[fileName] || {};
-        const featureColor = meta.color || '#2A9D8F';
-        const featureName  = meta.name  || fileName.replace(/\.gpx$/i, '');
-        geojson.features.forEach(feat => {
-          feat.properties = feat.properties || {};
-          feat.properties.filename = fileName;
-          feat.properties.color    = featureColor;
-          feat.properties.name     = featureName;
-          features.push(feat);
-        });
+        features.push(...gpxTextToFeatures(xmlStr, file.name, null));
       } catch (err) {
         console.warn(`  Warning: Failed to process ${file.name}:`, err.message);
       }
     }
 
-    console.log(`Converted ${features.length} GeoJSON feature(s).`);
+    // 3b. Process Firestore-only routes (Storage file missing, gpxContent present)
+    for (const r of firestoreOnlyRoutes) {
+      console.log(`  Processing Firestore-cached GPX: ${r.fileName || '(unknown)'}`);
+      try {
+        features.push(...gpxTextToFeatures(r.gpxContent, r.storagePath, r.fileName));
+      } catch (err) {
+        console.warn(`  Warning: Failed to process inline gpxContent for ${r.fileName || '(unknown)'}:`, err.message);
+      }
+    }
+
+    console.log(`Converted ${features.length} GeoJSON feature(s) from ${gpxFiles.length + firestoreOnlyRoutes.length} source(s).`);
 
     if (features.length === 0) {
       console.warn('No valid GeoJSON features produced. Exiting without generating tiles.');
