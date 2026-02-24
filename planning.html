@@ -639,10 +639,15 @@
     }
   };
 
+  // Cache one L.divIcon instance per point type (avoids re-creating per marker)
+  const _pointIconCache = {};
   function getPointIcon(type) {
     const key = normalizePointType(type);
-    const iconDef = POINT_TYPE_ICONS[key];
-    return L.divIcon({ html: iconDef.svg, className: 'point-type-icon', iconSize: POINT_ICON_SIZE, iconAnchor: POINT_ICON_ANCHOR, popupAnchor: POINT_POPUP_ANCHOR });
+    if (_pointIconCache[key]) return _pointIconCache[key];
+    const iconDef = POINT_TYPE_ICONS[key] || POINT_TYPE_ICONS['_default'];
+    const icon = L.divIcon({ html: iconDef.svg, className: 'point-type-icon', iconSize: POINT_ICON_SIZE, iconAnchor: POINT_ICON_ANCHOR, popupAnchor: POINT_POPUP_ANCHOR });
+    _pointIconCache[key] = icon;
+    return icon;
   }
 
   function normalizePointType(type) {
@@ -1269,17 +1274,20 @@
 
   function createPointMarker(pointData) {
     const pointType = getPointType(pointData);
-    const pointUrl = resolvePointUrl(pointData, pointData.metadata);
     const marker = L.marker([pointData.lat, pointData.lon], { icon: getPointIcon(pointType) });
-    let popupContent = '<b>' + escapeHtml(pointData.name) + '</b>';
-    if (pointData.metadata) {
-      const desc = pointData.metadata.description||pointData.metadata.Description||'';
-      if (desc) popupContent += '<br><span style="color:#6c757d;font-size:0.92em;">' + escapeHtml(desc) + '</span>';
-      const notes = pointData.metadata.notes||pointData.metadata.Notes||'';
-      if (notes) popupContent += '<br><span style="color:#6c757d;font-size:0.88em;font-style:italic;">' + escapeHtml(notes) + '</span>';
-    }
-    if (pointUrl) popupContent += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';
-    marker.bindPopup(popupContent);
+    // Lazy popup: content is only built when the marker is actually clicked
+    marker.bindPopup(function() {
+      const pointUrl = resolvePointUrl(pointData, pointData.metadata);
+      let content = '<b>' + escapeHtml(pointData.name) + '</b>';
+      if (pointData.metadata) {
+        const desc = pointData.metadata.description||pointData.metadata.Description||'';
+        if (desc) content += '<br><span style="color:#6c757d;font-size:0.92em;">' + escapeHtml(desc) + '</span>';
+        const notes = pointData.metadata.notes||pointData.metadata.Notes||'';
+        if (notes) content += '<br><span style="color:#6c757d;font-size:0.88em;font-style:italic;">' + escapeHtml(notes) + '</span>';
+      }
+      if (pointUrl) content += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';
+      return content;
+    });
     return marker;
   }
 
@@ -1290,15 +1298,35 @@
     scheduleRenderPointToggles();
   }
 
+  // Process markers in idle-time chunks so the main thread stays responsive
+  const _MARKER_CHUNK = 250;
   function addPointsBatch(pointDataArray) {
-    const markers = [];
-    pointDataArray.forEach(({ pointData, fileName, firebaseDocId }) => {
-      const marker = createPointMarker(pointData);
-      markers.push(marker);
-      points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
-    });
-    if (markers.length > 0) markerClusterGroup.addLayers(markers);
-    renderPointToggles();
+    let offset = 0;
+    function processChunk(deadline) {
+      while (offset < pointDataArray.length) {
+        // Yield if the browser needs the frame (skip on first entry so at least one chunk always runs)
+        if (typeof deadline !== 'undefined' && offset > 0 && deadline.timeRemaining() <= 1) break;
+        const end = Math.min(offset + _MARKER_CHUNK, pointDataArray.length);
+        const markers = [];
+        for (let i = offset; i < end; i++) {
+          const { pointData, fileName, firebaseDocId } = pointDataArray[i];
+          const marker = createPointMarker(pointData);
+          markers.push(marker);
+          points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
+        }
+        markerClusterGroup.addLayers(markers);
+        offset = end;
+      }
+      if (offset < pointDataArray.length) {
+        // More chunks remain — schedule during next idle period
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(processChunk, { timeout: 2000 });
+        else setTimeout(processChunk, 0);
+      } else {
+        scheduleRenderPointToggles();
+      }
+    }
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(processChunk, { timeout: 2000 });
+    else processChunk();
   }
 
   function addPointsFromCSV(csvText, fileName, docIdMap) {
@@ -1540,8 +1568,8 @@
       .catch(err => { console.error('Firestore read error:', err); markLoaded('routes'); });
   }
 
-  // Change 2: Load points in batches of 500 to keep the UI responsive.
-  const POINTS_BATCH_SIZE = 500;
+  // Load points in pages of 1000 – fewer Firestore round-trips vs 500.
+  const POINTS_BATCH_SIZE = 1000;
   function loadFirebasePoints(lastDoc) {
     if (!firebaseReady) return;
     let query = db.collection('points').orderBy('uploadedAt', 'desc').limit(POINTS_BATCH_SIZE);
