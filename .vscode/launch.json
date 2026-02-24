@@ -2,24 +2,28 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Open index.html in Chrome",
+            "name": "Open index.html (Local Server)",
             "type": "chrome",
             "request": "launch",
-            "file": "${workspaceFolder}/index.html",
-            "runtimeArgs": ["--allow-file-access-from-files"]
+            "url": "http://localhost:8080/index.html",
+            "webRoot": "${workspaceFolder}",
+            "preLaunchTask": "Start Local Server"
         },
         {
-            "name": "Open planning.html in Chrome",
+            "name": "Open planning.html (Local Server)",
             "type": "chrome",
             "request": "launch",
-            "file": "${workspaceFolder}/planning.html",
-            "runtimeArgs": ["--allow-file-access-from-files"]
+            "url": "http://localhost:8080/planning.html",
+            "webRoot": "${workspaceFolder}",
+            "preLaunchTask": "Start Local Server"
         },
         {
-            "name": "Open index.html in Edge",
+            "name": "Open index.html in Edge (Local Server)",
             "type": "msedge",
             "request": "launch",
-            "file": "${workspaceFolder}/index.html"
+            "url": "http://localhost:8080/index.html",
+            "webRoot": "${workspaceFolder}",
+            "preLaunchTask": "Start Local Server"
         }
     ]
 }

@@ -1,9 +1,10 @@
 {
-  "name": "generate-pmtiles",
+  "name": "map-scripts",
   "version": "1.0.0",
-  "description": "Generate PMTiles from Firebase Storage GPX files",
-  "main": "generate-pmtiles.js",
+  "description": "Scripts for generating map assets from Firebase data",
   "scripts": {
+    "tiles": "node generate-pmtiles.js",
+    "points": "node generate-points-snapshot.js",
     "start": "node generate-pmtiles.js"
   },
   "engines": {

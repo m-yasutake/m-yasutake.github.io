@@ -1,0 +1,54 @@
+# .github/workflows/generate-points-snapshot.yml
+#
+# Workflow: Generate Points Snapshot
+#
+# Exports all point documents from the Firestore 'points' collection to a
+# single JSON file (points/points.json) in Firebase Storage. The planning.html
+# map page fetches this file on load instead of paginating through Firestore,
+# replacing 10+ sequential network round-trips with a single cached HTTP
+# request and dramatically reducing initial page load time.
+#
+# Required secrets (Settings > Secrets and variables > Actions):
+#   FIREBASE_SERVICE_ACCOUNT: JSON string of a Firebase service account key
+#     with the following permissions on the roots-eddf5 project:
+#       - Cloud Datastore User (Firestore read access)
+#       - Storage Object Admin (Firebase Storage write access)
+#
+# Triggers:
+#   - Manual: Actions tab > "Generate Points Snapshot" > Run workflow
+#   - Automatic: Send a repository_dispatch event with type "regenerate-points"
+#
+# Run this workflow whenever you add, edit, or delete points in Firebase so
+# the snapshot stays in sync with Firestore.
+
+name: Generate Points Snapshot
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [regenerate-points]
+
+jobs:
+  generate-snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install script dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Generate and upload points snapshot
+        working-directory: scripts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node generate-points-snapshot.js
