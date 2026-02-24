@@ -340,10 +340,6 @@
 
       <!-- Left: Map -->
       <div>
-        <p style="color:var(--color-gray-600);margin-bottom:1rem;font-size:.9rem">
-          Use <strong>Add Route(s)</strong> to upload GPX files and visualise bike routes, or <strong>Add Point(s)</strong>
-          to add GPS waypoints from a CSV file. Toggle point types on/off with the filters below.
-        </p>
 
         <!-- Map action buttons and filters -->
         <div class="roots-controls">
@@ -565,6 +561,38 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script>
+// PMTiles protocol interceptor – installed BEFORE VectorGrid.bundled.js so that
+// the bundle captures our patched `fetch` rather than the native one.
+// tile requests matching pmtiles://<key>/<z>/<x>/<y> are served from the
+// PMTiles instance registered in window.__pmtilesInstances[key].
+(function () {
+  var _orig = window.fetch;
+  window.__pmtilesInstances = {};
+  window.fetch = function pmtilesFetch(resource, options) {
+    var u = typeof resource === 'string' ? resource
+          : (resource && typeof resource === 'object' ? resource.url : '');
+    if (u && u.startsWith('pmtiles://')) {
+      var m = u.match(/^pmtiles:\/\/([^/]+)\/(-?\d+)\/(-?\d+)\/(-?\d+)$/);
+      if (m) {
+        var p = window.__pmtilesInstances[m[1]];
+        if (p) {
+          var z = +m[2], x = +m[3], y = +m[4];
+          return p.getZxy(z, x, y).then(function (result) {
+            if (!result || !result.data) return new Response(new ArrayBuffer(0), { status: 200 });
+            return new Response(result.data, { status: 200 });
+          });
+        }
+      }
+      return Promise.reject(new TypeError('pmtiles:// – no instance registered for: ' + u));
+    }
+    // Pass all other requests through; add cache:no-store to avoid
+    // ERR_CACHE_OPERATION_NOT_SUPPORTED on range responses used by PMTiles.
+    var opts = Object.assign({}, options, { cache: 'no-store' });
+    return _orig.call(window, resource, opts);
+  };
+}());
+</script>
 <script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
 
 <script src="js/main.js"></script>
@@ -936,30 +964,9 @@
 
     function buildLayer(pmtilesUrl) {
       const p = new pmtiles.PMTiles(pmtilesUrl);
+      // Register instance so the early-installed fetch interceptor can serve tiles.
+      if (window.__pmtilesInstances) window.__pmtilesInstances['routes'] = p;
       return p.getHeader().then(function(header) {
-        // Intercept fetch for pmtiles:// tile requests from L.vectorGrid.protobuf.
-        // Only URLs starting with 'pmtiles://' are affected; all other requests pass through.
-        // The override is removed when the layer is taken off the map.
-        const _origFetch = window.fetch;
-        function pmtilesFetch(resource, options) {
-          const u = typeof resource === 'string' ? resource
-            : (resource && typeof resource === 'object' ? resource.url : '');
-          if (u && u.startsWith('pmtiles://')) {
-            const m = u.match(/\/(\d+)\/(\d+)\/(\d+)$/);
-            if (m) {
-              const z = parseInt(m[1], 10), x = parseInt(m[2], 10), y = parseInt(m[3], 10);
-              return p.getZxy(z, x, y).then(function(result) {
-                if (!result || !result.data) return new Response(new ArrayBuffer(0), { status: 200 });
-                return new Response(result.data, { status: 200 });
-              });
-            }
-          }
-          // Add cache: 'no-store' to prevent ERR_CACHE_OPERATION_NOT_SUPPORTED
-          // which occurs when the browser tries to cache Range responses (used by PMTiles)
-          const opts = Object.assign({}, options, { cache: 'no-store' });
-          return _origFetch.call(window, resource, opts);
-        }
-        window.fetch = pmtilesFetch;
         const layer = L.vectorGrid.protobuf('pmtiles://routes/{z}/{x}/{y}', {
           vectorTileLayerStyles: {
             routes: function(properties) {
@@ -999,8 +1006,6 @@
           const props = e.layer.properties || {};
           if (e.layer.setStyle) e.layer.setStyle({ weight: 3, color: props.color || '#2A9D8F', opacity: 0.85 });
         });
-        layer.on('remove', function() { window.fetch = _origFetch; });
-        layer.on('add', function() { window.fetch = pmtilesFetch; });
         return layer;
       });
     }
