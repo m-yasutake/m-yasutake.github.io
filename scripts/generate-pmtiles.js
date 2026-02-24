@@ -127,15 +127,68 @@ async function main() {
       const featureName  = meta.name  || fileName.replace(/\.gpx$/i, '');
       const produced = [];
       geojson.features.forEach(feat => {
+        // Only include line/multiline geometries — skip Point features (waypoints)
+        if (!feat.geometry) return;
+        if (feat.geometry.type !== 'LineString' && feat.geometry.type !== 'MultiLineString') return;
         feat.properties = feat.properties || {};
         feat.properties.filename = fileName;
         feat.properties.color    = featureColor;
         feat.properties.name     = featureName;
         produced.push(feat);
       });
+
       if (produced.length === 0) {
-        console.warn(`  ⚠ Zero features produced from ${storagePath || fallbackFileName} — file may contain only waypoints (no <trk> or <rte> elements).`);
+        // Diagnostic: log what element types ARE present in this file
+        const trkCount = (xmlStr.match(/<trk[\s>]/g) || []).length;
+        const rteCount = (xmlStr.match(/<rte[\s>]/g) || []).length;
+        const wptCount = (xmlStr.match(/<wpt[\s>]/g) || []).length;
+        const trkptCount = (xmlStr.match(/<trkpt[\s>]/g) || []).length;
+        const rteptCount = (xmlStr.match(/<rtept[\s>]/g) || []).length;
+        const allFeatCount = geojson.features.length;
+        const allFeatTypes = [...new Set(geojson.features.map(f => f.geometry && f.geometry.type))].join(', ');
+
+        console.warn(`  ⚠ Zero LINE features from ${storagePath || fallbackFileName}`);
+        console.warn(`      GPX elements: <trk>=${trkCount} <rte>=${rteCount} <wpt>=${wptCount} <trkpt>=${trkptCount} <rtept>=${rteptCount}`);
+        console.warn(`      togeojson produced ${allFeatCount} feature(s) of type(s): [${allFeatTypes || 'none'}]`);
+
+        // Fallback: if there are <rte>/<rtept> but togeojson gave us nothing useful,
+        // try rewriting <rte>/<rtept> → <trk>/<trkseg>/<trkpt> and re-parsing
+        if (rteptCount > 0 && trkptCount === 0) {
+          console.warn(`      → Attempting <rte>→<trk> rewrite fallback...`);
+          try {
+            const rewritten = xmlStr
+              .replace(/<rte>/g,        '<trk><trkseg>')
+              .replace(/<\/rte>/g,      '</trkseg></trk>')
+              .replace(/<rtept /g,      '<trkpt ')
+              .replace(/<\/rtept>/g,    '</trkpt>')
+              .replace(/<rtename>/g,    '<name>')
+              .replace(/<\/rtename>/g,  '</name>');
+            const doc2 = parser.parseFromString(rewritten, 'application/xml');
+            const geojson2 = gpxToGeoJSON(doc2);
+            geojson2.features.forEach(feat => {
+              if (!feat.geometry) return;
+              if (feat.geometry.type !== 'LineString' && feat.geometry.type !== 'MultiLineString') return;
+              feat.properties = feat.properties || {};
+              feat.properties.filename = fileName;
+              feat.properties.color    = featureColor;
+              feat.properties.name     = featureName;
+              produced.push(feat);
+            });
+            if (produced.length > 0) {
+              console.warn(`      → Fallback succeeded: produced ${produced.length} feature(s).`);
+            } else {
+              console.warn(`      → Fallback also produced 0 line features.`);
+            }
+          } catch (e) {
+            console.warn(`      → Fallback failed: ${e.message}`);
+          }
+        }
+
+        if (produced.length === 0) {
+          console.warn(`      → This route will be MISSING from tiles. Re-export as a GPX track to fix.`);
+        }
       }
+
       return produced;
     }
 
