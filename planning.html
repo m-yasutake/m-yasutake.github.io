@@ -1298,14 +1298,18 @@
     scheduleRenderPointToggles();
   }
 
-  // Process markers in idle-time chunks so the main thread stays responsive
-  const _MARKER_CHUNK = 250;
+  // Process markers in idle-time chunks so the main thread stays responsive.
+  // Use a smaller chunk size on mobile/touch devices to avoid long blocking calls.
+  const _isMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile/i.test(navigator.userAgent);
+  const _MARKER_CHUNK = _isMobile ? 50 : 250;
   function addPointsBatch(pointDataArray) {
     let offset = 0;
     function processChunk(deadline) {
       while (offset < pointDataArray.length) {
-        // Yield if the browser needs the frame (skip on first entry so at least one chunk always runs)
-        if (typeof deadline !== 'undefined' && offset > 0 && deadline.timeRemaining() <= 1) break;
+        // Always yield after each chunk when no deadline is available (e.g. iOS Safari,
+        // which does not support requestIdleCallback before iOS 16). When a real deadline
+        // IS provided keep processing as long as time remains.
+        if (offset > 0 && (typeof deadline === 'undefined' || deadline.timeRemaining() <= 1)) break;
         const end = Math.min(offset + _MARKER_CHUNK, pointDataArray.length);
         const markers = [];
         for (let i = offset; i < end; i++) {
@@ -1326,7 +1330,7 @@
       }
     }
     if (typeof requestIdleCallback === 'function') requestIdleCallback(processChunk, { timeout: 2000 });
-    else processChunk();
+    else setTimeout(processChunk, 0); // Always yield; never call synchronously (prevents iOS crash)
   }
 
   function addPointsFromCSV(csvText, fileName, docIdMap) {
