@@ -586,10 +586,10 @@
       }
       return Promise.reject(new TypeError('pmtiles:// – no instance registered for: ' + u));
     }
-    // Pass all other requests through; add cache:no-store to avoid
-    // ERR_CACHE_OPERATION_NOT_SUPPORTED on range responses used by PMTiles.
-    var opts = Object.assign({}, options, { cache: 'no-store' });
-    return _orig.call(window, resource, opts);
+    // Pass all other requests through unchanged.
+    // Note: we do NOT force cache:'no-store' globally because Safari on iOS
+    // rejects certain cross-origin requests (e.g. Firebase) with that option.
+    return _orig.call(window, resource, options);
   };
 }());
 </script>
@@ -1530,9 +1530,14 @@
       db = firebase.firestore();
       // Note: persistence caches all Firestore data to IndexedDB. With lazy-loading
       // (no gpxContent written back until a route is first opened), the cache stays small.
-      db.enablePersistence().catch(err => {
-        if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore persistence error:', err);
-      });
+      // Skip Firestore offline persistence on iOS Safari — IndexedDB quota in
+      // Private Browsing is ~0 bytes and the call can silently break Firestore.
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (!isIOS) {
+        db.enablePersistence().catch(err => {
+          if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore persistence error:', err);
+        });
+      }
       firebaseReady = true;
       loadFirebaseRoutes(); loadFirebasePoints();
       loadAuthAndStorage().then(setupAuth).catch(err => console.warn('Auth load:', err));
