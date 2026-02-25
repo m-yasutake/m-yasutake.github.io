@@ -90,9 +90,9 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
-    .gear-tag.owned { background: rgba(42,157,143,0.12); color: #1a7a6e; }
-    .gear-tag.needed { background: rgba(244,162,97,0.15); color: #c26a10; }
-    .gear-tag.optional { background: rgba(173,181,189,0.2); color: var(--color-gray-600); }
+    .gear-tag.mika { background: rgba(230,126,179,0.15); color: #b03a7a; }
+    .gear-tag.tom  { background: rgba(66,133,244,0.15);  color: #1a56a3; }
+    .gear-tag.both { background: rgba(42,157,143,0.12);  color: #1a7a6e; }
 
     /* Packing checklist */
     .pack-list { list-style: none; padding: 0; }
@@ -235,6 +235,58 @@
     }
     .gear-add-row-btn:hover, .gear-add-cat-btn:hover { background: rgba(42,157,143,0.07); }
     .gear-add-cat-btn { margin-top: 0.75rem; }
+
+    /* ── Bike Setup Photos ───────────────────────────────── */
+    .bike-setups {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 600px) { .bike-setups { grid-template-columns: 1fr; } }
+    .bike-setup-card {
+      background: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      text-align: center;
+    }
+    .bike-setup-img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, var(--color-gray-100), var(--color-gray-200));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+      color: var(--color-gray-500);
+    }
+    .bike-setup-img .placeholder-icon { font-size: 4rem; }
+    .bike-setup-img .placeholder-text { font-size: 0.85rem; font-style: italic; }
+    .bike-setup-label {
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--color-primary);
+      font-family: var(--font-heading);
+    }
+
+    /* ── Split weight summary ────────────────────────────── */
+    .weight-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .weight-person-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+      margin-bottom: 0.15rem;
+    }
   </style>
 </head>
 <body>
@@ -313,6 +365,24 @@
       <!-- Left: Gear Tables (rendered by JS) -->
       <div>
 
+        <!-- Bike Setup Photos -->
+        <div class="bike-setups">
+          <div class="bike-setup-card">
+            <div class="bike-setup-img">
+              <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
+              <span class="placeholder-text">Photo coming soon</span>
+            </div>
+            <div class="bike-setup-label">Mika's Bike</div>
+          </div>
+          <div class="bike-setup-card">
+            <div class="bike-setup-img">
+              <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
+              <span class="placeholder-text">Photo coming soon</span>
+            </div>
+            <div class="bike-setup-label">Tom's Bike</div>
+          </div>
+        </div>
+
         <!-- Admin editing toolbar (only visible when signed in as admin) -->
         <div class="gear-admin-bar" id="gearAdminBar">
           <strong>✏️ Admin: you can edit this gear list</strong>
@@ -334,8 +404,19 @@
         <!-- Weight Summary -->
         <div class="weight-summary">
           <h4>Estimated Pack Weight</h4>
-          <div class="weight-big">~22 kg</div>
-          <div class="weight-sub">Per bike (loaded) · Target: &lt;25 kg</div>
+          <div class="weight-split">
+            <div>
+              <div class="weight-person-label">Mika</div>
+              <div class="weight-big" id="weightMika">—</div>
+              <div class="weight-sub">kg (loaded)</div>
+            </div>
+            <div>
+              <div class="weight-person-label">Tom</div>
+              <div class="weight-big" id="weightTom">—</div>
+              <div class="weight-sub">kg (loaded)</div>
+            </div>
+          </div>
+          <div class="weight-sub" style="margin-top:0.5rem">Target: &lt;25 kg per bike</div>
         </div>
 
         <!-- Packing Checklist -->
@@ -466,49 +547,49 @@ updatePackProgress();
   // ── Default / seed data ──────────────────────────────────
   const GEAR_DEFAULT = [
     { id: 'bikes-bags', icon: '🚲', name: 'Bikes & Bags', order: 0, items: [
-      { id: 'bb1', name: 'Touring bike (each)',   weight: '10.5 kg', status: 'owned',    notes: 'Steel frame, 700c wheels' },
-      { id: 'bb2', name: 'Rear panniers (pair)',  weight: '1.4 kg',  status: 'owned',    notes: 'Ortlieb Back-Roller Classic' },
-      { id: 'bb3', name: 'Front panniers (pair)', weight: '1.1 kg',  status: 'needed',   notes: 'Ortlieb Front-Roller' },
-      { id: 'bb4', name: 'Handlebar bag',         weight: '0.4 kg',  status: 'owned',    notes: 'Quick access for snacks & map' },
-      { id: 'bb5', name: 'Frame bag',             weight: '0.2 kg',  status: 'optional', notes: 'Tools & spares' },
+      { id: 'bb1', name: 'Touring bike (each)',   weight: '10.5 kg', who: 'Both', notes: 'Steel frame, 700c wheels' },
+      { id: 'bb2', name: 'Rear panniers (pair)',  weight: '1.4 kg',  who: 'Both', notes: 'Ortlieb Back-Roller Classic' },
+      { id: 'bb3', name: 'Front panniers (pair)', weight: '1.1 kg',  who: 'Both', notes: 'Ortlieb Front-Roller' },
+      { id: 'bb4', name: 'Handlebar bag',         weight: '0.4 kg',  who: 'Both', notes: 'Quick access for snacks & map' },
+      { id: 'bb5', name: 'Frame bag',             weight: '0.2 kg',  who: 'Both', notes: 'Tools & spares' },
     ]},
     { id: 'shelter-sleep', icon: '⛺', name: 'Shelter & Sleep', order: 1, items: [
-      { id: 'ss1', name: 'Tent (2-person)',       weight: '1.6 kg',  status: 'owned',    notes: 'MSR Hubba Hubba NX' },
-      { id: 'ss2', name: 'Sleeping bag (each)',   weight: '0.9 kg',  status: 'owned',    notes: 'Down, comfort to 5°C' },
-      { id: 'ss3', name: 'Sleeping mat (each)',   weight: '0.5 kg',  status: 'owned',    notes: 'Thermarest NeoAir' },
-      { id: 'ss4', name: 'Camping pillow (each)', weight: '0.1 kg',  status: 'optional', notes: 'Inflatable' },
+      { id: 'ss1', name: 'Tent (2-person)',       weight: '1.6 kg',  who: 'Tom',  notes: 'MSR Hubba Hubba NX' },
+      { id: 'ss2', name: 'Sleeping bag (each)',   weight: '0.9 kg',  who: 'Both', notes: 'Down, comfort to 5°C' },
+      { id: 'ss3', name: 'Sleeping mat (each)',   weight: '0.5 kg',  who: 'Both', notes: 'Thermarest NeoAir' },
+      { id: 'ss4', name: 'Camping pillow (each)', weight: '0.1 kg',  who: 'Both', notes: 'Inflatable' },
     ]},
     { id: 'nav-tech', icon: '📡', name: 'Navigation & Tech', order: 2, items: [
-      { id: 'nt1', name: 'GPS device',           weight: '0.1 kg',  status: 'owned',  notes: 'Garmin Edge 530' },
-      { id: 'nt2', name: 'Smartphone (each)',    weight: '0.2 kg',  status: 'owned',  notes: 'Offline maps downloaded' },
-      { id: 'nt3', name: 'Solar charging panel', weight: '0.3 kg',  status: 'needed', notes: 'BigBlue 28W' },
-      { id: 'nt4', name: 'Power bank (each)',    weight: '0.2 kg',  status: 'owned',  notes: '20,000 mAh' },
-      { id: 'nt5', name: 'Camera + lenses',      weight: '1.2 kg',  status: 'owned',  notes: 'Sony A6400 + 16-50 kit' },
-      { id: 'nt6', name: 'Laptop (shared)',      weight: '1.3 kg',  status: 'owned',  notes: 'For blog & work on the road' },
+      { id: 'nt1', name: 'GPS device',           weight: '0.1 kg',  who: 'Both', notes: 'Garmin Edge 530' },
+      { id: 'nt2', name: 'Smartphone (each)',    weight: '0.2 kg',  who: 'Both', notes: 'Offline maps downloaded' },
+      { id: 'nt3', name: 'Solar charging panel', weight: '0.3 kg',  who: 'Tom',  notes: 'BigBlue 28W' },
+      { id: 'nt4', name: 'Power bank (each)',    weight: '0.2 kg',  who: 'Both', notes: '20,000 mAh' },
+      { id: 'nt5', name: 'Camera + lenses',      weight: '1.2 kg',  who: 'Mika', notes: 'Sony A6400 + 16-50 kit' },
+      { id: 'nt6', name: 'Laptop (shared)',      weight: '1.3 kg',  who: 'Mika', notes: 'For blog & work on the road' },
     ]},
     { id: 'bike-maintenance', icon: '🔧', name: 'Bike Maintenance', order: 3, items: [
-      { id: 'bm1', name: 'Repair kit & multi-tool', weight: '0.4 kg', status: 'owned',  notes: 'Leatherman + Park Tool' },
-      { id: 'bm2', name: 'Spare tubes (×4)',         weight: '0.4 kg', status: 'needed', notes: '700×35c' },
-      { id: 'bm3', name: 'Tyre levers + patches',    weight: '0.1 kg', status: 'owned',  notes: '—' },
-      { id: 'bm4', name: 'Mini pump',                weight: '0.2 kg', status: 'owned',  notes: 'Topeak Road Morph G' },
-      { id: 'bm5', name: 'Chain lube & cleaner',     weight: '0.2 kg', status: 'needed', notes: '—' },
+      { id: 'bm1', name: 'Repair kit & multi-tool', weight: '0.4 kg', who: 'Both', notes: 'Leatherman + Park Tool' },
+      { id: 'bm2', name: 'Spare tubes (×4)',         weight: '0.4 kg', who: 'Both', notes: '700×35c' },
+      { id: 'bm3', name: 'Tyre levers + patches',    weight: '0.1 kg', who: 'Both', notes: '—' },
+      { id: 'bm4', name: 'Mini pump',                weight: '0.2 kg', who: 'Both', notes: 'Topeak Road Morph G' },
+      { id: 'bm5', name: 'Chain lube & cleaner',     weight: '0.2 kg', who: 'Both', notes: '—' },
     ]},
     { id: 'clothing', icon: '👕', name: 'Clothing (per person)', order: 4, items: [
-      { id: 'cl1', name: 'Cycling jerseys (×3)',      weight: '0.4 kg', status: 'owned', notes: 'Merino wool preferred' },
-      { id: 'cl2', name: 'Bib shorts (×2)',           weight: '0.3 kg', status: 'owned', notes: 'Padded' },
-      { id: 'cl3', name: 'Rain jacket',               weight: '0.4 kg', status: 'owned', notes: 'Lightweight packable' },
-      { id: 'cl4', name: 'Thermal base layers',       weight: '0.3 kg', status: 'owned', notes: 'For cold mornings' },
-      { id: 'cl5', name: 'Casual clothes (×2 sets)',  weight: '0.8 kg', status: 'owned', notes: 'Off-bike wear' },
-      { id: 'cl6', name: 'Cycling shoes (each)',      weight: '0.6 kg', status: 'owned', notes: 'SPD compatible' },
-      { id: 'cl7', name: 'Sandals/flip-flops',        weight: '0.3 kg', status: 'owned', notes: 'Camp & casual' },
+      { id: 'cl1', name: 'Cycling jerseys (×3)',      weight: '0.4 kg', who: 'Both', notes: 'Merino wool preferred' },
+      { id: 'cl2', name: 'Bib shorts (×2)',           weight: '0.3 kg', who: 'Both', notes: 'Padded' },
+      { id: 'cl3', name: 'Rain jacket',               weight: '0.4 kg', who: 'Both', notes: 'Lightweight packable' },
+      { id: 'cl4', name: 'Thermal base layers',       weight: '0.3 kg', who: 'Both', notes: 'For cold mornings' },
+      { id: 'cl5', name: 'Casual clothes (×2 sets)',  weight: '0.8 kg', who: 'Both', notes: 'Off-bike wear' },
+      { id: 'cl6', name: 'Cycling shoes (each)',      weight: '0.6 kg', who: 'Both', notes: 'SPD compatible' },
+      { id: 'cl7', name: 'Sandals/flip-flops',        weight: '0.3 kg', who: 'Both', notes: 'Camp & casual' },
     ]},
     { id: 'safety-health', icon: '🩺', name: 'Safety & Health', order: 5, items: [
-      { id: 'sh1', name: 'Helmets (each)',              weight: '0.3 kg', status: 'owned',  notes: 'MIPS rated' },
-      { id: 'sh2', name: 'Lights front + rear (each)', weight: '0.2 kg', status: 'owned',  notes: 'Rechargeable' },
-      { id: 'sh3', name: 'High-vis vest',               weight: '0.1 kg', status: 'needed', notes: 'Some countries require by law' },
-      { id: 'sh4', name: 'First aid kit',               weight: '0.4 kg', status: 'needed', notes: 'Compact travel kit' },
-      { id: 'sh5', name: 'Sun cream + lip balm',        weight: '0.2 kg', status: 'owned',  notes: 'SPF 50+' },
-      { id: 'sh6', name: 'Travel insurance docs',       weight: '—',       status: 'needed', notes: 'Covering bike touring' },
+      { id: 'sh1', name: 'Helmets (each)',              weight: '0.3 kg', who: 'Both', notes: 'MIPS rated' },
+      { id: 'sh2', name: 'Lights front + rear (each)', weight: '0.2 kg', who: 'Both', notes: 'Rechargeable' },
+      { id: 'sh3', name: 'High-vis vest',               weight: '0.1 kg', who: 'Both', notes: 'Some countries require by law' },
+      { id: 'sh4', name: 'First aid kit',               weight: '0.4 kg', who: 'Mika', notes: 'Compact travel kit' },
+      { id: 'sh5', name: 'Sun cream + lip balm',        weight: '0.2 kg', who: 'Both', notes: 'SPF 50+' },
+      { id: 'sh6', name: 'Travel insurance docs',       weight: '—',       who: 'Both', notes: 'Covering bike touring' },
     ]},
   ];
 
@@ -551,16 +632,36 @@ updatePackProgress();
   }
 
   // ── Rendering ─────────────────────────────────────────────
-  function statusTag(status, editable) {
+  function whoTag(who, editable) {
     if (editable) {
-      return '<select class="gear-status-select" data-field="status">' +
-        ['owned', 'needed', 'optional'].map(v =>
-          '<option value="' + v + '"' + (status === v ? ' selected' : '') + '>' +
-          v.charAt(0).toUpperCase() + v.slice(1) + '</option>'
+      return '<select class="gear-status-select" data-field="who">' +
+        ['Both', 'Mika', 'Tom'].map(v =>
+          '<option value="' + v + '"' + (who === v ? ' selected' : '') + '>' + v + '</option>'
         ).join('') + '</select>';
     }
-    const labels = { owned: 'Owned', needed: 'Needed', optional: 'Optional' };
-    return '<span class="gear-tag ' + status + '">' + (labels[status] || status) + '</span>';
+    const cls = (who || 'both').toLowerCase();
+    return '<span class="gear-tag ' + cls + '">' + (who || 'Both') + '</span>';
+  }
+
+  function parseWeight(w) {
+    const m = (w || '').match(/([\d.]+)\s*kg/i);
+    return m ? parseFloat(m[1]) : 0;
+  }
+
+  function updateWeightSummary(data) {
+    let mika = 0, tom = 0;
+    data.forEach(cat => {
+      cat.items.forEach(item => {
+        const w = parseWeight(item.weight);
+        const who = (item.who || 'Both').toLowerCase();
+        if (who === 'mika' || who === 'both') mika += w;
+        if (who === 'tom'  || who === 'both') tom  += w;
+      });
+    });
+    const elMika = document.getElementById('weightMika');
+    const elTom  = document.getElementById('weightTom');
+    if (elMika) elMika.textContent = mika.toFixed(1);
+    if (elTom)  elTom.textContent  = tom.toFixed(1);
   }
 
   function renderGear(data, editMode) {
@@ -575,13 +676,13 @@ updatePackProgress();
       html += '<h3' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + cat.name + '</h3>';
       if (editMode) html += '<button class="gear-cat-delete" onclick="GearManager.deleteCategory(\'' + cid + '\')" title="Remove category">✕ Remove</button>';
       html += '</div>';
-      html += '<table class="gear-table"><thead><tr><th>Item</th><th>Weight</th><th>Status</th><th>Notes</th>' + (editMode ? '<th></th>' : '') + '</tr></thead><tbody>';
+      html += '<table class="gear-table"><thead><tr><th>Item</th><th>Weight</th><th>Who</th><th>Notes</th>' + (editMode ? '<th></th>' : '') + '</tr></thead><tbody>';
       cat.items.forEach(item => {
         const iid = item.id;
         html += '<tr data-item-id="' + iid + '">';
         html += '<td' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + item.name + '</td>';
         html += '<td class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
-        html += '<td>' + statusTag(item.status, editMode) + '</td>';
+        html += '<td>' + whoTag(item.who || 'Both', editMode) + '</td>';
         html += '<td class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
         if (editMode) html += '<td><button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
         html += '</tr>';
@@ -596,6 +697,7 @@ updatePackProgress();
       html += '<button class="gear-add-cat-btn" onclick="GearManager.addCategory()">＋ Add category</button>';
     }
     content.innerHTML = html;
+    updateWeightSummary(data);
   }
 
   function collectFromDOM() {
@@ -609,14 +711,14 @@ updatePackProgress();
       catEl.querySelectorAll('tbody tr').forEach(row => {
         const nameEl   = row.querySelector('[data-field="name"]');
         const weightEl = row.querySelector('[data-field="weight"]');
-        const statusEl = row.querySelector('[data-field="status"]');
+        const whoEl    = row.querySelector('[data-field="who"]');
         const notesEl  = row.querySelector('[data-field="notes"]');
         if (!nameEl) return;
         items.push({
           id:     row.dataset.itemId || uid(),
           name:   nameEl.textContent.trim(),
           weight: weightEl ? weightEl.textContent.trim() : '',
-          status: statusEl ? statusEl.value : 'owned',
+          who:    whoEl    ? whoEl.value                 : 'Both',
           notes:  notesEl  ? notesEl.textContent.trim()  : '',
         });
       });
@@ -641,7 +743,7 @@ updatePackProgress();
     addItem(catId) {
       _gearData = collectFromDOM();
       const cat = _gearData.find(c => c.id === catId);
-      if (cat) cat.items.push({ id: uid(), name: 'New item', weight: '0.0 kg', status: 'needed', notes: '' });
+      if (cat) cat.items.push({ id: uid(), name: 'New item', weight: '0.0 kg', who: 'Both', notes: '' });
       renderGear(_gearData, true);
     },
     addCategory() {
