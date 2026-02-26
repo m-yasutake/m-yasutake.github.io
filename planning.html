@@ -1300,7 +1300,10 @@
 
   // Process markers in idle-time chunks so the main thread stays responsive.
   // Use a smaller chunk size on mobile/touch devices to avoid long blocking calls.
-  const _isMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile/i.test(navigator.userAgent);
+  // iPadOS 13+ presents a desktop Safari UA (no 'iPad' token), so detect it via
+  // navigator.maxTouchPoints > 1 (distinguishes iPad from non-touch Mac hardware).
+  const _isIPadOS = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+  const _isMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile/i.test(navigator.userAgent) || _isIPadOS;
   const _MARKER_CHUNK = _isMobile ? 50 : 250;
   function addPointsBatch(pointDataArray) {
     let offset = 0;
@@ -1395,7 +1398,8 @@
     // maps.app.goo.gl uses Firebase Dynamic Links which serve an HTML page with a JS
     // redirect rather than a plain HTTP redirect. We therefore fetch the page content
     // via a CORS proxy and look for the embedded Google Maps URL in the HTML.
-    return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(shortUrl), { cache: 'no-store' })
+    // Omit 'cache: no-store' — iOS Safari rejects cross-origin requests with that option.
+    return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(shortUrl))
       .then(res => { if (!res.ok) throw new Error('Proxy request failed'); return res.json(); })
       .then(data => {
         // 1. Try the final URL reported by the proxy (works for plain HTTP redirects)
@@ -1532,7 +1536,8 @@
       // (no gpxContent written back until a route is first opened), the cache stays small.
       // Skip Firestore offline persistence on iOS Safari — IndexedDB quota in
       // Private Browsing is ~0 bytes and the call can silently break Firestore.
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      // _isIPadOS detects iPadOS 13+ which presents a desktop Safari UA.
+      const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) || _isIPadOS;
       if (!isIOS) {
         db.enablePersistence().catch(err => {
           if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore persistence error:', err);

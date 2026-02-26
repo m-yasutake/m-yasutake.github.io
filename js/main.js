@@ -13,6 +13,16 @@ window.addEventListener('load', () => {
   }
 });
 
+// When the page is restored from the Back-Forward Cache (BFCache) on Mobile Safari,
+// the 'load' event does not re-fire. Use 'pageshow' as a safety net to ensure the
+// page loader is removed so the page doesn't appear stuck.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    const loader = document.querySelector('.page-loader');
+    if (loader) loader.remove();
+  }
+});
+
 // ── Navbar scroll effect ─────────────────────
 const navbar = document.querySelector('.navbar');
 if (navbar) {
