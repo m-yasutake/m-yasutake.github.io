@@ -1546,8 +1546,13 @@
       // Private Browsing is ~0 bytes and the call can silently break Firestore.
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-      function _finishInit() {
+      function _finishInit(firestoreSettings) {
         db = firebase.firestore();
+        // iOS Safari kills WebChannel (streaming) connections, causing Firestore reads
+        // to silently fail and leaving the map blank. Long-polling works reliably.
+        if (firestoreSettings) {
+          try { db.settings(firestoreSettings); } catch(e) { /* already set — ignore */ }
+        }
         firebaseReady = true;
         loadFirebaseRoutes(); loadFirebasePoints();
         loadAuthAndStorage().then(setupAuth).catch(err => console.warn('Auth load:', err));
@@ -1567,7 +1572,8 @@
           })
           .catch(function() { _finishInit(); });
       } else {
-        _finishInit();
+        // Long-polling avoids the WebChannelConnection transport errors on iOS Safari.
+        _finishInit({ experimentalAutoDetectLongPolling: true });
       }
     } catch (err) { console.error('Firebase init error:', err); markLoaded('routes'); markLoaded('points'); }
   }
