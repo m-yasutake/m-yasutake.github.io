@@ -1531,20 +1531,36 @@
     }
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      db = firebase.firestore();
+      const _app = firebase.app();
       // Note: persistence caches all Firestore data to IndexedDB. With lazy-loading
       // (no gpxContent written back until a route is first opened), the cache stays small.
       // Skip Firestore offline persistence on iOS Safari — IndexedDB quota in
       // Private Browsing is ~0 bytes and the call can silently break Firestore.
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      if (!isIOS) {
-        db.enablePersistence().catch(err => {
-          if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore persistence error:', err);
-        });
+
+      function _finishInit() {
+        db = firebase.firestore();
+        firebaseReady = true;
+        loadFirebaseRoutes(); loadFirebasePoints();
+        loadAuthAndStorage().then(setupAuth).catch(err => console.warn('Auth load:', err));
       }
-      firebaseReady = true;
-      loadFirebaseRoutes(); loadFirebasePoints();
-      loadAuthAndStorage().then(setupAuth).catch(err => console.warn('Auth load:', err));
+
+      if (!isIOS) {
+        // Use the modular SDK to configure persistent local cache before the compat
+        // wrapper initialises Firestore, replacing the deprecated enablePersistence() API.
+        import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+          .then(function(mod) {
+            try {
+              mod.initializeFirestore(_app, {
+                localCache: mod.persistentLocalCache({ tabManager: mod.persistentMultipleTabManager() })
+              });
+            } catch(e) { /* already initialised — ignore */ }
+            _finishInit();
+          })
+          .catch(function() { _finishInit(); });
+      } else {
+        _finishInit();
+      }
     } catch (err) { console.error('Firebase init error:', err); markLoaded('routes'); markLoaded('points'); }
   }
 
