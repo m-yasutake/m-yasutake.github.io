@@ -267,10 +267,6 @@
 </head>
 <body>
 
-<!-- REMOVE THIS WHEN DONE -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-
 <!-- Page Loader -->
 <div class="page-loader">
   <div class="loader-inner">
@@ -1551,7 +1547,7 @@
         // iOS Safari kills WebChannel (streaming) connections, causing Firestore reads
         // to silently fail and leaving the map blank. Long-polling works reliably.
         if (firestoreSettings) {
-          try { db.settings(firestoreSettings); } catch(e) { /* already set — ignore */ }
+          try { db.settings({ ...firestoreSettings, merge: true }); } catch(e) { /* already set — ignore */ }
         }
         firebaseReady = true;
         loadFirebaseRoutes(); loadFirebasePoints();
