@@ -590,9 +590,20 @@
       }
       return Promise.reject(new TypeError('pmtiles:// – no instance registered for: ' + u));
     }
-    // Pass all other requests through unchanged.
-    // Note: we do NOT force cache:'no-store' globally because Safari on iOS
-    // rejects certain cross-origin requests (e.g. Firebase) with that option.
+    // Pass all other requests through, but strip cache modes that some browsers
+    // (Eruda, iOS WebView, Android WebView) reject with ERR_CACHE_OPERATION_NOT_SUPPORTED.
+    // pmtiles.js internally uses cache:'reload' when fetching the .pmtiles source file;
+    // we degrade it to 'default' so the request still succeeds.
+    if (options && options.cache &&
+        (options.cache === 'reload' || options.cache === 'no-store' || options.cache === 'no-cache')) {
+      var safeOptions = Object.assign({}, options, { cache: 'default' });
+      return _orig.call(window, resource, safeOptions).catch(function(err) {
+        // Final fallback: retry with no options at all if even 'default' fails.
+        var bare = Object.assign({}, options);
+        delete bare.cache;
+        return _orig.call(window, resource, bare);
+      });
+    }
     return _orig.call(window, resource, options);
   };
 }());
