@@ -685,7 +685,7 @@
     return normalized === '_default' ? 'Other' : normalized;
   }
 
-  const map = L.map('map').setView([49.25, -123.1], 11);
+  const map = L.map('map', { preferCanvas: true }).setView([49.25, -123.1], 11);
 
   // Debounced fit-all: fires 600ms after the last route/point is added,
   // ensuring async Firebase Storage routes are included before zooming.
@@ -736,13 +736,16 @@
 
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
-      if (zoom >= 16) return 0; // disable clustering at zoom 16+ (also overridden by disableClusteringAtZoom: 18)
+      if (zoom >= 16) return 0;
       return Math.max(0, 80 - (zoom * 3));
     },
-    disableClusteringAtZoom: 18,
+    disableClusteringAtZoom: 16,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
+    chunkedLoading: true,
+    chunkInterval: 100,
+    chunkDelay: 20,
     iconCreateFunction: function(cluster) {
       const count = cluster.getChildCount();
       let clusterClass = 'marker-cluster-small';
@@ -882,11 +885,13 @@
     polyline.bindPopup(buildRoutePopupContent(routes.indexOf(routeRef)), { maxWidth: 280 });
   }
 
-  // ── Route line weight – thinner at higher zoom levels ──────────────────
+  // ── Route line weight – scales down as you zoom in so roads stay visible ──
   function getRouteWeight(zoom) {
-    if (zoom >= 14) return 2;
-    if (zoom >= 12) return 3;
-    return 4;
+    if (zoom >= 15) return 1;
+    if (zoom >= 13) return 1.5;
+    if (zoom >= 11) return 2;
+    if (zoom >= 9) return 2.5;
+    return 3;
   }
 
   // ── addRoute: supports preview (gpxText=null) and full mode ───────────
@@ -929,8 +934,7 @@
     if (r.polyline || r._loading) {
       // Already loaded: ensure it's on the map if visible and in viewport
       if (r.polyline && r.visible && !map.hasLayer(r.polyline)) {
-        const b = r.polyline.getBounds();
-        if (!b.isValid() || map.getBounds().intersects(b)) r.polyline.addTo(map);
+        r.polyline.addTo(map);
       }
       return;
     }
@@ -946,8 +950,7 @@
       r._loading = false;
       _bindPolylinePopup(r.polyline, r);
       if (r.visible) {
-        const b = r.polyline.getBounds();
-        if (!b.isValid() || map.getBounds().intersects(b)) r.polyline.addTo(map);
+        r.polyline.addTo(map);
       }
       renderToggles();
       renderStats();
@@ -974,31 +977,13 @@
       .catch(err => { console.error('Error loading route ' + r.routeName + ':', err); r._loading = false; });
   }
 
-  // ── Viewport-based route rendering (Change 4) ────────────────────────
-  function updateRouteVisibilityByViewport() {
-    const mapBounds = map.getBounds();
-    routes.forEach(r => {
-      if (!r.polyline || !r.visible) return;
-      const b = r.polyline.getBounds();
-      if (!b.isValid()) return;
-      const inView = mapBounds.intersects(b);
-      const onMap  = map.hasLayer(r.polyline);
-      if (inView && !onMap)  r.polyline.addTo(map);
-      else if (!inView && onMap) map.removeLayer(r.polyline);
-    });
-  }
-  map.on('moveend', updateRouteVisibilityByViewport);
+  // Update route line weight when zoom changes – Leaflet's Canvas renderer
+  // already clips off-screen content efficiently, so no viewport culling needed.
   map.on('zoomend', function() {
     const w = getRouteWeight(map.getZoom());
-    // Only setStyle on layers that are currently on the map – calling setStyle on a
-    // removed layer (viewport-culled) corrupts Leaflet's renderer reference and
-    // prevents the layer from being re-added later.
     routes.forEach(function(r) {
-      if (r.polyline && map.hasLayer(r.polyline)) r.polyline.setStyle({ weight: w });
+      if (r.polyline && r.visible) r.polyline.setStyle({ weight: w });
     });
-    // Re-evaluate viewport visibility so routes hidden by culling are restored when
-    // zooming back out (zoomend and moveend are not guaranteed to fire in all cases).
-    updateRouteVisibilityByViewport();
   });
 
   // ── PMTiles route layer ─────────────────────────────────────
@@ -1121,8 +1106,7 @@
     const r = routes[idx]; r.visible = !r.visible;
     if (r.visible) {
       if (r.polyline) {
-        const b = r.polyline.getBounds();
-        if (!b.isValid() || map.getBounds().intersects(b)) r.polyline.addTo(map);
+        r.polyline.addTo(map);
       } else {
         loadFullGpxForRoute(idx);
       }
@@ -1339,42 +1323,20 @@
     scheduleRenderPointToggles();
   }
 
-  // Process markers in idle-time chunks so the main thread stays responsive.
-  // Use a smaller chunk size on mobile/touch devices to avoid long blocking calls.
-  // iPadOS 13+ presents a desktop Safari UA (no 'iPad' token), so detect it via
-  // navigator.maxTouchPoints > 1 (distinguishes iPad from non-touch Mac hardware).
-  const _isIPadOS = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
-  const _isMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile/i.test(navigator.userAgent) || _isIPadOS;
-  const _MARKER_CHUNK = _isMobile ? 50 : 250;
+  // Collect all markers from the batch and hand them to MarkerClusterGroup in a
+  // single addLayers call. The cluster group's chunkedLoading option (enabled above)
+  // splits the insertion into small time-sliced chunks internally, keeping the UI
+  // responsive on both desktop and mobile without manual requestIdleCallback work.
   function addPointsBatch(pointDataArray) {
-    let offset = 0;
-    function processChunk(deadline) {
-      while (offset < pointDataArray.length) {
-        // Always yield after each chunk when no deadline is available (e.g. iOS Safari,
-        // which does not support requestIdleCallback before iOS 16). When a real deadline
-        // IS provided keep processing as long as time remains.
-        if (offset > 0 && (typeof deadline === 'undefined' || deadline.timeRemaining() <= 1)) break;
-        const end = Math.min(offset + _MARKER_CHUNK, pointDataArray.length);
-        const markers = [];
-        for (let i = offset; i < end; i++) {
-          const { pointData, fileName, firebaseDocId } = pointDataArray[i];
-          const marker = createPointMarker(pointData);
-          markers.push(marker);
-          points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
-        }
-        markerClusterGroup.addLayers(markers);
-        offset = end;
-      }
-      if (offset < pointDataArray.length) {
-        // More chunks remain — schedule during next idle period
-        if (typeof requestIdleCallback === 'function') requestIdleCallback(processChunk, { timeout: 2000 });
-        else setTimeout(processChunk, 0);
-      } else {
-        scheduleRenderPointToggles();
-      }
+    const markers = [];
+    for (let i = 0; i < pointDataArray.length; i++) {
+      const { pointData, fileName, firebaseDocId } = pointDataArray[i];
+      const marker = createPointMarker(pointData);
+      markers.push(marker);
+      points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
     }
-    if (typeof requestIdleCallback === 'function') requestIdleCallback(processChunk, { timeout: 2000 });
-    else setTimeout(processChunk, 0); // Always yield; never call synchronously (prevents iOS crash)
+    markerClusterGroup.addLayers(markers);
+    scheduleRenderPointToggles();
   }
 
   function addPointsFromCSV(csvText, fileName, docIdMap) {
@@ -1892,7 +1854,7 @@
     const overlay = document.getElementById('map-loading');
     if (overlay) { overlay.classList.add('fade-out'); setTimeout(() => overlay.remove(), 500); }
     scheduleFitAll();
-  }, 20000);
+  }, 30000);
 
   // ── Initialise ─────────────────────────────────────────────
   loadBundledRoutes();
