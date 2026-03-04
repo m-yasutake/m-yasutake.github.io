@@ -979,9 +979,15 @@
   map.on('moveend', updateRouteVisibilityByViewport);
   map.on('zoomend', function() {
     const w = getRouteWeight(map.getZoom());
+    // Only setStyle on layers that are currently on the map – calling setStyle on a
+    // removed layer (viewport-culled) corrupts Leaflet's renderer reference and
+    // prevents the layer from being re-added later.
     routes.forEach(function(r) {
-      if (r.polyline) r.polyline.setStyle({ weight: w });
+      if (r.polyline && map.hasLayer(r.polyline)) r.polyline.setStyle({ weight: w });
     });
+    // Re-evaluate viewport visibility so routes hidden by culling are restored when
+    // zooming back out (zoomend and moveend are not guaranteed to fire in all cases).
+    updateRouteVisibilityByViewport();
   });
 
   // ── PMTiles route layer ─────────────────────────────────────
