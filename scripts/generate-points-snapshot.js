@@ -88,8 +88,11 @@ async function main() {
 
   console.log(`Total: ${points.length} point(s).`);
 
-  // Serialise to JSON
-  const json   = JSON.stringify(points);
+  // Serialise to JSON — wrap in an envelope so the client can detect the
+  // generation time and query Firestore for only the delta (new points added
+  // since the snapshot was taken).
+  const generatedAt = new Date().toISOString();
+  const json   = JSON.stringify({ generatedAt, points });
   const buffer = Buffer.from(json, 'utf8');
   console.log(`Snapshot size: ${(buffer.length / 1024).toFixed(1)} KB`);
 
@@ -119,7 +122,7 @@ async function main() {
     );
   }
 
-  console.log(`Done. ${points.length} point(s) written to points/points.json.`);
+  console.log(`Done. ${points.length} point(s) written to points/points.json (generatedAt: ${generatedAt}).`);
 }
 
 main().catch(err => {

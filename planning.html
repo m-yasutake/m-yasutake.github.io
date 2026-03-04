@@ -1641,17 +1641,46 @@
           return res.json();
         })
         .then(data => {
-          if (!Array.isArray(data) || data.length === 0) throw new Error('empty snapshot');
+          // Handle both old plain-array format and new { generatedAt, points } envelope.
+          let snapPoints, generatedAt;
+          if (Array.isArray(data)) {
+            snapPoints = data; generatedAt = null;
+          } else if (data && Array.isArray(data.points)) {
+            snapPoints = data.points; generatedAt = data.generatedAt || null;
+          } else {
+            throw new Error('unrecognised snapshot format');
+          }
+          if (snapPoints.length === 0) throw new Error('empty snapshot');
           // Register Firestore IDs so any subsequent Firestore call skips these docs.
-          data.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
-          const batch = data.map(d => ({
+          snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
+          const batch = snapPoints.map(d => ({
             pointData: { name: d.name, lat: d.lat, lon: d.lon, url: d.url || null, metadata: d.metadata || {} },
             fileName: d.fileName || 'points.json',
             firebaseDocId: d.id || null
           }));
           addPointsBatch(batch);
           scheduleFitAll();
-          markLoaded('points');
+          // After loading the snapshot, query Firestore for any points added AFTER
+          // the snapshot was generated. This delta query replaces re-downloading all
+          // documents and keeps the map current without waiting for a snapshot rebuild.
+          if (generatedAt && db) {
+            const since = firebase.firestore.Timestamp.fromDate(new Date(generatedAt));
+            db.collection('points').where('uploadedAt', '>', since).get()
+              .then(snap => {
+                const deltaB = [];
+                snap.forEach(doc => {
+                  if (loadedFirebasePointIds.has(doc.id)) return;
+                  loadedFirebasePointIds.add(doc.id);
+                  const d = doc.data();
+                  deltaB.push({ pointData: { name: d.name, lat: d.lat, lon: d.lon, url: resolvePointUrl(d, d.metadata), metadata: d.metadata || {} }, fileName: d.fileName, firebaseDocId: doc.id });
+                });
+                if (deltaB.length > 0) { addPointsBatch(deltaB); scheduleFitAll(); }
+                markLoaded('points');
+              })
+              .catch(() => markLoaded('points'));
+          } else {
+            markLoaded('points');
+          }
         })
         .catch(() => {
           // Snapshot not available yet — fall back to live Firestore pagination.
