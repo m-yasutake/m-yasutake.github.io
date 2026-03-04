@@ -871,6 +871,13 @@
     polyline.bindPopup(buildRoutePopupContent(routes.indexOf(routeRef)), { maxWidth: 280 });
   }
 
+  // ── Route line weight – thinner at higher zoom levels ──────────────────
+  function getRouteWeight(zoom) {
+    if (zoom >= 14) return 2;
+    if (zoom >= 12) return 3;
+    return 4;
+  }
+
   // ── addRoute: supports preview (gpxText=null) and full mode ───────────
   function addRoute(gpxText, fileName, firebaseDocId, metadata, storagePath, cachedGpx) {
     if (!gpxText) {
@@ -891,7 +898,7 @@
     const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
     colorIdx++;
     const latlngs = pts.map(p => [p.lat, p.lon]);
-    const polyline = L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
+    const polyline = L.polyline(latlngs, { color, weight: getRouteWeight(map.getZoom()), opacity: 0.85 }).addTo(map);
     const routeName = name || fileName.replace(/\.gpx$/i, '');
     const stats = computeStats(pts);
     const meta = metadata || {};
@@ -920,7 +927,7 @@
 
     function onParsed(result) {
       if (!result || !result.latlngs || !result.latlngs.length) { r._loading = false; return; }
-      r.polyline = L.polyline(result.latlngs, { color: r.color, weight: 4, opacity: 0.85 });
+      r.polyline = L.polyline(result.latlngs, { color: r.color, weight: getRouteWeight(map.getZoom()), opacity: 0.85 });
       // Only update the route name from GPX if the current name is still the default
       // (derived from the file name) — avoids clobbering names set by the user.
       if (result.name && r.routeName === (r._fileName || '').replace(/\.gpx$/i, '')) r.routeName = result.name;
@@ -970,6 +977,12 @@
     });
   }
   map.on('moveend', updateRouteVisibilityByViewport);
+  map.on('zoomend', function() {
+    const w = getRouteWeight(map.getZoom());
+    routes.forEach(function(r) {
+      if (r.polyline) r.polyline.setStyle({ weight: w });
+    });
+  });
 
   // ── PMTiles route layer ─────────────────────────────────────
   // Attempts to load routes.pmtiles from Firebase Storage and render all routes
@@ -987,7 +1000,7 @@
           vectorTileLayerStyles: {
             routes: function(properties) {
               return {
-                weight: 3,
+                weight: getRouteWeight(map.getZoom()),
                 color: properties.color || '#2A9D8F',
                 opacity: 0.85,
                 fill: false
@@ -1020,7 +1033,7 @@
         });
         layer.on('mouseout', function(e) {
           const props = e.layer.properties || {};
-          if (e.layer.setStyle) e.layer.setStyle({ weight: 3, color: props.color || '#2A9D8F', opacity: 0.85 });
+          if (e.layer.setStyle) e.layer.setStyle({ weight: getRouteWeight(map.getZoom()), color: props.color || '#2A9D8F', opacity: 0.85 });
         });
         return layer;
       });
