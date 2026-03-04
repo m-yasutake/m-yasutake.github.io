@@ -1544,14 +1544,17 @@
       // (no gpxContent written back until a route is first opened), the cache stays small.
       // Skip Firestore offline persistence on iOS Safari — IndexedDB quota in
       // Private Browsing is ~0 bytes and the call can silently break Firestore.
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      // iPadOS 13+ reports itself as 'Macintosh' — use maxTouchPoints to distinguish
+      // it from a non-touch Mac. Both iOS and iPadOS must use long-polling.
+      const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
+                 || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
       function _finishInit(firestoreSettings) {
         db = firebase.firestore();
         // iOS Safari kills WebChannel (streaming) connections, causing Firestore reads
         // to silently fail and leaving the map blank. Long-polling works reliably.
         if (firestoreSettings) {
-          try { db.settings({ ...firestoreSettings, merge: true }); } catch(e) { /* already set — ignore */ }
+          try { db.settings(firestoreSettings); } catch(e) { /* already set — ignore */ }
         }
         firebaseReady = true;
         loadFirebaseRoutes(); loadFirebasePoints();
