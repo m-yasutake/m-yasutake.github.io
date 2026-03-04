@@ -798,7 +798,14 @@
         const cb = _workerCallbacks.get(id);
         if (cb) { _workerCallbacks.delete(id); cb(error ? null : { latlngs, stats, name }, error || null); }
       };
-      _gpxWorker.onerror = function(e) { console.warn('GPX Worker error:', e); _gpxWorker = null; }; // disable on error
+      _gpxWorker.onerror = function(e) {
+        console.warn('GPX Worker error:', e);
+        // Reject all pending callbacks so parseGpxAsync promises settle (important on
+        // Safari < iOS 16 where DOMParser is unavailable inside workers).
+        _workerCallbacks.forEach(function(cb) { cb(null, 'Worker failed'); });
+        _workerCallbacks.clear();
+        _gpxWorker = null;
+      }; // disable on error
     } catch(e) {
       _gpxWorker = null; // Web Workers unavailable — will parse on main thread
     }
@@ -1495,6 +1502,7 @@
     if (fill) fill.style.width = pct + '%';
     if (text) text.textContent = done < total ? 'Loading data... ' + pct + '%' : 'Done';
     if (done >= total) {
+      clearTimeout(_loadingTimeoutId);
       const overlay = document.getElementById('map-loading');
       if (overlay) { overlay.classList.add('fade-out'); setTimeout(() => overlay.remove(), 500); }
       scheduleFitAll();
@@ -1568,8 +1576,9 @@
           })
           .catch(function() { _finishInit(); });
       } else {
-        // Long-polling avoids the WebChannelConnection transport errors on iOS Safari.
-        _finishInit({ experimentalAutoDetectLongPolling: true });
+        // Force long-polling on iOS Safari — auto-detect tries WebChannel first and
+        // can silently hang for 10–30 s before falling back, leaving the map blank.
+        _finishInit({ experimentalForceLongPolling: true });
       }
     } catch (err) { console.error('Firebase init error:', err); markLoaded('routes'); markLoaded('points'); }
   }
@@ -1814,6 +1823,14 @@
     if (el) el.textContent = checked + ' of ' + items.length + ' items packed';
   }
   updatePackProgress();
+
+  // ── Safety timeout: dismiss loading overlay after 20 s regardless of task state.
+  // Prevents the map appearing stuck when a Firebase/network call hangs on iOS Safari.
+  const _loadingTimeoutId = setTimeout(function() {
+    const overlay = document.getElementById('map-loading');
+    if (overlay) { overlay.classList.add('fade-out'); setTimeout(() => overlay.remove(), 500); }
+    scheduleFitAll();
+  }, 20000);
 
   // ── Initialise ─────────────────────────────────────────────
   loadBundledRoutes();
