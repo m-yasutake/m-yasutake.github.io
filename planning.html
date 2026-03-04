@@ -685,7 +685,9 @@
     return normalized === '_default' ? 'Other' : normalized;
   }
 
-  const map = L.map('map', { preferCanvas: true }).setView([49.25, -123.1], 11);
+  const map = L.map('map', {
+    renderer: L.canvas({ tolerance: 10 })   // Canvas for speed; tolerance widens clickable area around thin lines
+  }).setView([49.25, -123.1], 11);
 
   // Debounced fit-all: fires 600ms after the last route/point is added,
   // ensuring async Firebase Storage routes are included before zooming.
