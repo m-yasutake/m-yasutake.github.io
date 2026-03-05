@@ -286,7 +286,6 @@
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
-      <li><a href="journal.html">Journal</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -306,7 +305,6 @@
   <a href="planning.html">🗺️ Map</a>
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
-  <a href="journal.html">📔 Journal</a>
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
@@ -317,7 +315,7 @@
   <div class="auth-modal">
     <button class="auth-close">✕</button>
     <h2>Welcome back 👋</h2>
-    <p>Sign in to access your journal and admin tools</p>
+    <p>Sign in to access admin tools</p>
     <button class="google-btn">
       <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       Continue with Google
@@ -446,20 +444,24 @@
           <h3>Trip Overview</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
             <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">12</div>
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">2</div>
               <div style="font-size:.8rem;color:var(--color-gray-600)">Countries</div>
             </div>
             <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">4,200</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">km</div>
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">~5,000</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">km total</div>
             </div>
             <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
               <div style="font-size:1.75rem;font-weight:700;color:var(--color-accent);font-family:var(--font-heading)">180</div>
               <div style="font-size:.8rem;color:var(--color-gray-600)">Days</div>
             </div>
             <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-warm);font-family:var(--font-heading)">24</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">Waypoints</div>
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-warm);font-family:var(--font-heading)">~2,500</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">km Japan</div>
+            </div>
+            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem;grid-column:span 2">
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-coral);font-family:var(--font-heading)">~2,500</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">km Norway</div>
             </div>
           </div>
         </div>
@@ -471,41 +473,57 @@
             <div class="timeline-item">
               <div class="timeline-dot" style="background:var(--color-secondary)"></div>
               <div class="timeline-content">
-                <div class="timeline-date">Mar 2026 – Start</div>
-                <h4>🇬🇧 London, UK</h4>
-                <p>Departure point. Final packing and bike check.</p>
+                <div class="timeline-date">Mar 5, 2026 – Departure</div>
+                <h4>🛫 Tokyo, Japan</h4>
+                <p>Fly to Tokyo. One week visiting friends and family before the real journey begins.</p>
               </div>
             </div>
             <div class="timeline-item">
               <div class="timeline-dot" style="background:var(--color-accent)"></div>
               <div class="timeline-content">
-                <div class="timeline-date">Apr 2026</div>
-                <h4>🇫🇷 Paris, France</h4>
-                <p>Across the Channel and into France. First major checkpoint.</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-secondary)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">May 2026</div>
-                <h4>🇮🇹 Milan → Rome</h4>
-                <p>Through the Alps and down through beautiful Italy.</p>
+                <div class="timeline-date">Mid Mar 2026</div>
+                <h4>🇯🇵 Kagoshima – Start of Bike Leg</h4>
+                <p>Fly south to Kagoshima. Begin cycling northward from the southern tip of Kyushu.</p>
               </div>
             </div>
             <div class="timeline-item">
               <div class="timeline-dot" style="background:var(--color-warm)"></div>
               <div class="timeline-content">
-                <div class="timeline-date">Jun–Jul 2026</div>
-                <h4>🇬🇷 Greece + Islands</h4>
-                <p>Balkan route through Greece. Island hopping break 🏝️</p>
+                <div class="timeline-date">Apr – May 2026</div>
+                <h4>🚴 Through Honshu</h4>
+                <p>Crossing through Hiroshima, Kyoto, and the Japanese Alps. Cherry blossom season!</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-secondary)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">Jun 2026</div>
+                <h4>🏔️ Hokkaido – Cape Soya</h4>
+                <p>Final push through Hokkaido to Cape Soya — the northernmost point of Japan.</p>
               </div>
             </div>
             <div class="timeline-item">
               <div class="timeline-dot" style="background:var(--color-coral)"></div>
               <div class="timeline-content">
-                <div class="timeline-date">Aug 2026 – End</div>
-                <h4>🇹🇷 Istanbul, Turkey</h4>
-                <p>Final destination. Europe to Asia crossing!</p>
+                <div class="timeline-date">Jun 2026 – Norway Start</div>
+                <h4>🇳🇴 Egersund, Norway</h4>
+                <p>Fly to Norway. Begin from Egersund on the southwest coast — Tom's maternal hometown.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-warm)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">Jul – Aug 2026</div>
+                <h4>🏔️ Up the Norwegian Coast</h4>
+                <p>Cycling north through fjords, past Bergen, and up through wild Arctic landscapes.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:var(--color-accent)"></div>
+              <div class="timeline-content">
+                <div class="timeline-date">Sep 2026 – End</div>
+                <h4>🌅 Tromsø, Norway</h4>
+                <p>Final destination — the gateway to the Arctic. We did it! 🎉</p>
               </div>
             </div>
           </div>
@@ -521,11 +539,8 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
-        <p>A cycling adventure blog documenting our journey across continents. Planning routes, collecting stories, and sharing every beautiful moment.</p>
+        <p>A cycling adventure blog documenting our journey through Japan and Norway.</p>
         <div class="social-links">
-          <a class="social-link" title="Instagram" aria-label="Instagram">📸</a>
-          <a class="social-link" title="Twitter" aria-label="Twitter">🐦</a>
-          <a class="social-link" title="YouTube" aria-label="YouTube">▶️</a>
           <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
         </div>
       </div>
@@ -537,11 +552,6 @@
         <a href="photos.html">Photos</a>
       </div>
       <div class="footer-col">
-        <h4>Account</h4>
-        <a href="journal.html">Private Journal</a>
-        <a href="#" data-auth>Sign In</a>
-      </div>
-      <div class="footer-col">
         <h4>Info</h4>
         <a href="#">About Us</a>
         <a href="#">Contact</a>
@@ -550,8 +560,8 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 tomika.bike – All rights reserved</span>
-      <span>Made with ❤️ and 🚴 by Tomika &amp; Partner</span>
+      <span>© 2026 tomika.bike</span>
+      <span>Made with ❤️ and 🚴</span>
     </div>
   </div>
 </footer>
@@ -1584,7 +1594,7 @@
 
   function updateAuthUI() {
     const addBtns = ['add-routes-btn', 'add-points-btn', 'add-gmaps-btn'];
-    if (currentUser) {
+    if (isAdmin()) {
       addBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
     } else {
       addBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });

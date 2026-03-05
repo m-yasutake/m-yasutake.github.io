@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bike – A travel adventure blog. Follow our cycling journey around the world." />
+  <meta name="description" content="Tomika Bike – A travel adventure blog. Follow our cycling journey through Japan and Norway." />
   <title>Tomika Bike – Travel Adventure</title>
 
   <!-- Fonts -->
@@ -38,7 +38,6 @@
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
-      <li><a href="journal.html">Journal</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -67,7 +66,6 @@
   <a href="planning.html">🗺️ Map</a>
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
-  <a href="journal.html">📔 Journal</a>
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
@@ -78,7 +76,7 @@
   <div class="auth-modal">
     <button class="auth-close" aria-label="Close">✕</button>
     <h2>Welcome back 👋</h2>
-    <p>Sign in to access your journal and admin tools</p>
+    <p>Sign in to access admin tools</p>
 
     <button class="google-btn">
       <svg class="google-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
@@ -122,8 +120,8 @@
       <span class="line2">Tells a Story</span>
     </h1>
     <p class="hero-desc">
-      Follow our cycling journey across continents – planning routes, collecting memories,
-      and sharing every beautiful moment along the way.
+      Follow our cycling journey through Japan and Norway – from the southern tip of Kyushu
+      to the Arctic coast, this is our story.
     </p>
     <div class="hero-actions">
       <a href="planning.html" class="btn btn-primary">🗺️ View Our Route</a>
@@ -143,19 +141,19 @@
   <div class="container">
     <div class="stats-grid">
       <div class="stat-item">
-        <span class="stat-num" data-count="12">0</span>
-        <div class="stat-label">Countries Planned</div>
+        <span class="stat-num" data-count="2">0</span>
+        <div class="stat-label">Countries</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" data-count="4200">0</span>
+        <span class="stat-num" data-count="5000">0</span>
         <div class="stat-label">Kilometres of Routes</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" data-count="8">0</span>
-        <div class="stat-label">Blog Posts</div>
+        <span class="stat-num" data-count="180">0</span>
+        <div class="stat-label">Days on the Road</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" data-count="120">0</span>
+        <span class="stat-num" data-count="0">0</span>
         <div class="stat-label">Photos Captured</div>
       </div>
     </div>
@@ -189,20 +187,10 @@
         <h3>Photo Gallery</h3>
         <p>A beautiful masonry gallery of all the moments we want to remember forever.</p>
       </a>
-      <a href="journal.html" class="feature-box" style="text-decoration:none;color:inherit">
-        <span class="feature-icon">📔</span>
-        <h3>Private Journal</h3>
-        <p>Our personal diary – raw thoughts, feelings, and reflections for our eyes only.</p>
-      </a>
-      <div class="feature-box" style="cursor:default">
-        <span class="feature-icon">🔐</span>
-        <h3>Google Sign-In</h3>
-        <p>Secure access using your Google account – Firebase authentication coming soon.</p>
-      </div>
-      <a href="admin.html" class="feature-box" style="text-decoration:none;color:inherit">
-        <span class="feature-icon">⚙️</span>
-        <h3>Admin Dashboard</h3>
-        <p>Manage posts, photos, and journal entries all from a single admin panel.</p>
+      <a href="gear.html" class="feature-box" style="text-decoration:none;color:inherit">
+        <span class="feature-icon">🎒</span>
+        <h3>Gear List</h3>
+        <p>Everything we're packing – bikes, camping kit, clothes, and the essentials.</p>
       </a>
     </div>
   </div>
@@ -220,14 +208,14 @@
     </div>
     <div class="grid-3">
       <article class="card">
-        <div class="card-img" style="background:linear-gradient(135deg,#264653,#2A9D8F);display:flex;align-items:center;justify-content:center;font-size:4rem;">🏔️</div>
+        <div class="card-img" style="background:linear-gradient(135deg,#264653,#2A9D8F);display:flex;align-items:center;justify-content:center;font-size:4rem;">🗾</div>
         <div class="card-body">
-          <span class="card-tag">Planning</span>
-          <h3 class="card-title">The Grand Plan: Cycling Across Europe</h3>
-          <p class="card-text">We've been mapping our dream route for months. Here's the plan, the gear list, and why we chose this path.</p>
+          <span class="card-tag">Japan</span>
+          <h3 class="card-title">We Quit Our Jobs and We're Going to Japan</h3>
+          <p class="card-text">Bikes built, bags packed, flights booked. We leave tomorrow and we can barely contain ourselves.</p>
         </div>
         <div class="card-footer">
-          <span>Feb 2026</span>
+          <span>Mar 2026</span>
           <a href="blog.html" style="color:var(--color-secondary);font-weight:600">Read →</a>
         </div>
       </article>
@@ -270,9 +258,8 @@
 <section class="cta-section">
   <div class="container">
     <h2>Ready to follow the journey?</h2>
-    <p>Sign in to access the private journal and get updates from the road.</p>
+    <p>We're cycling from Cape to Cape in Japan, then from Egersund to Tromsø in Norway.</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
-      <button class="btn btn-accent" data-auth>🔑 Sign In with Google</button>
       <a href="planning.html" class="btn btn-outline">🗺️ See the Route</a>
     </div>
   </div>
@@ -286,11 +273,8 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
-        <p>A cycling adventure blog documenting our journey across continents. Planning routes, collecting stories, and sharing every beautiful moment.</p>
+        <p>A cycling adventure blog documenting our journey through Japan and Norway.</p>
         <div class="social-links">
-          <a class="social-link" title="Instagram" aria-label="Instagram">📸</a>
-          <a class="social-link" title="Twitter" aria-label="Twitter">🐦</a>
-          <a class="social-link" title="YouTube" aria-label="YouTube">▶️</a>
           <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
         </div>
       </div>
@@ -302,11 +286,6 @@
         <a href="photos.html">Photos</a>
       </div>
       <div class="footer-col">
-        <h4>Account</h4>
-        <a href="journal.html">Private Journal</a>
-        <a href="#" data-auth>Sign In</a>
-      </div>
-      <div class="footer-col">
         <h4>Info</h4>
         <a href="#">About Us</a>
         <a href="#">Contact</a>
@@ -315,8 +294,8 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 tomika.bike – All rights reserved</span>
-      <span>Made with ❤️ and 🚴 by Tomika & Partner</span>
+      <span>© 2026 tomika.bike</span>
+      <span>Made with ❤️ and 🚴</span>
     </div>
   </div>
 </footer>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bike – Travel blog with stories, tips, and adventures from the road." />
+  <meta name="description" content="Tomika Bike – Travel blog. We quit our jobs and we're cycling through Japan and Norway." />
   <title>Blog – Tomika Bike</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -151,7 +151,6 @@
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
-      <li><a href="journal.html">Journal</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -170,7 +169,6 @@
   <a href="planning.html">🗺️ Map</a>
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
-  <a href="journal.html">📔 Journal</a>
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
@@ -180,7 +178,7 @@
   <div class="auth-modal">
     <button class="auth-close">✕</button>
     <h2>Welcome back 👋</h2>
-    <p>Sign in to access your journal and admin tools</p>
+    <p>Sign in to access admin tools</p>
     <button class="google-btn">
       <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       Continue with Google
@@ -194,7 +192,7 @@
   <div class="container">
     <div class="hero-badge" style="margin-bottom:.75rem">✍️ Travel Stories</div>
     <h1>The Blog</h1>
-    <p>Routes, reflections, and all the beautiful chaos of cycling the world</p>
+    <p>Japan. Norway. Bikes. Two people, one ridiculous plan.</p>
   </div>
 </div>
 
@@ -209,30 +207,28 @@
       <input type="text" id="blogSearch" placeholder="🔍 Search posts..." />
       <div class="gallery-filters" style="margin:0">
         <button class="filter-btn active" data-cat="all">All</button>
-        <button class="filter-btn" data-cat="planning">Planning</button>
+        <button class="filter-btn" data-cat="japan">🆯 Japan</button>
+        <button class="filter-btn" data-cat="norway">🇳🇴 Norway</button>
         <button class="filter-btn" data-cat="gear">Gear</button>
-        <button class="filter-btn" data-cat="stories">Stories</button>
-        <button class="filter-btn" data-cat="food">Food</button>
-        <button class="filter-btn" data-cat="tips">Tips</button>
       </div>
     </div>
 
     <!-- Featured Post -->
-    <article class="featured-post" data-cat="planning">
-      <div class="featured-post-img">🏔️</div>
+    <article class="featured-post" data-cat="japan">
+      <div class="featured-post-img">🗾</div>
       <div class="featured-post-body">
-        <div class="featured-badge">⭐ Featured Post</div>
+        <div class="featured-badge">⭐ Latest Post</div>
         <div class="post-meta-row">
           <div class="author-chip">
             <div class="author-avatar" style="background:var(--color-secondary)">T</div>
-            <span>Tomika</span>
+            <span>Tomika &amp; Tom</span>
           </div>
-          <span class="post-date">February 2026</span>
-          <span class="read-time">8 min read</span>
+          <span class="post-date">March 4, 2026</span>
+          <span class="read-time">5 min read</span>
         </div>
-        <h2>The Grand Plan: Cycling Across Europe from London to Istanbul</h2>
-        <p>After 6 months of planning, spreadsheets, gear reviews, and route debates, we're finally ready to share our full itinerary. Here's everything – the good, the daunting, and the absolutely ridiculous.</p>
-        <a href="#" class="btn btn-primary" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read Full Post →</a>
+        <h2>We Quit Our Jobs and We're Going to Japan 🆯🇵</h2>
+        <p>It started as a joke, then a spreadsheet, then a very serious conversation about pension contributions and whether we really needed them. Spoiler: we decided we didn't. Tomorrow morning we fly to Tokyo, and we genuinely can't believe it's happening.</p>
+        <a href="#post-japan-1" class="btn btn-primary">Read Full Post →</a>
       </div>
     </article>
 
@@ -240,93 +236,54 @@
     <div class="blog-grid">
       <div class="blog-main" id="postList">
 
-        <article class="blog-post-card" data-cat="gear">
-          <div class="blog-post-img">🚴</div>
-          <div class="blog-post-body">
+        <!-- POST 1: We Quit & Going to Japan -->
+        <article class="blog-post-card" id="post-japan-1" data-cat="japan">
+          <div class="blog-post-img" style="height:200px;background:linear-gradient(135deg,#264653,#2a9d8f);display:flex;align-items:center;justify-content:center;font-size:5rem">🗾</div>
+          <div class="blog-post-body" style="padding:1.5rem">
             <div class="post-meta-row">
-              <span class="card-tag">Gear</span>
-              <div class="author-chip">
-                <div class="author-avatar" style="background:var(--color-warm)">P</div>
-                <span>Partner</span>
-              </div>
-              <span class="post-date">Feb 12, 2026</span>
-              <span class="read-time">6 min read</span>
-            </div>
-            <h2>Packing Light: Our Complete Bikepacking Setup for 6 Months</h2>
-            <p>We're bringing two bikes, four panniers, a tent, and somehow fitting in 6 months of life. Here's exactly what's going in the bags and why every gram matters when you're climbing alpine passes.</p>
-            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
-          </div>
-        </article>
-
-        <article class="blog-post-card" data-cat="stories">
-          <div class="blog-post-img">🌅</div>
-          <div class="blog-post-body">
-            <div class="post-meta-row">
-              <span class="card-tag">Stories</span>
+              <span class="card-tag">Japan</span>
               <div class="author-chip">
                 <div class="author-avatar" style="background:var(--color-secondary)">T</div>
-                <span>Tomika</span>
+                <span>Tomika &amp; Tom</span>
               </div>
-              <span class="post-date">Jan 28, 2026</span>
+              <span class="post-date">March 4, 2026</span>
               <span class="read-time">5 min read</span>
             </div>
-            <h2>Why We're Doing This Together: A Love Letter to Partnership</h2>
-            <p>There's something uniquely terrifying – and incredibly exciting – about planning a six-month cycling trip with your partner. Every decision becomes a negotiation, and somehow that makes it better.</p>
-            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
-          </div>
-        </article>
 
-        <article class="blog-post-card" data-cat="planning">
-          <div class="blog-post-img">🗺️</div>
-          <div class="blog-post-body">
-            <div class="post-meta-row">
-              <span class="card-tag">Planning</span>
-              <div class="author-chip">
-                <div class="author-avatar" style="background:var(--color-warm)">P</div>
-                <span>Partner</span>
-              </div>
-              <span class="post-date">Jan 15, 2026</span>
-              <span class="read-time">10 min read</span>
-            </div>
-            <h2>Route Research: How We Built Our London-to-Istanbul Itinerary</h2>
-            <p>GPS tracks, elevation profiles, border crossings, visa requirements – planning a trans-European bike tour is part spreadsheet, part dream, part extreme optimism. Here's our process.</p>
-            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
-          </div>
-        </article>
+            <h2>We Quit Our Jobs and We're Going to Japan 🆯🇵</h2>
 
-        <article class="blog-post-card" data-cat="food">
-          <div class="blog-post-img">🍝</div>
-          <div class="blog-post-body">
-            <div class="post-meta-row">
-              <span class="card-tag">Food</span>
-              <div class="author-chip">
-                <div class="author-avatar" style="background:var(--color-secondary)">T</div>
-                <span>Tomika</span>
-              </div>
-              <span class="post-date">Jan 5, 2026</span>
-              <span class="read-time">4 min read</span>
-            </div>
-            <h2>Cycling Nutrition: Eating Well on the Road Without a Kitchen</h2>
-            <p>When you're burning 3,000+ calories a day on a loaded touring bike, food becomes an obsession. We've spent months researching what to eat, when, and how to carry enough energy without carrying too much weight.</p>
-            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
-          </div>
-        </article>
+            <p>Here's the short version: we handed in our notices, spent three frantic months building our bikes, buying gear, and trying not to think too hard about what we were doing — and tomorrow morning we fly to Tokyo.</p>
 
-        <article class="blog-post-card" data-cat="tips">
-          <div class="blog-post-img">🔧</div>
-          <div class="blog-post-body">
-            <div class="post-meta-row">
-              <span class="card-tag">Tips</span>
-              <div class="author-chip">
-                <div class="author-avatar" style="background:var(--color-warm)">P</div>
-                <span>Partner</span>
+            <p>The longer version is messier and more honest. We'd been talking about doing something big for years. A proper trip. Not a two-week holiday with a return flight already booked, but a real, open-ended, see-what-happens adventure. The kind where you don't know exactly what the end will look like when you're standing at the beginning.</p>
+
+            <p>Japan came up because of Mika's family connections — and because the idea of cycling from one end of Japan to the other, from the southern tip of Kyushu all the way north through Honshu and up into Hokkaido, felt like exactly the scale of thing we were dreaming of. Then Tom said "and we could do Norway after" and somehow that stuck too. His mum's family is from Egersund — a tiny harbour town on the southwest coast — and cycling from there to Tromsø, up past the Arctic Circle, felt equal parts beautiful and completely mad. So obviously we said yes to both.</p>
+
+            <p>The bikes took longer than expected. Of course they did. Tom's rear derailleur situation was a saga that involved three different mechanics and a lot of YouTube tutorials. Mika's front rack broke during a test ride three weeks ago and had to be re-welded. We did a fully loaded overnight test in Wales last month and came back drenched, exhausted, and completely convinced this was a good idea.</p>
+
+            <p>Right now, as I type this, there are two fully loaded touring bikes standing in the hallway. We have four panniers, a handlebar bag, one drybag each strapped to the rear rack, a small tent, two sleeping bags, and approximately one too many pairs of cycling socks. We've booked our flights and a hotel in Tokyo for the first week — we're visiting friends and family there before flying down to Kagoshima to start the actual bike journey. After that? We'll figure it out as we go.</p>
+
+            <p>We don't have a fixed itinerary. We don't have every night planned. What we do have is each other, working bikes, and an extremely optimistic attitude about our ability to read a Japanese map.</p>
+
+            <p>Tomorrow it starts. We leave at 6am. Neither of us has slept properly in a week.</p>
+
+            <p style="font-style:italic;color:var(--color-gray-500)">&#8212; Mika &amp; Tom, the night before</p>
+
+            <h3 style="margin-top:2rem;margin-bottom:.75rem">📷 Photos</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-bottom:.5rem">
+              <div style="background:var(--color-gray-100);border:2px dashed var(--color-gray-300);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;color:var(--color-gray-500);min-height:160px">
+                <div style="font-size:2.5rem;margin-bottom:.5rem">🚴</div>
+                <p style="font-size:.8rem;margin:0">Bikes packed and ready</p>
               </div>
-              <span class="post-date">Dec 20, 2025</span>
-              <span class="read-time">7 min read</span>
+              <div style="background:var(--color-gray-100);border:2px dashed var(--color-gray-300);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;color:var(--color-gray-500);min-height:160px">
+                <div style="font-size:2.5rem;margin-bottom:.5rem">🎒</div>
+                <p style="font-size:.8rem;margin:0">All the gear laid out</p>
+              </div>
+              <div style="background:var(--color-gray-100);border:2px dashed var(--color-gray-300);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;color:var(--color-gray-500);min-height:160px">
+                <div style="font-size:2.5rem;margin-bottom:.5rem">✈️</div>
+                <p style="font-size:.8rem;margin:0">Airport departure</p>
+              </div>
             </div>
-            <h2>Bike Maintenance 101: Keeping Your Touring Bike Running for 6 Months</h2>
-            <p>Your bike is your engine, your car, your lifeline. Learning basic maintenance before a long trip isn't optional – it's survival. Here's our crash course in keeping wheels turning.</p>
-            <a href="#" class="read-more" onclick="TomikaBikes.showToast('Full post coming soon!','info');return false">Read more →</a>
+            <p style="font-size:.8rem;color:var(--color-gray-400)"><em>Photos coming soon — we'll update this post once we're on the road!</em></p>
           </div>
         </article>
 
@@ -338,7 +295,7 @@
           <h3>About the Blog</h3>
           <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
             <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--color-secondary),var(--color-accent));display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🚴</div>
-            <p style="font-size:.875rem;color:var(--color-gray-600);margin:0">Two cyclists. One route. London → Istanbul → beyond. Documenting every beautiful, difficult, hilarious moment.</p>
+            <p style="font-size:.875rem;color:var(--color-gray-600);margin:0">Two cyclists. Japan to Norway. Documenting every beautiful, difficult, and hilarious moment.</p>
           </div>
           <a href="planning.html" class="btn btn-dark" style="width:100%;justify-content:center">See Our Route 🗺️</a>
         </div>
@@ -357,14 +314,11 @@
         <div class="sidebar-widget">
           <h3>Tags</h3>
           <div class="tag-cloud">
-            <span class="tag" onclick="filterByTag('cycling')">cycling</span>
+            <span class="tag" onclick="filterByTag('japan')">japan</span>
+            <span class="tag" onclick="filterByTag('norway')">norway</span>
             <span class="tag" onclick="filterByTag('bikepacking')">bikepacking</span>
-            <span class="tag" onclick="filterByTag('europe')">europe</span>
             <span class="tag" onclick="filterByTag('touring')">touring</span>
             <span class="tag" onclick="filterByTag('gear')">gear</span>
-            <span class="tag" onclick="filterByTag('food')">food</span>
-            <span class="tag" onclick="filterByTag('adventure')">adventure</span>
-            <span class="tag" onclick="filterByTag('couple')">couple travel</span>
           </div>
         </div>
 
@@ -384,9 +338,9 @@
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
-    <h2>Want the full story?</h2>
-    <p>Sign in to read the private journal and get behind-the-scenes entries.</p>
-    <button class="btn btn-accent" data-auth>🔑 Sign In to Read More</button>
+    <h2>Follow along!</h2>
+    <p>We're starting tomorrow — check back for updates from the road.</p>
+    <a href="planning.html" class="btn btn-outline">🗺️ See Our Route</a>
   </div>
 </section>
 
@@ -399,7 +353,6 @@
         <p>A cycling adventure blog.</p>
       </div>
       <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="planning.html">Map</a><a href="blog.html">Blog</a><a href="photos.html">Photos</a></div>
-      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a></div>
       <div class="footer-col"><h4>Info</h4><a href="#">About</a><a href="#">Contact</a></div>
     </div>
     <div class="footer-bottom">

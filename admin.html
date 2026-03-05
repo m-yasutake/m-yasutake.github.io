@@ -536,7 +536,6 @@
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
-      <li><a href="journal.html">Journal</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -555,7 +554,6 @@
   <a href="planning.html">🗺️ Map</a>
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
-  <a href="journal.html">📔 Journal</a>
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
@@ -601,7 +599,6 @@
       <a href="#" class="active" onclick="showSection('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="#" onclick="showSection('posts',this)"><span class="nav-icon">✍️</span> Blog Posts</a>
       <a href="#" onclick="showSection('photos',this)"><span class="nav-icon">📷</span> Photos</a>
-      <a href="#" onclick="showSection('journal',this)"><span class="nav-icon">📔</span> Journal</a>
       <a href="#" onclick="showSection('waypoints',this)"><span class="nav-icon">🗺️</span> Waypoints</a>
       <a href="#" onclick="showSection('roots',this)"><span class="nav-icon">🗺️</span> Map Admin</a>
       <a href="#" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
@@ -631,11 +628,6 @@
           <div class="stat-label">Photos</div>
         </div>
         <div class="admin-stat-card">
-          <div class="stat-icon">📔</div>
-          <span class="stat-value">3</span>
-          <div class="stat-label">Journal Entries</div>
-        </div>
-        <div class="admin-stat-card">
           <div class="stat-icon">📍</div>
           <span class="stat-value">9</span>
           <div class="stat-label">Waypoints</div>
@@ -655,11 +647,6 @@
             <div class="qa-icon">📤</div>
             <h4>Upload Photos</h4>
             <p>Add new gallery images</p>
-          </div>
-          <div class="quick-action" onclick="showSection('journal',null)">
-            <div class="qa-icon">📔</div>
-            <h4>New Journal Entry</h4>
-            <p>Write a private entry</p>
           </div>
           <div class="quick-action" onclick="TomikaBikes.showToast('Waypoint editor coming soon','info')">
             <div class="qa-icon">📍</div>
@@ -690,15 +677,7 @@
             <div class="activity-time">1d ago</div>
           </div>
           <div class="activity-item">
-            <div class="activity-icon">📔</div>
-            <div class="activity-body">
-              <strong>Journal entry added</strong>
-              <span>"Valentine's Day – Pre-trip nerves"</span>
-            </div>
-            <div class="activity-time">2d ago</div>
-          </div>
-          <div class="activity-item">
-            <div class="activity-icon">📍</div>
+            <div class="activity-icon"></div>
             <div class="activity-body">
               <strong>Waypoint updated</strong>
               <span>Istanbul, Turkey – added notes</span>
@@ -809,15 +788,6 @@
         <h3>Upload Photos</h3>
         <p>Drag & drop or click to upload. Firebase Storage integration coming soon.</p>
       </div>
-    </div>
-
-    <!-- ── Journal ── -->
-    <div id="section-journal" class="admin-section" style="display:none">
-      <div class="admin-header">
-        <h1>Journal 📔</h1>
-        <p>Manage private journal entries.</p>
-      </div>
-      <p style="color:var(--color-gray-600)">Journal entries are managed from the <a href="journal.html" style="color:var(--color-secondary)">Journal page</a>.</p>
     </div>
 
     <!-- ── Waypoints ── -->

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -68,7 +68,6 @@
       <li><a href="planning.html">Map</a></li>
       <li><a href="blog.html">Blog</a></li>
       <li><a href="photos.html">Photos</a></li>
-      <li><a href="journal.html">Journal</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -87,7 +86,6 @@
   <a href="planning.html">🗺️ Map</a>
   <a href="blog.html">✍️ Blog</a>
   <a href="photos.html">📷 Photos</a>
-  <a href="journal.html">📔 Journal</a>
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
@@ -97,7 +95,7 @@
   <div class="auth-modal">
     <button class="auth-close">✕</button>
     <h2>Welcome back 👋</h2>
-    <p>Sign in to access your journal and admin tools</p>
+    <p>Sign in to access admin tools</p>
     <button class="google-btn">
       <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       Continue with Google
@@ -111,7 +109,7 @@
   <div class="container">
     <div class="hero-badge" style="margin-bottom:.75rem">📷 Gallery</div>
     <h1>Photo Gallery</h1>
-    <p>Every moment captured – landscapes, cities, people, and the open road</p>
+    <p>Moments from the road – Japan, Norway, and everything in between</p>
   </div>
 </div>
 
@@ -122,97 +120,32 @@
   <div class="container">
 
     <div class="photos-stats">
-      <div class="photos-stat">📷 <strong>24</strong> photos</div>
-      <div class="photos-stat">🗺️ <strong>4</strong> countries</div>
-      <div class="photos-stat">🏔️ <strong>3</strong> albums</div>
+      <div class="photos-stat">📷 <strong>0</strong> photos so far</div>
+      <div class="photos-stat">🗺️ <strong>2</strong> countries planned</div>
     </div>
 
-    <!-- Upload zone (visible when logged in conceptually) -->
-    <div class="upload-zone" onclick="TomikaBikes.showToast('Sign in to upload photos','info')">
+    <!-- Upload zone (admin only) -->
+    <div class="upload-zone" id="uploadZone" style="display:none" onclick="TomikaBikes.showToast('Sign in to upload photos','info')">
       <div class="upload-icon">📤</div>
       <h3>Add New Photos</h3>
-      <p>Drag & drop photos here, or click to browse.<br>Sign in to upload your adventure photos.</p>
-      <button class="btn btn-primary" style="margin-top:1rem" onclick="event.stopPropagation();TomikaBikes.openAuth()">Sign In to Upload</button>
+      <p>Drag &amp; drop photos here, or click to browse.</p>
     </div>
 
     <!-- Gallery Filters -->
     <div class="gallery-filters">
       <button class="filter-btn active" data-gcat="all">🌍 All Photos</button>
-      <button class="filter-btn" data-gcat="landscapes">🏔️ Landscapes</button>
+      <button class="filter-btn" data-gcat="japan">🇯🇵 Japan</button>
+      <button class="filter-btn" data-gcat="norway">🇳🇴 Norway</button>
       <button class="filter-btn" data-gcat="cycling">🚴 Cycling</button>
+      <button class="filter-btn" data-gcat="landscapes">🏔️ Landscapes</button>
       <button class="filter-btn" data-gcat="food">🍜 Food</button>
-      <button class="filter-btn" data-gcat="people">👥 People</button>
-      <button class="filter-btn" data-gcat="cities">🏙️ Cities</button>
     </div>
 
-    <!-- Gallery Grid -->
-    <div class="gallery-grid" id="gallery">
-
-      <div class="gallery-item" data-gcat="landscapes">
-        <div class="photo-placeholder" style="height:280px">🏔️</div>
-        <div class="gallery-item-overlay"><p>Alpine Pass – Swiss Alps<br><small>Mar 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="cycling">
-        <div class="photo-placeholder" style="height:180px">🚴</div>
-        <div class="gallery-item-overlay"><p>Morning ride through Burgundy<br><small>Apr 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="cities">
-        <div class="photo-placeholder" style="height:220px;background:linear-gradient(135deg,#e9c46a,#f4a261)">🗼</div>
-        <div class="gallery-item-overlay"><p>Paris at sunrise<br><small>Apr 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="food">
-        <div class="photo-placeholder" style="height:200px;background:linear-gradient(135deg,#e76f51,#f4a261)">🍕</div>
-        <div class="gallery-item-overlay"><p>Best pizza in Naples 🍕<br><small>May 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="landscapes">
-        <div class="photo-placeholder" style="height:320px;background:linear-gradient(135deg,#2a9d8f,#264653)">🌅</div>
-        <div class="gallery-item-overlay"><p>Sunset over Tuscany<br><small>May 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="people">
-        <div class="photo-placeholder" style="height:180px;background:linear-gradient(135deg,#264653,#2a9d8f)">👥</div>
-        <div class="gallery-item-overlay"><p>New friends at a campsite<br><small>May 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="cycling">
-        <div class="photo-placeholder" style="height:240px;background:linear-gradient(135deg,#e9c46a,#2a9d8f)">🛣️</div>
-        <div class="gallery-item-overlay"><p>Empty roads in Umbria<br><small>May 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="cities">
-        <div class="photo-placeholder" style="height:200px;background:linear-gradient(135deg,#e76f51,#264653)">🏛️</div>
-        <div class="gallery-item-overlay"><p>The Colosseum, Rome<br><small>May 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="landscapes">
-        <div class="photo-placeholder" style="height:260px;background:linear-gradient(135deg,#52b788,#2a9d8f)">🏖️</div>
-        <div class="gallery-item-overlay"><p>Adriatic Coast<br><small>Jun 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="food">
-        <div class="photo-placeholder" style="height:200px;background:linear-gradient(135deg,#f4a261,#e9c46a)">🥗</div>
-        <div class="gallery-item-overlay"><p>Greek salad in Thessaloniki<br><small>Jun 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="landscapes">
-        <div class="photo-placeholder" style="height:180px;background:linear-gradient(135deg,#264653,#e9c46a)">🌊</div>
-        <div class="gallery-item-overlay"><p>Aegean Sea views<br><small>Jul 2026</small></p></div>
-      </div>
-
-      <div class="gallery-item" data-gcat="cities">
-        <div class="photo-placeholder" style="height:280px;background:linear-gradient(135deg,#e76f51,#e9c46a)">🕌</div>
-        <div class="gallery-item-overlay"><p>Blue Mosque, Istanbul<br><small>Aug 2026</small></p></div>
-      </div>
-
-    </div>
-
-    <!-- Load more -->
-    <div style="text-align:center;margin-top:3rem">
-      <button class="btn btn-dark" onclick="TomikaBikes.showToast('More photos coming as we travel!','info')">Load More Photos</button>
+    <!-- Empty state -->
+    <div style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500)" id="gallery">
+      <div style="font-size:4rem;margin-bottom:1rem">📷</div>
+      <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Photos coming soon!</h2>
+      <p style="font-size:.95rem;max-width:420px;margin:0 auto">We leave tomorrow — check back once we're on the road. The first photos from Tokyo and Kagoshima will be up as soon as we can manage it.</p>
     </div>
   </div>
 </section>
@@ -228,9 +161,9 @@
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
-    <h2>Want to add photos?</h2>
-    <p>Sign in with your Google account to upload and manage the gallery.</p>
-    <button class="btn btn-accent" data-auth>📷 Sign In to Upload</button>
+    <h2>Check back soon!</h2>
+    <p>We leave tomorrow — photos from Tokyo and Kagoshima coming shortly.</p>
+    <a href="planning.html" class="btn btn-outline">🗺️ See the Route</a>
   </div>
 </section>
 
@@ -243,7 +176,6 @@
         <p>A cycling adventure blog.</p>
       </div>
       <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="planning.html">Map</a><a href="blog.html">Blog</a><a href="photos.html">Photos</a></div>
-      <div class="footer-col"><h4>Account</h4><a href="journal.html">Journal</a></div>
       <div class="footer-col"><h4>Info</h4><a href="#">About</a><a href="#">Contact</a></div>
     </div>
     <div class="footer-bottom">
