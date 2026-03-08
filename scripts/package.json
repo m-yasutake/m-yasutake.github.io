@@ -5,6 +5,7 @@
   "scripts": {
     "tiles": "node generate-pmtiles.js",
     "points": "node generate-points-snapshot.js",
+    "strava": "node fetch-strava-rides.js",
     "start": "node generate-pmtiles.js"
   },
   "engines": {

@@ -1,0 +1,104 @@
+# .github/workflows/fetch-strava-rides.yml
+#
+# Workflow: Fetch Strava Rides
+#
+# Runs nightly to pull the latest Strava bike rides, convert them to GPX, and
+# store them in Firebase Storage (gpx/ prefix) and Firestore ('routes'
+# collection).  When new rides are saved a second job regenerates the PMTiles
+# vector-tile overlay so the planning.html map page immediately shows the new
+# route without any manual intervention.
+#
+# Required secrets (Settings > Secrets and variables > Actions):
+#   STRAVA_CLIENT_ID      - Strava application Client ID
+#   STRAVA_CLIENT_SECRET  - Strava application Client Secret
+#   STRAVA_REFRESH_TOKEN  - Long-lived OAuth refresh token obtained via the
+#                           Strava authorization flow (does NOT expire)
+#   FIREBASE_SERVICE_ACCOUNT - JSON string of a Firebase service account key
+#     with the following permissions on the roots-eddf5 project:
+#       - Cloud Datastore User  (Firestore read/write)
+#       - Storage Object Admin  (Firebase Storage write)
+#
+# Optional secrets / variables:
+#   STRAVA_AFTER_DATE - ISO 8601 date string limiting how far back to look for
+#                       activities (default: 365 days ago). Already-saved rides
+#                       are always skipped regardless of this setting.
+#
+# Triggers:
+#   - Scheduled: every day at 02:00 UTC
+#   - Manual: Actions tab > "Fetch Strava Rides" > Run workflow
+
+name: Fetch Strava Rides
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  # ── Job 1: fetch new rides from Strava and save to Firebase ─────────────────
+  fetch-rides:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    outputs:
+      new_rides:     ${{ steps.fetch.outputs.new_rides }}
+      has_new_rides: ${{ steps.fetch.outputs.has_new_rides }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install script dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Fetch and save Strava rides
+        id: fetch
+        working-directory: scripts
+        env:
+          STRAVA_CLIENT_ID:     ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+          STRAVA_AFTER_DATE:    ${{ vars.STRAVA_AFTER_DATE }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node fetch-strava-rides.js
+
+  # ── Job 2: regenerate PMTiles so new rides appear on the map ────────────────
+  regenerate-tiles:
+    needs: fetch-rides
+    if: needs.fetch-rides.outputs.has_new_rides == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install tippecanoe
+        run: |
+          git clone https://github.com/felt/tippecanoe.git
+          cd tippecanoe
+          make -j$(nproc)
+          sudo make install
+
+      - name: Install script dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Generate and upload PMTiles
+        working-directory: scripts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node generate-pmtiles.js
