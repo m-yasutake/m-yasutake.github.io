@@ -481,6 +481,48 @@
 
   .back-link:hover { text-decoration: underline; }
 
+  /* ── Photos Admin ──────────────────────────────────── */
+  #photos-drop-zone {
+    border: 2px dashed var(--color-gray-300);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    background: var(--color-white);
+  }
+  #photos-drop-zone:hover, #photos-drop-zone.drag-over {
+    border-color: var(--color-secondary);
+    background: rgba(42,157,143,.06);
+  }
+  .photo-queue-item {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem;
+    background: var(--color-gray-100);
+    border-radius: var(--radius-md);
+    margin-top: .5rem;
+  }
+  .photo-queue-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: var(--radius-sm); flex-shrink: 0; }
+  .photo-queue-info { flex: 1; min-width: 0; }
+  .photo-queue-name { font-size: .85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .photo-queue-meta { font-size: .75rem; color: var(--color-gray-500); }
+  .photo-queue-progress { height: 4px; background: var(--color-gray-200); border-radius: 2px; margin-top: .35rem; overflow: hidden; }
+  .photo-queue-bar { height: 100%; background: var(--color-secondary); border-radius: 2px; width: 0%; transition: width .15s ease; }
+  .photo-queue-remove { background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--color-gray-400); padding: .25rem; flex-shrink: 0; line-height: 1; }
+  .photo-queue-remove:hover { color: #e74c3c; }
+  .photo-gallery-card { background: var(--color-white); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-gray-200); box-shadow: var(--shadow-sm); transition: transform .2s, box-shadow .2s; }
+  .photo-gallery-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .photo-gallery-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .photo-gallery-card .pgc-body { padding: .6rem; }
+  .photo-gallery-card .pgc-album { font-size: .72rem; color: var(--color-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .photo-gallery-card .pgc-caption { font-size: .8rem; color: var(--color-gray-700); margin-top: .15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .photo-gallery-card .pgc-actions { display: flex; gap: .25rem; padding: .4rem .5rem; border-top: 1px solid var(--color-gray-100); }
+  .photo-gallery-card .pgc-actions a, .photo-gallery-card .pgc-actions button { font-size: .72rem; background: none; border: none; cursor: pointer; color: var(--color-gray-500); padding: .2rem .4rem; border-radius: var(--radius-sm); text-decoration: none; }
+  .photo-gallery-card .pgc-actions a:hover { color: var(--color-secondary); }
+  .photo-gallery-card .pgc-actions button:hover { color: #e74c3c; }
+
   /* ── Loading overlay ─────────────────────────────────── */
   #roots-admin-loading {
     text-align: center;
@@ -643,7 +685,7 @@
             <h4>New Blog Post</h4>
             <p>Write and publish a post</p>
           </div>
-          <div class="quick-action" onclick="TomikaBikes.showToast('Photo upload coming soon','info')">
+          <div class="quick-action" onclick="showSection('photos', document.querySelector('.admin-nav a[onclick*=photos]'))">
             <div class="qa-icon">📤</div>
             <h4>Upload Photos</h4>
             <p>Add new gallery images</p>
@@ -783,10 +825,43 @@
         <h1>Photos 📷</h1>
         <p>Upload and manage your travel gallery.</p>
       </div>
-      <div class="upload-zone" style="background:var(--color-white)" onclick="TomikaBikes.showToast('Firebase storage upload coming soon','info')">
-        <div class="upload-icon" style="font-size:2.5rem">📤</div>
-        <h3>Upload Photos</h3>
-        <p>Drag & drop or click to upload. Firebase Storage integration coming soon.</p>
+
+      <!-- Upload form -->
+      <div class="new-post-form">
+        <h3 style="margin-bottom:1.5rem">Upload Photos</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Album</label>
+            <input type="text" id="photos-album" class="form-control" placeholder="e.g. Spain 2026" />
+          </div>
+          <div class="form-group">
+            <label>Caption (optional)</label>
+            <input type="text" id="photos-caption" class="form-control" placeholder="A short description..." />
+          </div>
+        </div>
+        <div id="photos-drop-zone">
+          <input type="file" id="photos-file-input" accept="image/*" multiple style="display:none" />
+          <div style="font-size:2.5rem">📤</div>
+          <h3 style="margin:.5rem 0 .25rem">Drag &amp; drop photos here</h3>
+          <p style="color:var(--color-gray-500);margin:0">or <strong>click to browse</strong> — JPG, PNG, WEBP up to 10 MB each</p>
+        </div>
+        <div id="photos-queue"></div>
+        <div style="display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap">
+          <button class="btn btn-primary" id="photos-upload-btn" disabled>📤 Upload All</button>
+          <button class="btn" style="background:var(--color-gray-200)" id="photos-clear-btn">Clear Queue</button>
+        </div>
+      </div>
+
+      <!-- Gallery -->
+      <div style="margin-top:2rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+          <h3 style="margin:0">Existing Photos</h3>
+          <select id="photos-gallery-filter" class="form-control" style="width:auto;max-width:220px">
+            <option value="">All albums</option>
+          </select>
+        </div>
+        <div id="photos-gallery-status" style="color:var(--color-gray-500);font-size:.85rem;margin-bottom:.75rem">Loading photos...</div>
+        <div id="photos-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem"></div>
       </div>
     </div>
 
@@ -1759,6 +1834,313 @@
   initFirebase();
 })();
 
+</script>
+<script>
+// ── Photos Admin ──────────────────────────────────────────────
+(function () {
+  let photosDb = null;
+  let photosStorage = null;
+  let queue = []; // { id, file, blobUrl, el, barEl, statusEl }
+  let galleryDocs = [];
+  let initialized = false;
+  let _sdkLoaded = false;
+
+  // ── Lazy-load Firebase Storage SDK (reuse if Roots Admin already loaded it)
+  function loadStorageSdk() {
+    if (_sdkLoaded) return Promise.resolve();
+    // Check if another section already injected it
+    if ([...document.scripts].some(s => (s.getAttribute('src') || '').includes('firebase-storage-compat'))) {
+      _sdkLoaded = true;
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js';
+      s.onload = () => { _sdkLoaded = true; resolve(); };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  function ensureReady() {
+    return loadStorageSdk().then(() => {
+      if (photosDb) return;
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      photosDb = firebase.firestore();
+      photosStorage = firebase.storage();
+    });
+  }
+
+  // ── Helpers
+  function fmtSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+  }
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+  }
+
+  function escAttr(str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function sanitizeFilename(name) {
+    return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  }
+
+  // ── Queue management
+  const MAX_SIZE = 10 * 1048576;
+  const ALLOWED  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+  function addFilesToQueue(files) {
+    Array.from(files).forEach(file => {
+      if (!ALLOWED.includes(file.type)) {
+        showToast(file.name + ' is not a supported image type', 'error');
+        return;
+      }
+      if (file.size > MAX_SIZE) {
+        showToast(file.name + ' exceeds the 10 MB limit', 'error');
+        return;
+      }
+      const id = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      const blobUrl = URL.createObjectURL(file);
+
+      const el = document.createElement('div');
+      el.className = 'photo-queue-item';
+      el.dataset.qid = id;
+      el.innerHTML =
+        '<img class="photo-queue-thumb" src="' + escAttr(blobUrl) + '" alt="">' +
+        '<div class="photo-queue-info">' +
+          '<div class="photo-queue-name">' + esc(file.name) + '</div>' +
+          '<div class="photo-queue-meta">' + esc(fmtSize(file.size)) + '</div>' +
+          '<div class="photo-queue-progress"><div class="photo-queue-bar"></div></div>' +
+          '<div class="photo-queue-status" style="font-size:.72rem;margin-top:.2rem;color:var(--color-gray-500)">Ready</div>' +
+        '</div>' +
+        '<button class="photo-queue-remove" title="Remove">✕</button>';
+
+      el.querySelector('.photo-queue-remove').addEventListener('click', () => {
+        URL.revokeObjectURL(blobUrl);
+        queue = queue.filter(q => q.id !== id);
+        el.remove();
+        syncUploadBtn();
+      });
+
+      queue.push({ id, file, blobUrl, el,
+        barEl:    el.querySelector('.photo-queue-bar'),
+        statusEl: el.querySelector('.photo-queue-status') });
+      document.getElementById('photos-queue').appendChild(el);
+    });
+    syncUploadBtn();
+  }
+
+  function syncUploadBtn() {
+    document.getElementById('photos-upload-btn').disabled = queue.length === 0;
+  }
+
+  // ── Drop-zone wiring
+  function setupDropZone() {
+    const zone  = document.getElementById('photos-drop-zone');
+    const input = document.getElementById('photos-file-input');
+
+    zone.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      if (input.files.length) addFilesToQueue(input.files);
+      input.value = '';
+    });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', e => {
+      if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+    });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) addFilesToQueue(e.dataTransfer.files);
+    });
+  }
+
+  // ── Upload
+  function uploadAll() {
+    if (!queue.length) return;
+    const album   = (document.getElementById('photos-album').value.trim()   || 'general').replace(/[^a-zA-Z0-9 _-]/g, '_');
+    const caption =  document.getElementById('photos-caption').value.trim();
+    const btn = document.getElementById('photos-upload-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Uploading…';
+
+    ensureReady()
+      .then(() => Promise.allSettled(queue.map(item => uploadOne(item, album, caption))))
+      .then(results => {
+        const ok   = results.filter(r => r.status === 'fulfilled').length;
+        const fail = results.filter(r => r.status === 'rejected').length;
+        if (fail === 0) {
+          showToast(ok + ' photo' + (ok !== 1 ? 's' : '') + ' uploaded!', 'success');
+          // Remove successful items
+          const failedIds = new Set(
+            results.map((r, i) => r.status === 'rejected' ? queue[i].id : null).filter(Boolean)
+          );
+          queue = queue.filter(q => failedIds.has(q.id));
+          if (!queue.length) document.getElementById('photos-queue').innerHTML = '';
+        } else {
+          showToast(ok + ' uploaded, ' + fail + ' failed', 'error');
+        }
+        btn.textContent = '📤 Upload All';
+        btn.disabled = queue.length === 0;
+        loadGallery();
+      });
+  }
+
+  function uploadOne(item, album, caption) {
+    return new Promise((resolve, reject) => {
+      const safeName    = sanitizeFilename(item.file.name);
+      const storagePath = 'photos/' + album + '/' + Date.now() + '_' + safeName;
+      const ref         = photosStorage.ref(storagePath);
+
+      item.statusEl.textContent = 'Uploading…';
+      item.statusEl.style.color = 'var(--color-secondary)';
+
+      const task = ref.put(item.file);
+      task.on('state_changed',
+        snap => {
+          item.barEl.style.width = Math.round(snap.bytesTransferred / snap.totalBytes * 100) + '%';
+        },
+        err => {
+          item.statusEl.textContent = 'Failed: ' + err.message;
+          item.statusEl.style.color = '#e74c3c';
+          reject(err);
+        },
+        () => {
+          task.snapshot.ref.getDownloadURL()
+            .then(url => photosDb.collection('photos').add({
+              url,
+              storagePath,
+              album,
+              caption: caption || '',
+              fileName: item.file.name,
+              uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }))
+            .then(() => {
+              item.barEl.style.width = '100%';
+              item.statusEl.textContent = '✓ Done';
+              item.statusEl.style.color = '#27ae60';
+              URL.revokeObjectURL(item.blobUrl);
+              resolve();
+            })
+            .catch(err => {
+              item.statusEl.textContent = 'Metadata failed: ' + err.message;
+              item.statusEl.style.color = '#e74c3c';
+              reject(err);
+            });
+        }
+      );
+    });
+  }
+
+  // ── Gallery
+  function loadGallery() {
+    const statusEl = document.getElementById('photos-gallery-status');
+    statusEl.textContent = 'Loading photos…';
+    ensureReady()
+      .then(() => photosDb.collection('photos').orderBy('uploadedAt', 'desc').limit(200).get())
+      .then(snapshot => {
+        galleryDocs = [];
+        snapshot.forEach(doc => galleryDocs.push({ id: doc.id, data: doc.data() }));
+        populateAlbumFilter();
+        renderGallery(document.getElementById('photos-gallery-filter').value);
+        statusEl.textContent = galleryDocs.length + ' photo' + (galleryDocs.length !== 1 ? 's' : '');
+      })
+      .catch(err => { statusEl.textContent = 'Error loading gallery: ' + err.message; });
+  }
+
+  function populateAlbumFilter() {
+    const select  = document.getElementById('photos-gallery-filter');
+    const current = select.value;
+    select.innerHTML = '<option value="">All albums</option>';
+    const albums = new Set(galleryDocs.map(d => d.data.album).filter(Boolean));
+    Array.from(albums).sort().forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      select.appendChild(opt);
+    });
+    if (current) select.value = current;
+  }
+
+  function renderGallery(filterAlbum) {
+    const gallery = document.getElementById('photos-gallery');
+    const docs = filterAlbum ? galleryDocs.filter(d => d.data.album === filterAlbum) : galleryDocs;
+    if (!docs.length) {
+      gallery.innerHTML = '<p style="color:var(--color-gray-500);grid-column:1/-1">No photos yet.</p>';
+      return;
+    }
+    gallery.innerHTML = docs.map(doc => {
+      const d = doc.data;
+      return '<div class="photo-gallery-card">' +
+        '<img src="' + escAttr(d.url || '') + '" alt="' + escAttr(d.caption || d.fileName || '') + '" loading="lazy">' +
+        '<div class="pgc-body">' +
+          '<div class="pgc-album">' + esc(d.album || 'general') + '</div>' +
+          '<div class="pgc-caption">' + esc(d.caption || d.fileName || '') + '</div>' +
+        '</div>' +
+        '<div class="pgc-actions">' +
+          '<a href="' + escAttr(d.url || '#') + '" target="_blank" rel="noopener noreferrer">🔗 View</a>' +
+          '<button data-docid="' + escAttr(doc.id) + '" data-sp="' + escAttr(d.storagePath || '') + '">🗑 Delete</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    gallery.querySelectorAll('.pgc-actions button').forEach(btn => {
+      btn.addEventListener('click', () => deletePhoto(btn.dataset.docid, btn.dataset.sp));
+    });
+  }
+
+  function deletePhoto(docId, storagePath) {
+    if (!confirm('Delete this photo? This cannot be undone.')) return;
+    ensureReady()
+      .then(() => {
+        const ops = [photosDb.collection('photos').doc(docId).delete()];
+        if (storagePath) {
+          ops.push(photosStorage.ref(storagePath).delete().catch(e => console.warn('Storage delete:', e)));
+        }
+        return Promise.all(ops);
+      })
+      .then(() => {
+        galleryDocs = galleryDocs.filter(d => d.id !== docId);
+        populateAlbumFilter();
+        renderGallery(document.getElementById('photos-gallery-filter').value);
+        document.getElementById('photos-gallery-status').textContent =
+          galleryDocs.length + ' photo' + (galleryDocs.length !== 1 ? 's' : '');
+        showToast('Photo deleted', 'success');
+      })
+      .catch(err => showToast('Delete failed: ' + err.message, 'error'));
+  }
+
+  // ── Init (lazy — runs on first visit to Photos section)
+  function init() {
+    if (initialized) return;
+    initialized = true;
+    setupDropZone();
+    document.getElementById('photos-upload-btn').addEventListener('click', uploadAll);
+    document.getElementById('photos-clear-btn').addEventListener('click', () => {
+      queue.forEach(q => URL.revokeObjectURL(q.blobUrl));
+      queue = [];
+      document.getElementById('photos-queue').innerHTML = '';
+      syncUploadBtn();
+    });
+    document.getElementById('photos-gallery-filter').addEventListener('change', e => renderGallery(e.target.value));
+    loadGallery();
+  }
+
+  // Intercept showSection to trigger Photos init
+  const _origShowSection = window.showSection;
+  window.showSection = function (name, linkEl) {
+    _origShowSection(name, linkEl);
+    if (name === 'photos') init();
+  };
+})();
 </script>
 </body>
 </html>

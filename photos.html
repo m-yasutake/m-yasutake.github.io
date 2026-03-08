@@ -120,8 +120,8 @@
   <div class="container">
 
     <div class="photos-stats">
-      <div class="photos-stat">📷 <strong>0</strong> photos so far</div>
-      <div class="photos-stat">🗺️ <strong>2</strong> countries planned</div>
+      <div class="photos-stat">📷 <strong id="photo-count">…</strong> photos</div>
+      <div class="photos-stat">🗺️ <strong id="album-count">…</strong> albums</div>
     </div>
 
     <!-- Upload zone (admin only) -->
@@ -131,18 +131,22 @@
       <p>Drag &amp; drop photos here, or click to browse.</p>
     </div>
 
-    <!-- Gallery Filters -->
-    <div class="gallery-filters">
+    <!-- Gallery Filters (populated dynamically) -->
+    <div class="gallery-filters" id="gallery-filters">
       <button class="filter-btn active" data-gcat="all">🌍 All Photos</button>
-      <button class="filter-btn" data-gcat="japan">🇯🇵 Japan</button>
-      <button class="filter-btn" data-gcat="norway">🇳🇴 Norway</button>
-      <button class="filter-btn" data-gcat="cycling">🚴 Cycling</button>
-      <button class="filter-btn" data-gcat="landscapes">🏔️ Landscapes</button>
-      <button class="filter-btn" data-gcat="food">🍜 Food</button>
     </div>
 
-    <!-- Empty state -->
-    <div style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500)" id="gallery">
+    <!-- Loading state -->
+    <div id="gallery-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
+      <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
+      <p>Loading photos…</p>
+    </div>
+
+    <!-- Photo grid (populated by JS) -->
+    <div class="gallery-grid" id="gallery" style="display:none"></div>
+
+    <!-- Empty state (shown when Firestore returns 0 photos) -->
+    <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
       <div style="font-size:4rem;margin-bottom:1rem">📷</div>
       <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Photos coming soon!</h2>
       <p style="font-size:.95rem;max-width:420px;margin:0 auto">We leave tomorrow — check back once we're on the road. The first photos from Tokyo and Kagoshima will be up as soon as we can manage it.</p>
@@ -185,51 +189,131 @@
   </div>
 </footer>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
 <script src="js/main.js"></script>
 <script>
-  // Gallery filter
-  document.querySelectorAll('[data-gcat]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-gcat]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const cat = btn.dataset.gcat;
-      document.querySelectorAll('.gallery-item').forEach(item => {
-        item.style.display = (cat === 'all' || item.dataset.gcat === cat) ? 'block' : 'none';
-      });
-    });
-  });
-
-  // Lightbox
-  const lightbox = document.getElementById('lightbox');
+(function () {
+  // ── Lightbox helpers
+  const lightbox     = document.getElementById('lightbox');
   const lightboxBody = document.getElementById('lightboxBody');
 
-  document.querySelectorAll('.gallery-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const content = item.innerHTML;
-      lightboxBody.innerHTML = content;
-      lightbox.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    });
-  });
+  function openLightbox(url, caption) {
+    lightboxBody.innerHTML =
+      '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + (caption || '').replace(/"/g, '&quot;') + '">' +
+      (caption ? '<p style="color:#fff;text-align:center;margin-top:.75rem;font-size:.9rem">' + caption + '</p>' : '');
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
 
-  document.getElementById('lightboxClose').addEventListener('click', () => {
+  function closeLightbox() {
     lightbox.classList.remove('open');
+    lightboxBody.innerHTML = '';
     document.body.style.overflow = '';
+  }
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox(); });
+
+  // ── Filter helpers
+  let currentCat = 'all';
+
+  function setFilter(cat) {
+    currentCat = cat;
+    document.querySelectorAll('#gallery-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.gcat === cat));
+    document.querySelectorAll('.gallery-item').forEach(item => {
+      item.style.display = (cat === 'all' || item.dataset.gcat === cat) ? '' : 'none';
+    });
+  }
+
+  document.getElementById('gallery-filters').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (btn) setFilter(btn.dataset.gcat);
   });
 
-  lightbox.addEventListener('click', e => {
-    if (e.target === lightbox) {
-      lightbox.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  });
+  // ── Slugify album name for data-gcat attribute
+  function slugify(str) {
+    return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
 
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && lightbox.classList.contains('open')) {
-      lightbox.classList.remove('open');
-      document.body.style.overflow = '';
+  // ── Render gallery from Firestore docs
+  function renderGallery(docs) {
+    const grid      = document.getElementById('gallery');
+    const loading   = document.getElementById('gallery-loading');
+    const empty     = document.getElementById('gallery-empty');
+    const filters   = document.getElementById('gallery-filters');
+    const countEl   = document.getElementById('photo-count');
+    const albumsEl  = document.getElementById('album-count');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      empty.style.display = '';
+      countEl.textContent = '0';
+      albumsEl.textContent = '0';
+      return;
     }
-  });
+
+    // Build album list and inject filter buttons
+    const albums = [...new Set(docs.map(d => d.album).filter(Boolean))].sort();
+    albums.forEach(album => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.dataset.gcat = slugify(album);
+      btn.textContent = '📁 ' + album;
+      filters.appendChild(btn);
+    });
+
+    // Build gallery items
+    grid.innerHTML = docs.map(doc => {
+      const cat     = slugify(doc.album || 'general');
+      const caption = doc.caption || doc.fileName || '';
+      const url     = doc.url || '';
+      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + url.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '">' +
+        '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
+        '<div class="gallery-item-overlay"><p>' + caption + '</p></div>' +
+      '</div>';
+    }).join('');
+
+    // Lightbox click delegation
+    grid.addEventListener('click', e => {
+      const item = e.target.closest('.gallery-item');
+      if (item) openLightbox(item.dataset.url, item.dataset.caption);
+    });
+
+    grid.style.display = '';
+    countEl.textContent  = docs.length;
+    albumsEl.textContent = albums.length;
+
+    // Re-apply any active filter
+    if (currentCat !== 'all') setFilter(currentCat);
+  }
+
+  // ── Load from Firestore
+  function loadPhotos() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      const db = firebase.firestore();
+      db.collection('photos').orderBy('uploadedAt', 'desc').get()
+        .then(snapshot => {
+          const docs = [];
+          snapshot.forEach(doc => docs.push(doc.data()));
+          renderGallery(docs);
+        })
+        .catch(err => {
+          console.error('Photos load error:', err);
+          document.getElementById('gallery-loading').innerHTML = '<p style="color:#e74c3c">Could not load photos. Please try again later.</p>';
+        });
+    } catch (err) {
+      console.error('Firebase init error:', err);
+    }
+  }
+
+  loadPhotos();
+})();
 </script>
 </body>
 </html>
