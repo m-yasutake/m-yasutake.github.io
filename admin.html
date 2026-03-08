@@ -1096,14 +1096,17 @@
     } catch(e) {
       // App already initialized - use existing instance
     }
+    // Use persistent multi-tab cache (replaces deprecated enablePersistence)
+    try {
+      firebase.firestore().settings({
+        localCache: firebase.firestore.persistentLocalCache({
+          tabManager: firebase.firestore.persistentMultipleTabManager()
+        })
+      });
+    } catch (e) {
+      // settings() can only be called once; ignore if already set
+    }
     db = firebase.firestore();
-
-    // Enable local persistence — repeat visits serve data from cache first
-    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-      if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
-        console.warn('Firestore persistence error:', err);
-      }
-    });
 
     const authBtn = document.getElementById('roots-admin-auth-btn');
 

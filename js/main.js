@@ -252,7 +252,9 @@ document.querySelectorAll('.card, .feature-box, .blog-post-card, .journal-entry,
 // ── Smooth anchor scrolling ──────────────────
 document.querySelectorAll('a[href^="#"]').forEach(link => {
   link.addEventListener('click', e => {
-    const target = document.querySelector(link.getAttribute('href'));
+    const href = link.getAttribute('href');
+    if (!href || href === '#') return; // bare # links are nav placeholders
+    const target = document.querySelector(href);
     if (target) {
       e.preventDefault();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
