@@ -268,12 +268,15 @@
     });
 
     // Build gallery items
+    // Use thumbUrl (600px) for the grid and url (1920px) for the lightbox.
+    // Fall back to url for photos uploaded before thumbnails were introduced.
     grid.innerHTML = docs.map(doc => {
-      const cat     = slugify(doc.album || 'general');
-      const caption = doc.caption || doc.fileName || '';
-      const url     = doc.url || '';
-      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + url.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '">' +
-        '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
+      const cat      = slugify(doc.album || 'general');
+      const caption  = doc.caption || doc.fileName || '';
+      const fullUrl  = doc.url      || '';
+      const thumbUrl = doc.thumbUrl || fullUrl;
+      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + fullUrl.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '">' +
+        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
         '<div class="gallery-item-overlay"><p>' + caption + '</p></div>' +
       '</div>';
     }).join('');

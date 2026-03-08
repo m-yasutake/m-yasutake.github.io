@@ -1967,6 +1967,29 @@
     });
   }
 
+  // ── Canvas resize helper
+  // Returns a Promise<Blob> of the image resized to fit within maxPx on its longest side.
+  function resizeImage(file, maxPx, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const blobUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(blobUrl);
+        let { width, height } = img;
+        if (width > maxPx || height > maxPx) {
+          if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx; }
+          else                 { width  = Math.round(width  * maxPx / height); height = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('Image load failed')); };
+      img.src = blobUrl;
+    });
+  }
+
   // ── Upload
   function uploadAll() {
     if (!queue.length) return;
@@ -1999,48 +2022,62 @@
   }
 
   function uploadOne(item, album, caption) {
-    return new Promise((resolve, reject) => {
-      const safeName    = sanitizeFilename(item.file.name);
-      const storagePath = 'photos/' + album + '/' + Date.now() + '_' + safeName;
-      const ref         = photosStorage.ref(storagePath);
+    const safeName  = sanitizeFilename(item.file.name).replace(/\.[^.]+$/, '') + '.jpg';
+    const base      = 'photos/' + album + '/' + Date.now();
+    const pathFull  = base + '_full_'  + safeName;
+    const pathThumb = base + '_thumb_' + safeName;
 
+    item.statusEl.textContent = 'Resizing…';
+    item.statusEl.style.color = 'var(--color-secondary)';
+
+    return Promise.all([
+      resizeImage(item.file, 1920, 0.82),
+      resizeImage(item.file, 600,  0.75)
+    ]).then(([fullBlob, thumbBlob]) => {
       item.statusEl.textContent = 'Uploading…';
-      item.statusEl.style.color = 'var(--color-secondary)';
+      // Show combined progress: full upload = 0-70%, thumb = 70-90%, Firestore = 90-100%
+      let fullPct = 0, thumbPct = 0;
+      const updateBar = () => {
+        item.barEl.style.width = Math.round(fullPct * 0.7 + thumbPct * 0.2 + 0) + '%';
+      };
 
-      const task = ref.put(item.file);
-      task.on('state_changed',
-        snap => {
-          item.barEl.style.width = Math.round(snap.bytesTransferred / snap.totalBytes * 100) + '%';
-        },
-        err => {
-          item.statusEl.textContent = 'Failed: ' + err.message;
-          item.statusEl.style.color = '#e74c3c';
-          reject(err);
-        },
-        () => {
-          task.snapshot.ref.getDownloadURL()
-            .then(url => photosDb.collection('photos').add({
-              url,
-              storagePath,
-              album,
-              caption: caption || '',
-              fileName: item.file.name,
-              uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }))
-            .then(() => {
-              item.barEl.style.width = '100%';
-              item.statusEl.textContent = '✓ Done';
-              item.statusEl.style.color = '#27ae60';
-              URL.revokeObjectURL(item.blobUrl);
-              resolve();
-            })
-            .catch(err => {
-              item.statusEl.textContent = 'Metadata failed: ' + err.message;
-              item.statusEl.style.color = '#e74c3c';
-              reject(err);
-            });
-        }
-      );
+      const uploadBlob = (path, blob) => new Promise((resolve, reject) => {
+        const task = photosStorage.ref(path).put(blob, { contentType: 'image/jpeg' });
+        task.on('state_changed',
+          snap => {
+            const pct = snap.bytesTransferred / snap.totalBytes * 100;
+            if (path === pathFull) { fullPct = pct; } else { thumbPct = pct; }
+            updateBar();
+          },
+          reject,
+          () => task.snapshot.ref.getDownloadURL().then(resolve).catch(reject)
+        );
+      });
+
+      return Promise.all([uploadBlob(pathFull, fullBlob), uploadBlob(pathThumb, thumbBlob)])
+        .then(([url, thumbUrl]) => {
+          item.barEl.style.width = '90%';
+          return photosDb.collection('photos').add({
+            url,
+            thumbUrl,
+            storagePath: pathFull,
+            thumbStoragePath: pathThumb,
+            album,
+            caption: caption || '',
+            fileName: item.file.name,
+            uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        })
+        .then(() => {
+          item.barEl.style.width = '100%';
+          item.statusEl.textContent = '✓ Done';
+          item.statusEl.style.color = '#27ae60';
+          URL.revokeObjectURL(item.blobUrl);
+        });
+    }).catch(err => {
+      item.statusEl.textContent = 'Failed: ' + err.message;
+      item.statusEl.style.color = '#e74c3c';
+      throw err;
     });
   }
 
