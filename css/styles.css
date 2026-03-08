@@ -946,7 +946,9 @@ p { line-height: 1.75; }
   opacity: 0;
   transition: opacity var(--transition);
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
   padding: 1rem;
   border-radius: var(--radius-md);
 }
@@ -959,6 +961,12 @@ p { line-height: 1.75; }
   font-weight: 500;
   line-height: 1.4;
   margin: 0;
+}
+
+.gallery-item-location {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,.75);
+  margin: 0 0 .2rem !important;
 }
 
 /* Lightbox */
