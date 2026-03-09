@@ -43,6 +43,7 @@
     </ul>
 
     <div class="nav-actions">
+      <button class="nav-subscribe-btn" onclick="openSubscribeModal()">🔔 Subscribe</button>
       <button class="nav-login-btn" data-auth>
         <svg class="google-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -69,6 +70,7 @@
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
   <button class="btn btn-primary" style="margin-top:.5rem" data-auth>Sign In with Google</button>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
 </div>
 
 <!-- Auth Modal -->
@@ -237,6 +239,7 @@
     <p>We're cycling from Cape to Cape in Japan, then from Egersund to Tromsø in Norway.</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
       <a href="planning.html" class="btn btn-outline">🗺️ See the Route</a>
+      <button class="btn btn-accent" onclick="openSubscribeModal()">🔔 Get Updates</button>
     </div>
   </div>
 </section>
