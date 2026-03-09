@@ -6,10 +6,6 @@
   <meta name="description" content="Tomika Bike – Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning." />
   <title>Map - Tomika Bike</title>
 
-  <!-- Eruda in-browser console (debug only – remove before final deploy) -->
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-  <script>eruda.init();</script>
-
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -263,6 +259,43 @@
   }
 
   .pack-check.checked { background: var(--color-secondary); border-color: var(--color-secondary); color: var(--color-white); }
+
+  /* ── Fullscreen map toggle ──────────────────────────────── */
+  #fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  #fullscreen-btn:hover { background: #f4f4f4; }
+
+  #map-wrapper.map-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 9998 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  #map-wrapper.map-fullscreen #map {
+    height: 100% !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+  }
   </style>
 </head>
 <body>
@@ -429,6 +462,18 @@
         </div>
 
         <div id="map-wrapper">
+          <button id="fullscreen-btn" title="Toggle fullscreen map" aria-label="Toggle fullscreen map">
+            <!-- expand icon -->
+            <svg id="fs-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+            <!-- collapse icon -->
+            <svg id="fs-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+              <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+              <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+            </svg>
+          </button>
           <div id="map-loading">
             <div class="loading-text" id="loading-text">Loading routes &amp; points...</div>
             <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -601,7 +646,7 @@
       return Promise.reject(new TypeError('pmtiles:// – no instance registered for: ' + u));
     }
     // Pass all other requests through, but strip cache modes that some browsers
-    // (Eruda, iOS WebView, Android WebView) reject with ERR_CACHE_OPERATION_NOT_SUPPORTED.
+    // (iOS WebView, Android WebView) reject with ERR_CACHE_OPERATION_NOT_SUPPORTED.
     // pmtiles.js internally uses cache:'reload' when fetching the .pmtiles source file;
     // we degrade it to 'default' so the request still succeeds.
     if (options && options.cache &&
@@ -744,14 +789,14 @@
     })
   };
 
-  const layerControl = L.control.layers(baseLayers, overlayLayers, { position: 'topright', collapsed: true }).addTo(map);
+  const layerControl = L.control.layers(baseLayers, overlayLayers, { position: 'bottomleft', collapsed: true }).addTo(map);
 
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
-      if (zoom >= 16) return 0;
-      return Math.max(0, 80 - (zoom * 3));
+      if (zoom >= 9) return 0;
+      return Math.max(0, 80 - (zoom * 4));
     },
-    disableClusteringAtZoom: 16,
+    disableClusteringAtZoom: 9,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
@@ -1882,6 +1927,38 @@ function toggleCheck(el) {
   const prog = document.getElementById('packProgress');
   if (prog) prog.textContent = checked + ' of ' + items.length + ' items packed';
 }
+
+// ── Fullscreen map toggle ───────────────────────────────────
+(function () {
+  const fsBtn = document.getElementById('fullscreen-btn');
+  const fsExpandIcon = document.getElementById('fs-expand-icon');
+  const fsCollapseIcon = document.getElementById('fs-collapse-icon');
+  const mapWrapper = document.getElementById('map-wrapper');
+
+  fsBtn.addEventListener('click', function () {
+    const isFullscreen = mapWrapper.classList.toggle('map-fullscreen');
+    fsExpandIcon.style.display = isFullscreen ? 'none' : '';
+    fsCollapseIcon.style.display = isFullscreen ? '' : 'none';
+    document.body.style.overflow = isFullscreen ? 'hidden' : '';
+    // Let the layout settle before telling Leaflet to recalculate
+    setTimeout(function () {
+      if (typeof map !== 'undefined') map.invalidateSize();
+    }, 200);
+  });
+
+  // Also exit fullscreen on Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && mapWrapper.classList.contains('map-fullscreen')) {
+      mapWrapper.classList.remove('map-fullscreen');
+      fsExpandIcon.style.display = '';
+      fsCollapseIcon.style.display = 'none';
+      document.body.style.overflow = '';
+      setTimeout(function () {
+        if (typeof map !== 'undefined') map.invalidateSize();
+      }, 200);
+    }
+  });
+}());
 </script>
 </body>
 </html>
