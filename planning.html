@@ -345,49 +345,8 @@
 
         <!-- Map action buttons and filters -->
         <div class="roots-controls">
-          <button class="roots-btn" id="add-routes-btn" title="Load GPX route files" style="display:none;">+ Add Route(s)</button>
-          <button class="roots-btn" id="add-points-btn" title="Load a CSV file with GPS points" style="display:none;">+ Add Point(s)</button>
-          <button class="roots-btn" id="add-gmaps-btn" title="Add a point from Google Maps URL" style="display:none;">+ Add Google Maps Point</button>
           <span id="type-filters"></span>
           <button class="roots-btn" id="fit-bounds-btn" title="Zoom to fit all routes">Fit All</button>
-        </div>
-
-        <!-- Add Routes modal -->
-        <div class="meta-overlay" id="add-routes-overlay">
-          <div class="meta-modal">
-            <h3>Add Route(s)</h3>
-            <p style="font-size:0.9em;color:var(--color-gray-600);margin:0 0 0.5em 0;">
-              Upload one or more <code>.gpx</code> files to visualise bike routes on the map.
-            </p>
-            <label class="file-pick-label" for="add-routes-file-input">📂 Choose GPX file(s)</label>
-            <input type="file" id="add-routes-file-input" accept=".gpx" multiple style="display:none;">
-            <div id="add-routes-file-list" style="font-size:0.85em;margin-top:0.5em;color:var(--color-gray-600);min-height:1.2em;"></div>
-            <div id="add-routes-status" style="font-size:0.85em;margin-top:0.5em;color:var(--color-secondary);"></div>
-            <div class="meta-actions">
-              <button class="roots-btn" id="add-routes-upload-btn" disabled>Upload</button>
-              <button class="roots-btn" id="add-routes-close-btn">Close</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Add Points modal -->
-        <div class="meta-overlay" id="add-points-overlay">
-          <div class="meta-modal">
-            <h3>Add Point(s)</h3>
-            <p style="font-size:0.9em;color:var(--color-gray-600);margin:0 0 0.5em 0;">
-              Upload a CSV file with columns: <code>name</code>, <code>latitude</code>, <code>longitude</code>,
-              and optionally <code>url</code> and <code>Type</code>
-              (Onsen, Campsite, Roadside Station, Must See, Hotel, Other).
-            </p>
-            <label class="file-pick-label" for="add-points-file-input">📂 Choose CSV file(s)</label>
-            <input type="file" id="add-points-file-input" accept=".csv" multiple style="display:none;">
-            <div id="add-points-file-list" style="font-size:0.85em;margin-top:0.5em;color:var(--color-gray-600);min-height:1.2em;"></div>
-            <div id="add-points-status" style="font-size:0.85em;margin-top:0.5em;color:var(--color-secondary);"></div>
-            <div class="meta-actions">
-              <button class="roots-btn" id="add-points-upload-btn" disabled>Upload</button>
-              <button class="roots-btn" id="add-points-close-btn">Close</button>
-            </div>
-          </div>
         </div>
 
         <!-- Metadata modal (for Firebase route info) -->
@@ -398,32 +357,6 @@
             <div class="meta-actions">
               <button class="roots-btn" id="meta-save-btn" style="display:none;">Save</button>
               <button class="roots-btn" id="meta-close-btn">Close</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Google Maps Point modal -->
-        <div class="meta-overlay" id="gmaps-overlay">
-          <div class="meta-modal">
-            <h3>Add Google Maps Point</h3>
-            <div id="gmaps-body">
-              <label for="gmaps-url-input">Google Maps URL</label>
-              <input type="text" id="gmaps-url-input" placeholder="Paste Google Maps URL here..." />
-              <label for="gmaps-name-input">Name (optional)</label>
-              <input type="text" id="gmaps-name-input" placeholder="Auto-detected from URL" />
-              <label for="gmaps-type-input">Point Type</label>
-              <select id="gmaps-type-input" style="width:100%;padding:0.5em;background:var(--color-gray-100);border:1px solid var(--color-gray-200);border-radius:4px;color:var(--color-dark);font-size:0.9em;font-family:inherit;box-sizing:border-box;">
-                <option value="Campsite">Campsite</option>
-                <option value="Onsen">Onsen</option>
-                <option value="Roadside Station">Roadside Station</option>
-                <option value="Must See">Must See</option>
-                <option value="Hotel">Hotel</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div class="meta-actions">
-              <button class="roots-btn" id="gmaps-add-btn">Add Point</button>
-              <button class="roots-btn" id="gmaps-close-btn">Cancel</button>
             </div>
           </div>
         </div>
@@ -1156,91 +1089,7 @@
       .catch(() => { markLoaded('bundled'); });
   }
 
-  // ── Add Routes modal ────────────────────────────────────────
-  const addRoutesOverlay = document.getElementById('add-routes-overlay');
-  const addRoutesFileInput = document.getElementById('add-routes-file-input');
-  const addRoutesStatus = document.getElementById('add-routes-status');
-  let pendingRouteFiles = [];
-
-  document.getElementById('add-routes-btn').addEventListener('click', () => {
-    addRoutesStatus.textContent = '';
-    document.getElementById('add-routes-file-list').innerHTML = '';
-    document.getElementById('add-routes-upload-btn').disabled = true;
-    pendingRouteFiles = [];
-    addRoutesOverlay.classList.add('open');
-  });
-  document.getElementById('add-routes-close-btn').addEventListener('click', () => { addRoutesOverlay.classList.remove('open'); pendingRouteFiles = []; });
-  addRoutesOverlay.addEventListener('click', (e) => { if (e.target === addRoutesOverlay) { addRoutesOverlay.classList.remove('open'); pendingRouteFiles = []; } });
-  addRoutesFileInput.addEventListener('change', (e) => {
-    pendingRouteFiles = Array.from(e.target.files);
-    const fileListEl = document.getElementById('add-routes-file-list');
-    if (pendingRouteFiles.length === 0) {
-      fileListEl.innerHTML = '';
-    } else {
-      let html = '';
-      pendingRouteFiles.forEach((f, i) => {
-        html += '<div style="margin-top:0.7em">';
-        html += '<div style="font-size:0.85em;font-weight:600;color:var(--color-dark);margin-bottom:0.2em">📄 ' + escapeHtml(f.name) + '</div>';
-        html += '<input type="text" class="route-source-url-input" data-idx="' + i + '" placeholder="Source URL (optional)" style="width:100%;padding:0.4em 0.6em;background:var(--color-gray-100);border:1px solid var(--color-gray-200);border-radius:4px;color:var(--color-dark);font-size:0.85em;font-family:inherit;box-sizing:border-box;">';
-        html += '</div>';
-      });
-      fileListEl.innerHTML = html;
-    }
-    document.getElementById('add-routes-upload-btn').disabled = pendingRouteFiles.length === 0;
-    addRoutesFileInput.value = '';
-  });
-  document.getElementById('add-routes-upload-btn').addEventListener('click', () => {
-    if (!pendingRouteFiles.length) return;
-    const urlInputs = document.querySelectorAll('#add-routes-file-list .route-source-url-input');
-    pendingRouteFiles.forEach((file, i) => {
-      const sourceUrl = (urlInputs[i] ? urlInputs[i].value.trim() : '');
-      if (firebaseReady && isAdmin()) { uploadToFirebase(file, sourceUrl); }
-      else {
-        const reader = new FileReader();
-        reader.onload = (ev) => addRoute(ev.target.result, file.name, null, sourceUrl ? { sourceUrl } : {});
-        reader.readAsText(file);
-      }
-    });
-    addRoutesStatus.textContent = pendingRouteFiles.length + ' file(s) uploaded.';
-    pendingRouteFiles = [];
-    document.getElementById('add-routes-upload-btn').disabled = true;
-    document.getElementById('add-routes-file-list').innerHTML = '';
-    setTimeout(() => { addRoutesOverlay.classList.remove('open'); addRoutesStatus.textContent = ''; }, 1200);
-  });
-
-  // ── Add Points modal ────────────────────────────────────────
-  const addPointsOverlay = document.getElementById('add-points-overlay');
-  const addPointsFileInput = document.getElementById('add-points-file-input');
-  const addPointsStatus = document.getElementById('add-points-status');
-  let pendingPointFiles = [];
-
-  document.getElementById('add-points-btn').addEventListener('click', () => {
-    addPointsStatus.textContent = '';
-    document.getElementById('add-points-file-list').textContent = '';
-    document.getElementById('add-points-upload-btn').disabled = true;
-    pendingPointFiles = [];
-    addPointsOverlay.classList.add('open');
-  });
-  document.getElementById('add-points-close-btn').addEventListener('click', () => { addPointsOverlay.classList.remove('open'); pendingPointFiles = []; });
-  addPointsOverlay.addEventListener('click', (e) => { if (e.target === addPointsOverlay) { addPointsOverlay.classList.remove('open'); pendingPointFiles = []; } });
-  addPointsFileInput.addEventListener('change', (e) => {
-    pendingPointFiles = Array.from(e.target.files);
-    document.getElementById('add-points-file-list').textContent = pendingPointFiles.map(f => f.name).join(', ');
-    document.getElementById('add-points-upload-btn').disabled = pendingPointFiles.length === 0;
-    addPointsFileInput.value = '';
-  });
-  document.getElementById('add-points-upload-btn').addEventListener('click', () => {
-    if (!pendingPointFiles.length) return;
-    pendingPointFiles.forEach(file => {
-      if (firebaseReady && isAdmin()) { uploadToFirebase(file); }
-      else { const reader = new FileReader(); reader.onload = (ev) => addPointsFromCSV(ev.target.result, file.name); reader.readAsText(file); }
-    });
-    addPointsStatus.textContent = pendingPointFiles.length + ' file(s) uploaded.';
-    pendingPointFiles = [];
-    document.getElementById('add-points-upload-btn').disabled = true;
-    document.getElementById('add-points-file-list').textContent = '';
-    setTimeout(() => { addPointsOverlay.classList.remove('open'); addPointsStatus.textContent = ''; }, 1200);
-  });
+  // ── Add Routes/Points/GMaps modal JS removed — use Admin page to upload data
 
   document.getElementById('fit-bounds-btn').addEventListener('click', () => {
     const layers = routes.filter(r => r.visible && r.polyline).map(r => r.polyline);
@@ -1380,111 +1229,7 @@
 
   function togglePointType(type, isChecked) { if (isChecked) pointTypeFilters.add(type); else pointTypeFilters.delete(type); applyPointTypeFilters(); }
 
-  // ── Google Maps Point Input ────────────────────────────────
-  const gmapsOverlay = document.getElementById('gmaps-overlay');
-  const gmapsUrlInput = document.getElementById('gmaps-url-input');
-  const gmapsNameInput = document.getElementById('gmaps-name-input');
-  const gmapsTypeInput = document.getElementById('gmaps-type-input');
-
-  document.getElementById('add-gmaps-btn').addEventListener('click', () => {
-    gmapsUrlInput.value = ''; gmapsNameInput.value = ''; gmapsTypeInput.value = 'Campsite';
-    gmapsOverlay.classList.add('open'); gmapsUrlInput.focus();
-  });
-  document.getElementById('gmaps-close-btn').addEventListener('click', () => gmapsOverlay.classList.remove('open'));
-  gmapsOverlay.addEventListener('click', (e) => { if (e.target === gmapsOverlay) gmapsOverlay.classList.remove('open'); });
-
-  function parseGoogleMapsUrl(url) {
-    const placeMatch = url.match(/\/place\/([^/@]+)/);
-    const name = placeMatch ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' ').replace(/%20/g, ' ')) : 'Unnamed Location';
-    const coordMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-    if (!coordMatch) {
-      const alt = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
-      if (!alt) throw new Error('Could not extract coordinates from URL');
-      return { name, lat: parseFloat(alt[1]), lon: parseFloat(alt[2]) };
-    }
-    return { name, lat: parseFloat(coordMatch[1]), lon: parseFloat(coordMatch[2]) };
-  }
-
-  function isShortGoogleMapsUrl(url) {
-    return /maps\.app\.goo\.gl\//.test(url) || /goo\.gl\/maps\//.test(url);
-  }
-
-  function expandShortUrl(shortUrl) {
-    // maps.app.goo.gl uses Firebase Dynamic Links which serve an HTML page with a JS
-    // redirect rather than a plain HTTP redirect. We therefore fetch the page content
-    // via a CORS proxy and look for the embedded Google Maps URL in the HTML.
-    // Omit 'cache: no-store' — iOS Safari rejects cross-origin requests with that option.
-    return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(shortUrl))
-      .then(res => { if (!res.ok) throw new Error('Proxy request failed'); return res.json(); })
-      .then(data => {
-        // 1. Try the final URL reported by the proxy (works for plain HTTP redirects)
-        const finalUrl = data && data.status && data.status.url ? data.status.url : null;
-        if (finalUrl && /google\.com\/maps/.test(finalUrl) && finalUrl !== shortUrl) return finalUrl;
-
-        // 2. Parse the HTML body for any embedded google.com/maps URL
-        const html = data && data.contents ? data.contents : '';
-        const mapsUrlMatch = html.match(/https:\/\/www\.google\.com\/maps\/[^\s"'<>\\]+/);
-        if (mapsUrlMatch) return mapsUrlMatch[0].replace(/\\u003d/g, '=').replace(/\\u0026/g, '&');
-
-        throw new Error('Could not resolve URL');
-      });
-  }
-
-  document.getElementById('gmaps-add-btn').addEventListener('click', function() {
-    const url = gmapsUrlInput.value.trim();
-    if (!url) { alert('Please enter a Google Maps URL'); return; }
-    const btn = this;
-    const nameOverride = gmapsNameInput.value.trim();
-
-    function handleParsed(parsed) {
-      const pointName = nameOverride || parsed.name;
-      const pointData = { name: pointName, lat: parsed.lat, lon: parsed.lon, url, metadata: { Type: gmapsTypeInput.value } };
-      if (firebaseReady && isAdmin()) { uploadGoogleMapsPointToFirebase(pointData); }
-      else { addPoint(pointData, 'Google Maps - ' + pointName, null); map.setView([parsed.lat, parsed.lon], 14); }
-      gmapsOverlay.classList.remove('open');
-    }
-
-    if (isShortGoogleMapsUrl(url)) {
-      btn.disabled = true;
-      btn.textContent = 'Resolving…';
-      // Note: allorigins.win is a public CORS proxy used to follow HTTP redirects on short Google Maps URLs.
-      // Only public Google Maps short URLs are sent to this service.
-      expandShortUrl(url)
-        .then(fullUrl => {
-          const parsed = parseGoogleMapsUrl(fullUrl);
-          handleParsed(parsed);
-        })
-        .catch(() => {
-          alert('Could not resolve this short URL automatically.\nPlease open the link in your browser, copy the full URL from the address bar, then paste it here.');
-        })
-        .finally(() => {
-          btn.disabled = false;
-          btn.textContent = 'Add Point';
-        });
-    } else {
-      try {
-        handleParsed(parseGoogleMapsUrl(url));
-      } catch (err) { alert('Error parsing Google Maps URL: ' + err.message); }
-    }  });
-
-  function uploadGoogleMapsPointToFirebase(pointData) {
-    db.collection('points').add({
-      name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: pointData.url,
-      metadata: pointData.metadata, fileName: 'Google Maps - ' + pointData.name,
-      storagePath: null, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(docRef => {
-      addPoint(pointData, 'Google Maps - ' + pointData.name, docRef.id);
-      map.setView([pointData.lat, pointData.lon], 14);
-      if (typeof showToast === 'function') showToast('Point added successfully ✓');
-    })
-    .catch(err => {
-      console.error('Firebase upload error:', err);
-      if (typeof showToast === 'function') showToast('Upload failed: ' + err.message, 'error');
-      addPoint(pointData, 'Google Maps - ' + pointData.name, null);
-      map.setView([pointData.lat, pointData.lon], 14);
-    });
-  }
+  // ── Google Maps point upload removed — use Admin page Map Data section
 
   // ── Firebase Integration ───────────────────────────────────
   let currentUser = null;
@@ -1593,12 +1338,6 @@
   function isAdmin() { return currentUser && typeof ADMIN_EMAIL !== 'undefined' && currentUser.email === ADMIN_EMAIL; }
 
   function updateAuthUI() {
-    const addBtns = ['add-routes-btn', 'add-points-btn', 'add-gmaps-btn'];
-    if (isAdmin()) {
-      addBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
-    } else {
-      addBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-    }
     renderToggles();
   }
 
@@ -1732,43 +1471,6 @@
         }
       })
       .catch(err => { console.error('Firestore points read error:', err); markLoaded('points'); });
-  }
-
-  function uploadToFirebase(file, sourceUrl) {
-    if (!isAdmin()) return;
-    const isCSV = file.name.toLowerCase().endsWith('.csv');
-    const storagePath = (isCSV?'csv/':'gpx/') + Date.now() + '_' + file.name;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const fileText = ev.target.result;
-      const metadata = sourceUrl ? { sourceUrl } : {};
-      storage.ref(storagePath).put(file)
-        .then(() => isCSV
-          ? uploadCSVToFirestore(file.name, storagePath, fileText)
-          : db.collection('routes').add({ fileName: file.name, storagePath, gpxContent: fileText, metadata, uploadedAt: firebase.firestore.FieldValue.serverTimestamp() })
-              .then(docRef => {
-                addRoute(fileText, file.name, docRef.id, metadata);
-                // TODO: After uploading a new GPX route, regenerate routes.pmtiles so the
-                // "All Routes (tiles)" layer reflects the new route. Trigger the GitHub Actions
-                // workflow manually via Actions > "Generate PMTiles Tiles" > Run workflow, or
-                // dispatch the 'regenerate-tiles' repository_dispatch event via the GitHub API.
-              }))
-        .then(() => { if (typeof showToast === 'function') showToast('Uploaded ' + file.name + ' ✓'); })
-        .catch(err => { console.error('Upload error:', err); if (typeof showToast === 'function') showToast('Upload failed: ' + err.message, 'error'); });
-    };
-    reader.readAsText(file);
-  }
-
-  function uploadCSVToFirestore(fileName, storagePath, csvText) {
-    const parsedPoints = parseCSV(csvText);
-    if (!parsedPoints.length) throw new Error('No valid points found in CSV');
-    const batch = db.batch(); const docIds = [];
-    parsedPoints.forEach(p => {
-      const docRef = db.collection('points').doc();
-      batch.set(docRef, { name: p.name, lat: p.lat, lon: p.lon, url: p.url, metadata: p.metadata, fileName, storagePath, uploadedAt: firebase.firestore.FieldValue.serverTimestamp() });
-      docIds.push(docRef.id);
-    });
-    return batch.commit().then(() => { addPointsFromCSV(csvText, fileName, docIds); });
   }
 
   function deleteFirebaseRoute(routeIdx) {

@@ -570,6 +570,114 @@
     transition: width 0.3s ease;
   }
 
+  /* ── Mobile admin nav bar ───────────────────────────── */
+  .admin-mobile-nav {
+    display: none;
+    overflow-x: auto;
+    background: var(--color-primary);
+    padding: 0.5rem 0.75rem;
+    gap: 0.35rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    position: sticky;
+    top: var(--nav-height);
+    z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  .admin-mobile-nav::-webkit-scrollbar { display: none; }
+
+  @media (max-width: 1024px) {
+    .admin-mobile-nav { display: flex; }
+  }
+
+  .amn-tab {
+    white-space: nowrap;
+    padding: 0.45rem 0.85rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.75);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background .15s, color .15s;
+    flex-shrink: 0;
+  }
+  .amn-tab:hover { background: rgba(255,255,255,.2); color: var(--color-white); }
+  .amn-tab.active { background: rgba(255,255,255,.25); color: var(--color-white); font-weight: 600; }
+
+  /* ── Blog post list ─────────────────────────────────── */
+  .blog-post-list { margin-bottom: 1.5rem; }
+  .blog-post-list-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-gray-200);
+    background: var(--color-white);
+    margin-bottom: 0.5rem;
+    transition: border-color .15s, box-shadow .15s;
+    cursor: pointer;
+  }
+  .blog-post-list-item:hover { border-color: var(--color-secondary); box-shadow: var(--shadow-sm); }
+  .blog-post-list-item.selected { border-color: var(--color-secondary); background: rgba(42,157,143,.04); }
+  .blog-post-list-emoji { font-size: 1.75rem; flex-shrink: 0; }
+  .blog-post-list-body { flex: 1; min-width: 0; }
+  .blog-post-list-title { font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .blog-post-list-meta { font-size: .75rem; color: var(--color-gray-500); margin-top: .15rem; }
+  .blog-post-list-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+
+  /* ── Map data upload ────────────────────────────────── */
+  .mapdata-upload-block {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .mapdata-upload-block h3 { font-size: 1rem; margin-bottom: .75rem; }
+  .mapdata-upload-block .upload-drop {
+    border: 2px dashed var(--color-gray-300);
+    border-radius: var(--radius-md);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .mapdata-upload-block .upload-drop:hover,
+  .mapdata-upload-block .upload-drop.drag-over { border-color: var(--color-secondary); background: rgba(42,157,143,.04); }
+  .mapdata-upload-status { font-size: .82rem; margin-top: .5rem; color: var(--color-secondary); min-height: 1.2em; }
+
+  /* ── Gear admin in admin panel ──────────────────────── */
+  .admin-gear-bar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    background: rgba(42,157,143,.08);
+    border: 1px solid rgba(42,157,143,.2);
+    border-radius: var(--radius-md);
+    padding: .75rem 1rem;
+    margin-bottom: 1.25rem;
+    font-size: .875rem;
+  }
+  .admin-gear-bar .gear-admin-btn {
+    padding: .4rem .9rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: .82rem;
+    font-family: var(--font-body);
+    font-weight: 500;
+    transition: opacity .15s;
+  }
+  .admin-gear-bar .gear-admin-btn.edit { background: var(--color-secondary); color: #fff; }
+  .admin-gear-bar .gear-admin-btn.save { background: var(--color-primary); color: #fff; }
+  .admin-gear-bar .gear-admin-btn.cancel { background: var(--color-gray-300); color: var(--color-gray-800); }
+
   </style>
 </head>
 <body>
@@ -643,6 +751,17 @@
 ════════════════════════════════════════════ -->
 <div id="adminDashboard" style="display:none" class="admin-layout">
 
+  <!-- Mobile section nav (visible when sidebar is hidden) -->
+  <div class="admin-mobile-nav" id="adminMobileNav">
+    <button class="amn-tab active" onclick="showSection('dashboard',this)" data-section="dashboard">📊 Dashboard</button>
+    <button class="amn-tab" onclick="showSection('posts',this)" data-section="posts">✍️ Blog</button>
+    <button class="amn-tab" onclick="showSection('photos',this)" data-section="photos">📷 Photos</button>
+    <button class="amn-tab" onclick="showSection('gear',this)" data-section="gear">🎒 Gear</button>
+    <button class="amn-tab" onclick="showSection('mapdata',this)" data-section="mapdata">🗺️ Map Data</button>
+    <button class="amn-tab" onclick="showSection('roots',this)" data-section="roots">🔧 Map Admin</button>
+    <button class="amn-tab" onclick="showSection('settings',this)" data-section="settings">⚙️ Settings</button>
+  </div>
+
   <!-- Sidebar -->
   <div class="admin-sidebar">
     <div class="admin-sidebar-header">
@@ -653,8 +772,9 @@
       <a href="#" class="active" onclick="showSection('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="#" onclick="showSection('posts',this)"><span class="nav-icon">✍️</span> Blog Posts</a>
       <a href="#" onclick="showSection('photos',this)"><span class="nav-icon">📷</span> Photos</a>
-      <a href="#" onclick="showSection('waypoints',this)"><span class="nav-icon">🗺️</span> Waypoints</a>
-      <a href="#" onclick="showSection('roots',this)"><span class="nav-icon">🗺️</span> Map Admin</a>
+      <a href="#" onclick="showSection('gear',this)"><span class="nav-icon">🎒</span> Gear</a>
+      <a href="#" onclick="showSection('mapdata',this)"><span class="nav-icon">🗺️</span> Map Data</a>
+      <a href="#" onclick="showSection('roots',this)"><span class="nav-icon">🔧</span> Map Admin</a>
       <a href="#" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
       <a href="index.html" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1rem"><span class="nav-icon">🏠</span> View Site</a>
     </nav>
@@ -673,18 +793,23 @@
       <div class="admin-stats-grid">
         <div class="admin-stat-card">
           <div class="stat-icon">✍️</div>
-          <span class="stat-value">8</span>
+          <span class="stat-value">1</span>
           <div class="stat-label">Blog Posts</div>
         </div>
         <div class="admin-stat-card">
           <div class="stat-icon">📷</div>
-          <span class="stat-value">24</span>
+          <span class="stat-value" id="dash-photo-count">—</span>
           <div class="stat-label">Photos</div>
         </div>
         <div class="admin-stat-card">
+          <div class="stat-icon">🗺️</div>
+          <span class="stat-value" id="dash-route-count">—</span>
+          <div class="stat-label">Map Routes</div>
+        </div>
+        <div class="admin-stat-card">
           <div class="stat-icon">📍</div>
-          <span class="stat-value">9</span>
-          <div class="stat-label">Waypoints</div>
+          <span class="stat-value" id="dash-point-count">—</span>
+          <div class="stat-label">Map Points</div>
         </div>
       </div>
 
@@ -692,7 +817,7 @@
       <div class="admin-section">
         <h2>⚡ Quick Actions</h2>
         <div class="quick-actions">
-          <div class="quick-action" onclick="showSection('posts',null);TomikaBikes.showToast('Opening new post editor','info')">
+          <div class="quick-action" onclick="showSection('posts',document.querySelector('.admin-nav a[onclick*=posts]'));adminBlogNewPost()">
             <div class="qa-icon">✍️</div>
             <h4>New Blog Post</h4>
             <p>Write and publish a post</p>
@@ -702,10 +827,15 @@
             <h4>Upload Photos</h4>
             <p>Add new gallery images</p>
           </div>
-          <div class="quick-action" onclick="TomikaBikes.showToast('Waypoint editor coming soon','info')">
-            <div class="qa-icon">📍</div>
-            <h4>Add Waypoint</h4>
-            <p>Update the trip map</p>
+          <div class="quick-action" onclick="showSection('gear', document.querySelector('.admin-nav a[onclick*=gear]'))">
+            <div class="qa-icon">🎒</div>
+            <h4>Edit Gear</h4>
+            <p>Update the gear list</p>
+          </div>
+          <div class="quick-action" onclick="showSection('mapdata', document.querySelector('.admin-nav a[onclick*=mapdata]'))">
+            <div class="qa-icon">🗺️</div>
+            <h4>Upload Map Data</h4>
+            <p>Add GPX routes or points</p>
           </div>
         </div>
       </div>
@@ -717,33 +847,33 @@
           <div class="activity-item">
             <div class="activity-icon">✍️</div>
             <div class="activity-body">
-              <strong>New blog post published</strong>
-              <span>"The Grand Plan: Cycling Across Europe"</span>
+              <strong>Blog post published</strong>
+              <span>"We Quit Our Jobs and We're Going to Japan"</span>
             </div>
-            <div class="activity-time">2h ago</div>
+            <div class="activity-time">Mar 4</div>
           </div>
           <div class="activity-item">
             <div class="activity-icon">📷</div>
             <div class="activity-body">
-              <strong>12 photos uploaded</strong>
-              <span>Album: Pre-trip preparation</span>
+              <strong>Photos uploaded</strong>
+              <span>3 photos — Storage unit, packed bags &amp; Håkull box</span>
             </div>
-            <div class="activity-time">1d ago</div>
+            <div class="activity-time">Mar 4</div>
           </div>
           <div class="activity-item">
-            <div class="activity-icon"></div>
+            <div class="activity-icon">🗺️</div>
             <div class="activity-body">
-              <strong>Waypoint updated</strong>
-              <span>Istanbul, Turkey – added notes</span>
+              <strong>Map routes loaded</strong>
+              <span>Routes and points live from Firebase</span>
             </div>
-            <div class="activity-time">3d ago</div>
+            <div class="activity-time">Live</div>
           </div>
         </div>
       </div>
 
       <!-- Posts table -->
       <div class="admin-table-card">
-        <h3>Latest Blog Posts</h3>
+        <h3>Blog Posts</h3>
         <table>
           <thead>
             <tr>
@@ -756,32 +886,11 @@
           </thead>
           <tbody>
             <tr>
-              <td>The Grand Plan: Cycling Across Europe</td>
-              <td>Tomika</td>
-              <td>Planning</td>
+              <td>We Quit Our Jobs and We're Going to Japan</td>
+              <td>Mika &amp; Tom</td>
+              <td>Japan</td>
               <td><span class="status-badge status-published">Published</span></td>
-              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
-            </tr>
-            <tr>
-              <td>Packing Light: Our Bikepacking Setup</td>
-              <td>Partner</td>
-              <td>Gear</td>
-              <td><span class="status-badge status-published">Published</span></td>
-              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
-            </tr>
-            <tr>
-              <td>Why We're Doing This Together</td>
-              <td>Tomika</td>
-              <td>Stories</td>
-              <td><span class="status-badge status-draft">Draft</span></td>
-              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
-            </tr>
-            <tr>
-              <td>Cycling Nutrition on the Road</td>
-              <td>Tomika</td>
-              <td>Food</td>
-              <td><span class="status-badge status-draft">Draft</span></td>
-              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="TomikaBikes.showToast('Edit coming soon','info')">Edit</button></td>
+              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="showSection('posts',document.querySelector('.admin-nav a[onclick*=posts]'));adminBlogEditStatic()">Edit</button></td>
             </tr>
           </tbody>
         </table>
@@ -795,38 +904,85 @@
         <p>Create, edit, and manage your travel blog posts.</p>
       </div>
 
-      <div class="new-post-form">
-        <h3 style="margin-bottom:1.5rem">New Blog Post</h3>
-        <div class="form-group">
-          <label>Post Title</label>
-          <input type="text" class="form-control" placeholder="An Unforgettable Day in the Alps..." />
+      <!-- Post list -->
+      <div id="blog-list-view">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+          <h3 style="margin:0">All Posts</h3>
+          <button class="btn btn-primary" onclick="adminBlogNewPost()">✍️ New Post</button>
         </div>
-        <div class="form-row">
+        <div id="blog-post-list" class="blog-post-list">
+          <p style="color:var(--color-gray-500);padding:.5rem 0">Loading posts…</p>
+        </div>
+      </div>
+
+      <!-- Post editor (hidden until a post is opened) -->
+      <div id="blog-editor-view" style="display:none">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">
+          <button class="btn" style="background:var(--color-gray-200)" onclick="adminBlogShowList()">← Back to posts</button>
+          <h3 style="margin:0;flex:1" id="blog-editor-heading">New Post</h3>
+          <span id="blog-editor-save-status" style="font-size:.8rem;color:var(--color-gray-500)"></span>
+        </div>
+
+        <div class="new-post-form">
+          <input type="hidden" id="blog-post-id" value="" />
           <div class="form-group">
-            <label>Category</label>
-            <select class="form-control">
-              <option>Planning</option>
-              <option>Gear</option>
-              <option>Stories</option>
-              <option>Food</option>
-              <option>Tips</option>
-            </select>
+            <label>Post Title</label>
+            <input type="text" id="blog-title" class="form-control" placeholder="An Unforgettable Day in the Alps…" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Author</label>
+              <input type="text" id="blog-author" class="form-control" placeholder="Mika &amp; Tom" value="Mika &amp; Tom" />
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="blog-date" class="form-control" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select id="blog-category" class="form-control">
+                <option value="japan">Japan</option>
+                <option value="norway">Norway</option>
+                <option value="gear">Gear</option>
+                <option value="planning">Planning</option>
+                <option value="stories">Stories</option>
+                <option value="food">Food</option>
+                <option value="tips">Tips</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="blog-status" class="form-control">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cover Emoji</label>
+              <input type="text" id="blog-emoji" class="form-control" placeholder="🗾" maxlength="4" style="font-size:1.4rem" />
+            </div>
+            <div class="form-group">
+              <label>Tags (comma-separated)</label>
+              <input type="text" id="blog-tags" class="form-control" placeholder="japan, cycling, touring" />
+            </div>
           </div>
           <div class="form-group">
-            <label>Status</label>
-            <select class="form-control">
-              <option>Draft</option>
-              <option>Published</option>
-            </select>
+            <label>Excerpt <span style="font-weight:400;color:var(--color-gray-500)">(shown in blog list)</span></label>
+            <textarea id="blog-excerpt" class="form-control" rows="2" placeholder="A short summary of the post…"></textarea>
           </div>
-        </div>
-        <div class="form-group">
-          <label>Content</label>
-          <textarea class="form-control" rows="10" placeholder="Write your post here..."></textarea>
-        </div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="TomikaBikes.showToast('Post saved! Firebase sync coming soon','success')">💾 Save Post</button>
-          <button class="btn" style="background:var(--color-gray-200)" onclick="TomikaBikes.showToast('Draft saved','info')">Save Draft</button>
+          <div class="form-group">
+            <label>Content <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
+            <textarea id="blog-content" class="form-control" rows="16" placeholder="Write your post here…&#10;&#10;You can use basic HTML: &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a href=&quot;…&quot;&gt;, &lt;img src=&quot;…&quot;&gt;"></textarea>
+          </div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="adminBlogSave(false)">💾 Save Post</button>
+            <button class="btn" style="background:var(--color-gray-200)" onclick="adminBlogSave(true)">Save as Draft</button>
+            <button class="btn" id="blog-delete-btn" style="background:#fee;color:#c0392b;display:none" onclick="adminBlogDelete()">🗑 Delete</button>
+          </div>
         </div>
       </div>
     </div>
@@ -901,13 +1057,108 @@
       </div>
     </div>
 
-    <!-- ── Waypoints ── -->
-    <div id="section-waypoints" class="admin-section" style="display:none">
+    <!-- ── Gear ── -->
+    <div id="section-gear" class="admin-section" style="display:none">
       <div class="admin-header">
-        <h1>Waypoints 🗺️</h1>
-        <p>Add and manage trip waypoints on the planning map.</p>
+        <h1>Gear 🎒</h1>
+        <p>Edit the gear list for both riders. Changes are saved to Firebase.</p>
       </div>
-      <p style="color:var(--color-gray-600)">Waypoints are managed from the <a href="planning.html" style="color:var(--color-secondary)">Map page</a>.</p>
+
+      <div class="admin-gear-bar" id="gearAdminBar" style="display:none">
+        <strong>⚙️ Admin gear editor</strong>
+        <button class="gear-admin-btn edit" id="gearEditBtn">✏️ Edit Gear</button>
+        <button class="gear-admin-btn save" id="gearSaveBtn" style="display:none">💾 Save</button>
+        <button class="gear-admin-btn cancel" id="gearCancelBtn" style="display:none">✕ Cancel</button>
+      </div>
+
+      <!-- Weight summary (inline on admin page) -->
+      <div style="display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap">
+        <div style="background:var(--color-white);border:1px solid var(--color-gray-200);border-radius:var(--radius-md);padding:.75rem 1.25rem;box-shadow:var(--shadow-sm)">
+          <div style="font-size:.75rem;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:.05em">Mika</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--color-secondary)" id="weightMika">—</div>
+          <div style="font-size:.72rem;color:var(--color-gray-500)">kg (loaded)</div>
+        </div>
+        <div style="background:var(--color-white);border:1px solid var(--color-gray-200);border-radius:var(--radius-md);padding:.75rem 1.25rem;box-shadow:var(--shadow-sm)">
+          <div style="font-size:.75rem;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:.05em">Tom</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--color-secondary)" id="weightTom">—</div>
+          <div style="font-size:.72rem;color:var(--color-gray-500)">kg (loaded)</div>
+        </div>
+      </div>
+
+      <div id="gearContent">
+        <p style="padding:2rem;color:var(--color-gray-600)">Loading gear list…</p>
+      </div>
+    </div>
+
+    <!-- ── Map Data ── -->
+    <div id="section-mapdata" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Map Data 🗺️</h1>
+        <p>Upload GPX routes, CSV point files, or add points from Google Maps. Changes appear on the Map page immediately.</p>
+      </div>
+
+      <!-- GPX Routes upload -->
+      <div class="mapdata-upload-block">
+        <h3>📄 Upload GPX Route(s)</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Upload <code>.gpx</code> files to add bike routes to the map. Each file is stored in Firebase Storage and registered in Firestore.</p>
+        <div class="upload-drop" id="gpx-drop-zone">
+          <input type="file" id="gpx-file-input" accept=".gpx" multiple style="display:none">
+          <div style="font-size:2rem">📂</div>
+          <p style="margin:.25rem 0 0;color:var(--color-gray-600)"><strong>Drag &amp; drop GPX files</strong> or click to browse</p>
+        </div>
+        <div id="gpx-file-list" style="font-size:.85rem;margin-top:.5rem;color:var(--color-gray-700)"></div>
+        <div class="mapdata-upload-status" id="gpx-upload-status"></div>
+        <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+          <button class="btn btn-primary" id="gpx-upload-btn" disabled>📤 Upload Route(s)</button>
+          <button class="btn" style="background:var(--color-gray-200)" id="gpx-clear-btn">Clear</button>
+        </div>
+      </div>
+
+      <!-- CSV Points upload -->
+      <div class="mapdata-upload-block">
+        <h3>📋 Upload CSV Point(s)</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Upload a <code>.csv</code> file with columns: <code>name</code>, <code>latitude</code>, <code>longitude</code>, and optionally <code>url</code> and <code>Type</code> (Onsen, Campsite, Roadside Station, Must See, Hotel, Other).</p>
+        <div class="upload-drop" id="csv-drop-zone">
+          <input type="file" id="csv-file-input" accept=".csv" multiple style="display:none">
+          <div style="font-size:2rem">📂</div>
+          <p style="margin:.25rem 0 0;color:var(--color-gray-600)"><strong>Drag &amp; drop CSV files</strong> or click to browse</p>
+        </div>
+        <div id="csv-file-list" style="font-size:.85rem;margin-top:.5rem;color:var(--color-gray-700)"></div>
+        <div class="mapdata-upload-status" id="csv-upload-status"></div>
+        <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+          <button class="btn btn-primary" id="csv-upload-btn" disabled>📤 Upload Point(s)</button>
+          <button class="btn" style="background:var(--color-gray-200)" id="csv-clear-btn">Clear</button>
+        </div>
+      </div>
+
+      <!-- Google Maps point -->
+      <div class="mapdata-upload-block">
+        <h3>📍 Add Google Maps Point</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Paste a Google Maps URL (full or short link) to add a single point directly to Firestore.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Google Maps URL</label>
+            <input type="text" id="gmaps-admin-url" class="form-control" placeholder="https://maps.google.com/…" />
+          </div>
+          <div class="form-group">
+            <label>Name (optional)</label>
+            <input type="text" id="gmaps-admin-name" class="form-control" placeholder="Auto-detected from URL" />
+          </div>
+        </div>
+        <div class="form-group" style="max-width:260px">
+          <label>Point Type</label>
+          <select id="gmaps-admin-type" class="form-control">
+            <option value="Campsite">Campsite</option>
+            <option value="Onsen">Onsen</option>
+            <option value="Roadside Station">Roadside Station</option>
+            <option value="Must See">Must See</option>
+            <option value="Hotel">Hotel</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="mapdata-upload-status" id="gmaps-admin-status"></div>
+        <button class="btn btn-primary" id="gmaps-admin-btn">📍 Add Point</button>
+      </div>
     </div>
 
     <!-- ── Settings ── -->
@@ -1055,12 +1306,29 @@
     // Hide all sections
     document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
     // Show target
-    const target = document.getElementById(`section-${name}`);
+    const target = document.getElementById('section-' + name);
     if (target) target.style.display = 'block';
-    // Update nav
-    if (linkEl) {
-      document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
-      linkEl.classList.add('active');
+    // Update sidebar nav
+    document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
+    if (linkEl && linkEl.tagName === 'A') linkEl.classList.add('active');
+    // Update mobile nav tabs
+    document.querySelectorAll('.amn-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.section === name);
+    });
+    // Scroll mobile nav tab into view
+    const activeTab = document.querySelector('.amn-tab.active');
+    if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    // Init gear manager on first visit
+    if (name === 'gear' && typeof GearManagerAdmin !== 'undefined' && !GearManagerAdmin._initialized) {
+      GearManagerAdmin.init();
+    }
+    // Load blog posts on first visit
+    if (name === 'posts' && !adminBlogLoaded) {
+      adminBlogLoadPosts();
+    }
+    // Load dashboard counts on first visit
+    if (name === 'dashboard') {
+      adminDashLoadCounts();
     }
   }
 </script>
@@ -2362,6 +2630,766 @@
     if (name === 'photos') init();
   };
 })();
+</script>
+
+<script>
+// ── Blog Admin ────────────────────────────────────────────────
+let adminBlogLoaded = false;
+let adminBlogPosts = []; // { id, data }
+let adminBlogDb = null;
+const BLOG_COLLECTION = 'blog_posts';
+
+// Built-in static post (from blog.html)
+const BLOG_STATIC_POST = {
+  id: 'static-japan-1',
+  data: {
+    title: "We Quit Our Jobs and We're Going to Japan",
+    author: 'Mika & Tom',
+    date: '2026-03-04',
+    category: 'japan',
+    status: 'published',
+    emoji: '🗾',
+    tags: 'japan, cycling, touring',
+    excerpt: 'We handed in our notices and tomorrow morning we fly to Tokyo. Here\'s the story of how a joke became a spreadsheet became an extremely real plane ticket.',
+    content: '',
+    source: 'static'  // indicates it lives in blog.html
+  }
+};
+
+async function adminBlogEnsureDb() {
+  if (adminBlogDb) return;
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  adminBlogDb = firebase.firestore();
+}
+
+async function adminBlogLoadPosts() {
+  adminBlogLoaded = true;
+  const listEl = document.getElementById('blog-post-list');
+  listEl.innerHTML = '<p style="color:var(--color-gray-500);padding:.5rem 0">Loading…</p>';
+  try {
+    await adminBlogEnsureDb();
+    const snap = await adminBlogDb.collection(BLOG_COLLECTION).orderBy('date', 'desc').get();
+    adminBlogPosts = [BLOG_STATIC_POST];
+    snap.forEach(doc => adminBlogPosts.push({ id: doc.id, data: doc.data() }));
+  } catch (e) {
+    adminBlogPosts = [BLOG_STATIC_POST];
+  }
+  adminBlogRenderList();
+}
+
+function adminBlogRenderList() {
+  const listEl = document.getElementById('blog-post-list');
+  if (!adminBlogPosts.length) {
+    listEl.innerHTML = '<p style="color:var(--color-gray-500)">No posts yet. Click <strong>New Post</strong> to create one.</p>';
+    return;
+  }
+  listEl.innerHTML = adminBlogPosts.map(p => {
+    const d = p.data;
+    const badgeCls = d.status === 'published' ? 'status-published' : 'status-draft';
+    const badgeTxt = d.status === 'published' ? 'Published' : 'Draft';
+    return '<div class="blog-post-list-item" onclick="adminBlogEditPost(\'' + p.id + '\')">' +
+      '<div class="blog-post-list-emoji">' + (d.emoji || '✍️') + '</div>' +
+      '<div class="blog-post-list-body">' +
+        '<div class="blog-post-list-title">' + escHtml(d.title || 'Untitled') + '</div>' +
+        '<div class="blog-post-list-meta">' + escHtml(d.author || '') + ' · ' + (d.date || '') + ' · ' + escHtml(d.category || '') + '</div>' +
+      '</div>' +
+      '<div class="blog-post-list-actions">' +
+        '<span class="status-badge ' + badgeCls + '">' + badgeTxt + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+function adminBlogShowList() {
+  document.getElementById('blog-list-view').style.display = '';
+  document.getElementById('blog-editor-view').style.display = 'none';
+}
+
+function adminBlogNewPost() {
+  document.getElementById('blog-list-view').style.display = 'none';
+  document.getElementById('blog-editor-view').style.display = '';
+  document.getElementById('blog-editor-heading').textContent = 'New Post';
+  document.getElementById('blog-post-id').value = '';
+  document.getElementById('blog-title').value = '';
+  document.getElementById('blog-author').value = 'Mika & Tom';
+  document.getElementById('blog-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('blog-category').value = 'japan';
+  document.getElementById('blog-status').value = 'draft';
+  document.getElementById('blog-emoji').value = '';
+  document.getElementById('blog-tags').value = '';
+  document.getElementById('blog-excerpt').value = '';
+  document.getElementById('blog-content').value = '';
+  document.getElementById('blog-delete-btn').style.display = 'none';
+  document.getElementById('blog-editor-save-status').textContent = '';
+}
+
+function adminBlogEditPost(id) {
+  const post = adminBlogPosts.find(p => p.id === id);
+  if (!post) return;
+  const d = post.data;
+  document.getElementById('blog-list-view').style.display = 'none';
+  document.getElementById('blog-editor-view').style.display = '';
+  document.getElementById('blog-editor-heading').textContent = 'Edit Post';
+  document.getElementById('blog-post-id').value = id;
+  document.getElementById('blog-title').value = d.title || '';
+  document.getElementById('blog-author').value = d.author || 'Mika & Tom';
+  document.getElementById('blog-date').value = d.date || '';
+  document.getElementById('blog-category').value = d.category || 'japan';
+  document.getElementById('blog-status').value = d.status || 'draft';
+  document.getElementById('blog-emoji').value = d.emoji || '';
+  document.getElementById('blog-tags').value = d.tags || '';
+  document.getElementById('blog-excerpt').value = d.excerpt || '';
+  document.getElementById('blog-content').value = d.content || '';
+  document.getElementById('blog-delete-btn').style.display = (id === BLOG_STATIC_POST.id) ? 'none' : '';
+  document.getElementById('blog-editor-save-status').textContent = '';
+}
+
+function adminBlogEditStatic() {
+  adminBlogShowList();
+  setTimeout(() => adminBlogEditPost(BLOG_STATIC_POST.id), 0);
+}
+
+async function adminBlogSave(asDraft) {
+  const id = document.getElementById('blog-post-id').value;
+  const statusEl = document.getElementById('blog-editor-save-status');
+  if (asDraft) document.getElementById('blog-status').value = 'draft';
+  const data = {
+    title: document.getElementById('blog-title').value.trim(),
+    author: document.getElementById('blog-author').value.trim(),
+    date: document.getElementById('blog-date').value,
+    category: document.getElementById('blog-category').value,
+    status: document.getElementById('blog-status').value,
+    emoji: document.getElementById('blog-emoji').value.trim(),
+    tags: document.getElementById('blog-tags').value.trim(),
+    excerpt: document.getElementById('blog-excerpt').value.trim(),
+    content: document.getElementById('blog-content').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+  if (!data.title) { TomikaBikes.showToast('Please enter a post title', 'error'); return; }
+  if (id === BLOG_STATIC_POST.id) {
+    // Static post — update in-memory only and show note
+    BLOG_STATIC_POST.data = { ...BLOG_STATIC_POST.data, ...data, source: 'static' };
+    const idx = adminBlogPosts.findIndex(p => p.id === BLOG_STATIC_POST.id);
+    if (idx >= 0) adminBlogPosts[idx].data = BLOG_STATIC_POST.data;
+    statusEl.textContent = '✓ Updated in preview (blog.html stores this post as static HTML)';
+    TomikaBikes.showToast('Preview updated. To publish edits, update blog.html directly.', 'info');
+    return;
+  }
+  statusEl.textContent = 'Saving…';
+  try {
+    await adminBlogEnsureDb();
+    if (id) {
+      await adminBlogDb.collection(BLOG_COLLECTION).doc(id).set(data);
+      const idx = adminBlogPosts.findIndex(p => p.id === id);
+      if (idx >= 0) adminBlogPosts[idx].data = data;
+    } else {
+      const ref = await adminBlogDb.collection(BLOG_COLLECTION).add(data);
+      adminBlogPosts.push({ id: ref.id, data });
+      document.getElementById('blog-post-id').value = ref.id;
+      document.getElementById('blog-delete-btn').style.display = '';
+    }
+    adminBlogRenderList();
+    statusEl.textContent = '✓ Saved ' + new Date().toLocaleTimeString();
+    TomikaBikes.showToast('Post saved!', 'success');
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
+    TomikaBikes.showToast('Save failed: ' + e.message, 'error');
+  }
+}
+
+async function adminBlogDelete() {
+  const id = document.getElementById('blog-post-id').value;
+  if (!id || id === BLOG_STATIC_POST.id) return;
+  if (!confirm('Delete this post? This cannot be undone.')) return;
+  try {
+    await adminBlogEnsureDb();
+    await adminBlogDb.collection(BLOG_COLLECTION).doc(id).delete();
+    adminBlogPosts = adminBlogPosts.filter(p => p.id !== id);
+    adminBlogRenderList();
+    adminBlogShowList();
+    TomikaBikes.showToast('Post deleted', 'success');
+  } catch (e) {
+    TomikaBikes.showToast('Delete failed: ' + e.message, 'error');
+  }
+}
+
+// Set default date on new post on page load
+document.getElementById('blog-date').value = new Date().toISOString().slice(0, 10);
+</script>
+
+<script>
+// ── Gear Admin ────────────────────────────────────────────────
+const GearManagerAdmin = (function () {
+  const GEAR_COLLECTION = 'gear_categories';
+  let _gearData = [];
+  let _editMode = false;
+  let _fsLoaded = false;
+  let _origData = null;
+  let _initialized = false;
+
+  const GEAR_DEFAULT = [
+    { id: 'bikes-bags', icon: '🚲', name: 'Bikes & Bags', order: 0, items: [
+      { id: 'bb1', name: 'Touring bike (each)',   weight: '10.5 kg', who: 'Both', notes: 'Steel frame, 700c wheels' },
+      { id: 'bb2', name: 'Rear panniers (pair)',  weight: '1.4 kg',  who: 'Both', notes: 'Ortlieb Back-Roller Classic' },
+      { id: 'bb3', name: 'Front panniers (pair)', weight: '1.1 kg',  who: 'Both', notes: 'Ortlieb Front-Roller' },
+      { id: 'bb4', name: 'Handlebar bag',         weight: '0.4 kg',  who: 'Both', notes: 'Quick access for snacks & map' },
+      { id: 'bb5', name: 'Frame bag',             weight: '0.2 kg',  who: 'Both', notes: 'Tools & spares' },
+    ]},
+    { id: 'shelter-sleep', icon: '⛺', name: 'Shelter & Sleep', order: 1, items: [
+      { id: 'ss1', name: 'Tent (2-person)',       weight: '1.6 kg', who: 'Tom',  notes: 'MSR Hubba Hubba NX' },
+      { id: 'ss2', name: 'Sleeping bag (each)',   weight: '0.9 kg', who: 'Both', notes: 'Down, comfort to 5°C' },
+      { id: 'ss3', name: 'Sleeping mat (each)',   weight: '0.5 kg', who: 'Both', notes: 'Thermarest NeoAir' },
+    ]},
+    { id: 'nav-tech', icon: '📡', name: 'Navigation & Tech', order: 2, items: [
+      { id: 'nt1', name: 'GPS device',           weight: '0.1 kg', who: 'Both', notes: 'Garmin Edge 530' },
+      { id: 'nt5', name: 'Camera + lenses',      weight: '1.2 kg', who: 'Mika', notes: 'Sony A6400 + 16-50 kit' },
+      { id: 'nt6', name: 'Laptop (shared)',      weight: '1.3 kg', who: 'Mika', notes: 'For blog & work on the road' },
+    ]},
+    { id: 'bike-maintenance', icon: '🔧', name: 'Bike Maintenance', order: 3, items: [
+      { id: 'bm1', name: 'Repair kit & multi-tool', weight: '0.4 kg', who: 'Both', notes: '' },
+      { id: 'bm2', name: 'Spare tubes (×4)',         weight: '0.4 kg', who: 'Both', notes: '700×35c' },
+    ]},
+    { id: 'clothing', icon: '👕', name: 'Clothing (per person)', order: 4, items: [
+      { id: 'cl1', name: 'Cycling jerseys (×3)', weight: '0.4 kg', who: 'Both', notes: 'Merino wool preferred' },
+      { id: 'cl3', name: 'Rain jacket',          weight: '0.4 kg', who: 'Both', notes: 'Lightweight packable' },
+    ]},
+    { id: 'safety-health', icon: '🩺', name: 'Safety & Health', order: 5, items: [
+      { id: 'sh1', name: 'Helmets (each)',              weight: '0.3 kg', who: 'Both', notes: 'MIPS rated' },
+      { id: 'sh2', name: 'Lights front + rear (each)', weight: '0.2 kg', who: 'Both', notes: 'Rechargeable' },
+      { id: 'sh4', name: 'First aid kit',               weight: '0.4 kg', who: 'Mika', notes: 'Compact travel kit' },
+    ]},
+  ];
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+  async function ensureFirestore() {
+    if (_fsLoaded) return;
+    await window.TomikaBikes.ensureFirebaseAuth();
+    const src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+    if (![...document.scripts].some(s => (s.getAttribute('src') || '') === src)) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    _fsLoaded = true;
+  }
+
+  async function fetchFromFirestore() {
+    const snap = await firebase.firestore().collection(GEAR_COLLECTION).orderBy('order').get();
+    if (snap.empty) return null;
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  async function saveToFirestore(data) {
+    const db = firebase.firestore();
+    const batch = db.batch();
+    const existing = await db.collection(GEAR_COLLECTION).get();
+    existing.docs.forEach(doc => batch.delete(doc.ref));
+    data.forEach((cat, idx) => {
+      batch.set(db.collection(GEAR_COLLECTION).doc(cat.id),
+        { icon: cat.icon, name: cat.name, order: idx, items: cat.items });
+    });
+    await batch.commit();
+  }
+
+  function whoTag(who, editable) {
+    if (editable) {
+      return '<select class="gear-status-select" data-field="who">' +
+        ['Both', 'Mika', 'Tom'].map(v =>
+          '<option value="' + v + '"' + (who === v ? ' selected' : '') + '>' + v + '</option>'
+        ).join('') + '</select>';
+    }
+    const cls = (who || 'both').toLowerCase();
+    return '<span class="gear-tag ' + cls + '">' + (who || 'Both') + '</span>';
+  }
+
+  function parseWeight(w) {
+    const m = (w || '').match(/([\d.]+)\s*kg/i);
+    return m ? parseFloat(m[1]) : 0;
+  }
+
+  function updateWeightSummary(data) {
+    let mika = 0, tom = 0;
+    data.forEach(cat => {
+      cat.items.forEach(item => {
+        const w = parseWeight(item.weight);
+        const who = (item.who || 'Both').toLowerCase();
+        if (who === 'mika' || who === 'both') mika += w;
+        if (who === 'tom'  || who === 'both') tom  += w;
+      });
+    });
+    const elMika = document.getElementById('weightMika');
+    const elTom  = document.getElementById('weightTom');
+    if (elMika) elMika.textContent = mika.toFixed(1);
+    if (elTom)  elTom.textContent  = tom.toFixed(1);
+  }
+
+  function renderGear(data, editMode) {
+    const content = document.getElementById('gearContent');
+    if (!content) return;
+    let html = '';
+    data.forEach(cat => {
+      const cid = cat.id;
+      html += '<div class="gear-category"' + (editMode ? ' data-editing="1"' : '') + ' data-cat-id="' + cid + '">';
+      html += '<div class="gear-category-header">';
+      html += '<span class="gear-category-icon"' + (editMode ? ' contenteditable="true" data-field="icon"' : '') + '>' + cat.icon + '</span>';
+      html += '<h3' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + cat.name + '</h3>';
+      if (editMode) html += '<button class="gear-cat-delete" onclick="GearManagerAdmin.deleteCategory(\'' + cid + '\')" title="Remove category">✕ Remove</button>';
+      html += '</div>';
+      html += '<table class="gear-table"><thead><tr><th>Item</th><th>Weight</th><th>Who</th><th>Notes</th>' + (editMode ? '<th></th>' : '') + '</tr></thead><tbody>';
+      cat.items.forEach(item => {
+        const iid = item.id;
+        html += '<tr data-item-id="' + iid + '">';
+        html += '<td' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + item.name + '</td>';
+        html += '<td class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
+        html += '<td>' + whoTag(item.who || 'Both', editMode) + '</td>';
+        html += '<td class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
+        if (editMode) html += '<td><button class="gear-row-delete" onclick="GearManagerAdmin.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody>';
+      if (editMode) {
+        html += '<tfoot><tr><td colspan="5"><button class="gear-add-row-btn" onclick="GearManagerAdmin.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
+      }
+      html += '</table></div>';
+    });
+    if (editMode) {
+      html += '<button class="gear-add-cat-btn" onclick="GearManagerAdmin.addCategory()">＋ Add category</button>';
+    }
+    content.innerHTML = html;
+    updateWeightSummary(data);
+  }
+
+  function collectFromDOM() {
+    const cats = [];
+    document.querySelectorAll('#gearContent .gear-category').forEach(catEl => {
+      const catId  = catEl.dataset.catId;
+      const header = catEl.querySelector('.gear-category-header');
+      const icon   = (header.querySelector('[data-field="icon"]') || {}).textContent || '';
+      const name   = (header.querySelector('[data-field="name"]') || {}).textContent || '';
+      const items  = [];
+      catEl.querySelectorAll('tbody tr').forEach(row => {
+        const nameEl   = row.querySelector('[data-field="name"]');
+        const weightEl = row.querySelector('[data-field="weight"]');
+        const whoEl    = row.querySelector('[data-field="who"]');
+        const notesEl  = row.querySelector('[data-field="notes"]');
+        if (!nameEl) return;
+        items.push({
+          id:     row.dataset.itemId || uid(),
+          name:   nameEl.textContent.trim(),
+          weight: weightEl ? weightEl.textContent.trim() : '',
+          who:    whoEl    ? whoEl.value                 : 'Both',
+          notes:  notesEl  ? notesEl.textContent.trim()  : '',
+        });
+      });
+      cats.push({ id: catId, icon: icon.trim(), name: name.trim(), items });
+    });
+    return cats;
+  }
+
+  function setEditMode(on) {
+    _editMode = on;
+    document.getElementById('gearEditBtn').style.display   = on ? 'none' : '';
+    document.getElementById('gearSaveBtn').style.display   = on ? ''     : 'none';
+    document.getElementById('gearCancelBtn').style.display = on ? ''     : 'none';
+    renderGear(_gearData, on);
+  }
+
+  async function init() {
+    if (_initialized) return;
+    _initialized = true;
+    try {
+      await ensureFirestore();
+      const data = await fetchFromFirestore();
+      _gearData = data || GEAR_DEFAULT;
+      if (!data) await saveToFirestore(_gearData);
+    } catch (e) {
+      console.warn('Gear: Firestore unavailable, using defaults:', e);
+      _gearData = GEAR_DEFAULT;
+    }
+    renderGear(_gearData, false);
+    document.getElementById('gearAdminBar').style.display = 'flex';
+
+    document.getElementById('gearEditBtn').addEventListener('click', () => {
+      _origData = deepClone(_gearData);
+      setEditMode(true);
+    });
+    document.getElementById('gearSaveBtn').addEventListener('click', async () => {
+      _gearData = collectFromDOM();
+      const btn = document.getElementById('gearSaveBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        await ensureFirestore();
+        await saveToFirestore(_gearData);
+        _origData = null;
+        setEditMode(false);
+        TomikaBikes.showToast('Gear list saved!', 'success');
+      } catch (e) {
+        TomikaBikes.showToast('Save failed: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = '💾 Save';
+      }
+    });
+    document.getElementById('gearCancelBtn').addEventListener('click', () => {
+      if (_origData) { _gearData = _origData; _origData = null; }
+      setEditMode(false);
+    });
+  }
+
+  return {
+    get _initialized() { return _initialized; },
+    init,
+    deleteCategory(catId) {
+      _gearData = collectFromDOM();
+      _gearData = _gearData.filter(c => c.id !== catId);
+      renderGear(_gearData, true);
+    },
+    deleteItem(catId, itemId) {
+      _gearData = collectFromDOM();
+      const cat = _gearData.find(c => c.id === catId);
+      if (cat) cat.items = cat.items.filter(i => i.id !== itemId);
+      renderGear(_gearData, true);
+    },
+    addItem(catId) {
+      _gearData = collectFromDOM();
+      const cat = _gearData.find(c => c.id === catId);
+      if (cat) cat.items.push({ id: uid(), name: 'New item', weight: '0.0 kg', who: 'Both', notes: '' });
+      renderGear(_gearData, true);
+    },
+    addCategory() {
+      _gearData = collectFromDOM();
+      _gearData.push({ id: uid(), icon: '📦', name: 'New Category', order: _gearData.length, items: [] });
+      renderGear(_gearData, true);
+    },
+  };
+})();
+</script>
+
+<script>
+// ── Map Data Upload ───────────────────────────────────────────
+(function () {
+  let _mapDb = null;
+  let _mapStorage = null;
+  let _mapSdkLoaded = false;
+
+  function loadMapSdks() {
+    if (_mapSdkLoaded) return Promise.resolve();
+    const already = src => [...document.scripts].some(s => (s.getAttribute('src') || '').includes(src));
+    const load = src => new Promise((res, rej) => {
+      if (already(src)) { res(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    return load('firebase-auth-compat').then(() =>
+      load('firebase-storage-compat').then(() => { _mapSdkLoaded = true; })
+    );
+  }
+
+  async function ensureMapReady() {
+    await loadMapSdks();
+    if (!_mapDb) {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      _mapDb = firebase.firestore();
+      _mapStorage = firebase.storage();
+    }
+  }
+
+  function parseCSV(csvText) {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) return [];
+    function parseLine(line) {
+      const result = []; let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+        else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+        else cur += c;
+      }
+      result.push(cur.trim()); return result;
+    }
+    const headers = parseLine(lines[0]);
+    const nameIdx = headers.findIndex(h => h.toLowerCase() === 'name');
+    const latIdx  = headers.findIndex(h => ['latitude','lat'].includes(h.toLowerCase()));
+    const lonIdx  = headers.findIndex(h => ['longitude','lon','lng'].includes(h.toLowerCase()));
+    const urlIdx  = headers.findIndex(h => ['url','link','page','website'].includes(h.toLowerCase().trim()));
+    if (latIdx === -1 || lonIdx === -1) { alert('CSV must have latitude and longitude columns'); return []; }
+    const pts = [];
+    for (let i = 1; i < lines.length; i++) {
+      const v = parseLine(lines[i]);
+      if (v.length < 2) continue;
+      const lat = parseFloat(v[latIdx]), lon = parseFloat(v[lonIdx]);
+      if (isNaN(lat) || isNaN(lon)) continue;
+      const metadata = {};
+      headers.forEach((h, idx) => { if (idx !== latIdx && idx !== lonIdx && idx !== nameIdx && idx !== urlIdx && v[idx]) metadata[h] = v[idx]; });
+      pts.push({ name: nameIdx !== -1 && v[nameIdx] ? v[nameIdx] : ('Point ' + i), lat, lon, url: urlIdx !== -1 && v[urlIdx] ? v[urlIdx] : null, metadata });
+    }
+    return pts;
+  }
+
+  function parseGoogleMapsUrl(url) {
+    const placeMatch = url.match(/\/place\/([^/@]+)/);
+    const name = placeMatch ? decodeURIComponent(placeMatch[1].replace(/\+/g,' ').replace(/%20/g,' ')) : 'Unnamed Location';
+    const coordMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (!coordMatch) {
+      const alt = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+      if (!alt) throw new Error('Could not extract coordinates from URL');
+      return { name, lat: parseFloat(alt[1]), lon: parseFloat(alt[2]) };
+    }
+    return { name, lat: parseFloat(coordMatch[1]), lon: parseFloat(coordMatch[2]) };
+  }
+
+  function isShortGoogleMapsUrl(url) {
+    return /maps\.app\.goo\.gl\//.test(url) || /goo\.gl\/maps\//.test(url);
+  }
+
+  function expandShortUrl(shortUrl) {
+    return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(shortUrl))
+      .then(res => { if (!res.ok) throw new Error('Proxy failed'); return res.json(); })
+      .then(data => {
+        const finalUrl = data && data.status && data.status.url ? data.status.url : null;
+        if (finalUrl && /google\.com\/maps/.test(finalUrl) && finalUrl !== shortUrl) return finalUrl;
+        const html = data && data.contents ? data.contents : '';
+        const m = html.match(/https:\/\/www\.google\.com\/maps\/[^\s"'<>\\]+/);
+        if (m) return m[0].replace(/\\u003d/g,'=').replace(/\\u0026/g,'&');
+        throw new Error('Could not resolve URL');
+      });
+  }
+
+  // ── GPX wiring
+  let pendingGpxFiles = [];
+
+  function setupGpxDropZone() {
+    const zone  = document.getElementById('gpx-drop-zone');
+    const input = document.getElementById('gpx-file-input');
+    const listEl = document.getElementById('gpx-file-list');
+
+    zone.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      pendingGpxFiles = Array.from(input.files);
+      renderGpxFileList(listEl);
+      document.getElementById('gpx-upload-btn').disabled = pendingGpxFiles.length === 0;
+      input.value = '';
+    });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      pendingGpxFiles = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.gpx'));
+      renderGpxFileList(listEl);
+      document.getElementById('gpx-upload-btn').disabled = pendingGpxFiles.length === 0;
+    });
+
+    document.getElementById('gpx-clear-btn').addEventListener('click', () => {
+      pendingGpxFiles = []; listEl.innerHTML = '';
+      document.getElementById('gpx-upload-btn').disabled = true;
+      document.getElementById('gpx-upload-status').textContent = '';
+    });
+
+    document.getElementById('gpx-upload-btn').addEventListener('click', () => {
+      if (!pendingGpxFiles.length) return;
+      const statusEl = document.getElementById('gpx-upload-status');
+      statusEl.textContent = 'Uploading…';
+      ensureMapReady().then(() => {
+        const promises = pendingGpxFiles.map((file, i) => {
+          const sourceUrl = (document.querySelectorAll('.gpx-source-url')[i] || {}).value || '';
+          return uploadGpxFile(file, sourceUrl).then(() => {
+            statusEl.textContent = 'Uploaded ' + (i + 1) + '/' + pendingGpxFiles.length + '…';
+          });
+        });
+        return Promise.all(promises);
+      }).then(() => {
+        statusEl.textContent = '✓ ' + pendingGpxFiles.length + ' file(s) uploaded successfully!';
+        TomikaBikes.showToast('Routes uploaded!', 'success');
+        pendingGpxFiles = []; listEl.innerHTML = '';
+        document.getElementById('gpx-upload-btn').disabled = true;
+      }).catch(err => {
+        statusEl.textContent = 'Error: ' + err.message;
+        TomikaBikes.showToast('Upload failed: ' + err.message, 'error');
+      });
+    });
+  }
+
+  function renderGpxFileList(listEl) {
+    if (!pendingGpxFiles.length) { listEl.innerHTML = ''; return; }
+    listEl.innerHTML = pendingGpxFiles.map((f, i) =>
+      '<div style="margin-top:.5rem">' +
+        '<div style="font-size:.85rem;font-weight:600;color:var(--color-dark)">📄 ' + escHtml(f.name) + '</div>' +
+        '<input type="text" class="gpx-source-url form-control" data-idx="' + i + '" placeholder="Source URL (optional)" style="font-size:.8rem;margin-top:.2rem">' +
+      '</div>'
+    ).join('');
+  }
+
+  async function uploadGpxFile(file, sourceUrl) {
+    const storagePath = 'gpx/' + Date.now() + '_' + file.name;
+    const metadata = sourceUrl ? { sourceUrl } : {};
+    const fileText = await file.text();
+    await _mapStorage.ref(storagePath).put(file);
+    await _mapDb.collection('routes').add({
+      fileName: file.name, storagePath, gpxContent: fileText,
+      metadata, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  // ── CSV wiring
+  let pendingCsvFiles = [];
+
+  function setupCsvDropZone() {
+    const zone   = document.getElementById('csv-drop-zone');
+    const input  = document.getElementById('csv-file-input');
+    const listEl = document.getElementById('csv-file-list');
+
+    zone.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      pendingCsvFiles = Array.from(input.files);
+      listEl.textContent = pendingCsvFiles.map(f => f.name).join(', ');
+      document.getElementById('csv-upload-btn').disabled = pendingCsvFiles.length === 0;
+      input.value = '';
+    });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      pendingCsvFiles = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.csv'));
+      listEl.textContent = pendingCsvFiles.map(f => f.name).join(', ');
+      document.getElementById('csv-upload-btn').disabled = pendingCsvFiles.length === 0;
+    });
+
+    document.getElementById('csv-clear-btn').addEventListener('click', () => {
+      pendingCsvFiles = []; listEl.textContent = '';
+      document.getElementById('csv-upload-btn').disabled = true;
+      document.getElementById('csv-upload-status').textContent = '';
+    });
+
+    document.getElementById('csv-upload-btn').addEventListener('click', () => {
+      if (!pendingCsvFiles.length) return;
+      const statusEl = document.getElementById('csv-upload-status');
+      statusEl.textContent = 'Uploading…';
+      ensureMapReady().then(async () => {
+        let total = 0;
+        for (const file of pendingCsvFiles) {
+          const text = await file.text();
+          const pts = parseCSV(text);
+          if (!pts.length) throw new Error('No valid points in ' + file.name);
+          const storagePath = 'csv/' + Date.now() + '_' + file.name;
+          await _mapStorage.ref(storagePath).put(file);
+          const batch = _mapDb.batch();
+          pts.forEach(p => {
+            const ref = _mapDb.collection('points').doc();
+            batch.set(ref, { name: p.name, lat: p.lat, lon: p.lon, url: p.url || null,
+              metadata: p.metadata, fileName: file.name, storagePath,
+              uploadedAt: firebase.firestore.FieldValue.serverTimestamp() });
+          });
+          await batch.commit();
+          total += pts.length;
+        }
+        return total;
+      }).then(total => {
+        statusEl.textContent = '✓ Uploaded ' + total + ' point(s) from ' + pendingCsvFiles.length + ' file(s)!';
+        TomikaBikes.showToast('Points uploaded!', 'success');
+        pendingCsvFiles = []; document.getElementById('csv-file-list').textContent = '';
+        document.getElementById('csv-upload-btn').disabled = true;
+      }).catch(err => {
+        statusEl.textContent = 'Error: ' + err.message;
+        TomikaBikes.showToast('Upload failed: ' + err.message, 'error');
+      });
+    });
+  }
+
+  // ── Google Maps Point wiring
+  function setupGmapsInput() {
+    const btn = document.getElementById('gmaps-admin-btn');
+    btn.addEventListener('click', () => {
+      const url = document.getElementById('gmaps-admin-url').value.trim();
+      if (!url) { TomikaBikes.showToast('Please enter a Google Maps URL', 'error'); return; }
+      const nameOverride = document.getElementById('gmaps-admin-name').value.trim();
+      const type = document.getElementById('gmaps-admin-type').value;
+      const statusEl = document.getElementById('gmaps-admin-status');
+      statusEl.textContent = 'Processing…';
+      btn.disabled = true;
+
+      function handleParsed(parsed) {
+        const pointName = nameOverride || parsed.name;
+        return ensureMapReady().then(() =>
+          _mapDb.collection('points').add({
+            name: pointName, lat: parsed.lat, lon: parsed.lon, url,
+            metadata: { Type: type },
+            fileName: 'Google Maps - ' + pointName, storagePath: null,
+            uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+          })
+        ).then(() => {
+          statusEl.textContent = '✓ Added "' + pointName + '" to the map!';
+          TomikaBikes.showToast('Point added: ' + pointName, 'success');
+          document.getElementById('gmaps-admin-url').value = '';
+          document.getElementById('gmaps-admin-name').value = '';
+        });
+      }
+
+      const done = (fn) => fn().then(() => { btn.disabled = false; }).catch(err => {
+        statusEl.textContent = 'Error: ' + err.message;
+        TomikaBikes.showToast('Failed: ' + err.message, 'error');
+        btn.disabled = false;
+      });
+
+      if (isShortGoogleMapsUrl(url)) {
+        btn.textContent = 'Resolving…';
+        done(() => expandShortUrl(url)
+          .then(full => handleParsed(parseGoogleMapsUrl(full)))
+          .finally(() => { btn.textContent = '📍 Add Point'; })
+        );
+      } else {
+        done(() => {
+          try { return handleParsed(parseGoogleMapsUrl(url)); }
+          catch (e) { return Promise.reject(e); }
+        });
+      }
+    });
+  }
+
+  // ── Init all wiring on page load
+  setupGpxDropZone();
+  setupCsvDropZone();
+  setupGmapsInput();
+})();
+</script>
+
+<script>
+// ── Dashboard counts ──────────────────────────────────────────
+let _dashCountsLoaded = false;
+function adminDashLoadCounts() {
+  if (_dashCountsLoaded) return;
+  _dashCountsLoaded = true;
+  if (typeof firebase === 'undefined' || typeof FIREBASE_CONFIG === 'undefined'
+      || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.firestore();
+    db.collection('photos').limit(1000).get()
+      .then(s => { const el = document.getElementById('dash-photo-count'); if (el) el.textContent = s.size; })
+      .catch(() => {});
+    db.collection('routes').limit(200).get()
+      .then(s => { const el = document.getElementById('dash-route-count'); if (el) el.textContent = s.size; })
+      .catch(() => {});
+    db.collection('points').limit(1000).get()
+      .then(s => { const el = document.getElementById('dash-point-count'); if (el) el.textContent = s.size + '+'; })
+      .catch(() => {});
+  } catch (e) { /* Firebase not ready */ }
+}
+
+// Load counts when admin dashboard is first shown
+document.addEventListener('DOMContentLoaded', () => {
+  adminDashLoadCounts();
+  // Also load blog posts list lazily
+});
 </script>
 </body>
 </html>
