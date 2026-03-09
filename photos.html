@@ -200,10 +200,15 @@
   const lightbox     = document.getElementById('lightbox');
   const lightboxBody = document.getElementById('lightboxBody');
 
-  function openLightbox(url, caption) {
+  function escHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openLightbox(url, caption, location) {
     lightboxBody.innerHTML =
       '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + (caption || '').replace(/"/g, '&quot;') + '">' +
-      (caption ? '<p style="color:#fff;text-align:center;margin-top:.75rem;font-size:.9rem">' + caption + '</p>' : '');
+      (location ? '<p style="color:rgba(255,255,255,.7);text-align:center;margin-top:.75rem;font-size:.8rem">📍 ' + escHtml(location) + '</p>' : '') +
+      (caption ? '<p style="color:#fff;text-align:center;margin-top:.25rem;font-size:.9rem">' + escHtml(caption) + '</p>' : '');
     lightbox.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -273,18 +278,22 @@
     grid.innerHTML = docs.map(doc => {
       const cat      = slugify(doc.album || 'general');
       const caption  = doc.caption || doc.fileName || '';
+      const location = doc.location || '';
       const fullUrl  = doc.url      || '';
       const thumbUrl = doc.thumbUrl || fullUrl;
-      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + fullUrl.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '">' +
+      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + fullUrl.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '" data-location="' + location.replace(/"/g, '&quot;') + '">' +
         '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
-        '<div class="gallery-item-overlay"><p>' + caption + '</p></div>' +
+        '<div class="gallery-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(caption) + '</p>' +
+        '</div>' +
       '</div>';
     }).join('');
 
     // Lightbox click delegation
     grid.addEventListener('click', e => {
       const item = e.target.closest('.gallery-item');
-      if (item) openLightbox(item.dataset.url, item.dataset.caption);
+      if (item) openLightbox(item.dataset.url, item.dataset.caption, item.dataset.location);
     });
 
     grid.style.display = '';
