@@ -3380,7 +3380,7 @@ function adminDashLoadCounts() {
       .then(s => { const el = document.getElementById('dash-route-count'); if (el) el.textContent = s.size; })
       .catch(() => {});
     db.collection('points').limit(1000).get()
-      .then(s => { const el = document.getElementById('dash-point-count'); if (el) el.textContent = s.size + '+'; })
+      .then(s => { const el = document.getElementById('dash-point-count'); if (el) el.textContent = s.size; })
       .catch(() => {});
   } catch (e) { /* Firebase not ready */ }
 }
