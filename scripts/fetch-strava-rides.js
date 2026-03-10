@@ -342,7 +342,6 @@ async function main() {
     await db.collection('routes').add({
       fileName,
       storagePath,
-      gpxContent:        gpxText,
       metadata,
       uploadedAt:        admin.firestore.FieldValue.serverTimestamp(),
       source:            'strava',

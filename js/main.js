@@ -280,17 +280,6 @@ function _getSubscribeOverlay() {
           <label for="sub-email">Email Address</label>
           <input type="email" id="sub-email" class="form-control" placeholder="you@example.com" autocomplete="email" />
         </div>
-        <p style="font-size:.85rem;font-weight:600;color:var(--color-gray-800);margin-bottom:.4rem">Notify me about:</p>
-        <div class="sub-prefs">
-          <label class="sub-pref-item">
-            <input type="checkbox" id="sub-pref-blog" checked />
-            <span>✍️ New blog posts</span>
-          </label>
-          <label class="sub-pref-item">
-            <input type="checkbox" id="sub-pref-photos" checked />
-            <span>📷 New photos</span>
-          </label>
-        </div>
         <button class="btn btn-primary" id="sub-submit-btn" style="width:100%;justify-content:center">🔔 Subscribe</button>
         <p class="auth-note">You can unsubscribe or change your preferences at any time. No spam, ever.</p>
       </div>`;
@@ -344,8 +333,6 @@ async function _ensureFirestoreLoaded() {
 
 async function handleSubscribe() {
   const emailInput = document.getElementById('sub-email');
-  const blogPref   = document.getElementById('sub-pref-blog');
-  const photosPref = document.getElementById('sub-pref-photos');
   const submitBtn  = document.getElementById('sub-submit-btn');
   const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
 
@@ -355,15 +342,7 @@ async function handleSubscribe() {
     return;
   }
 
-  const prefs = {
-    blog:   blogPref   ? blogPref.checked   : true,
-    photos: photosPref ? photosPref.checked : true,
-  };
-
-  if (!prefs.blog && !prefs.photos) {
-    showToast('Please select at least one notification type', 'error');
-    return;
-  }
+  const prefs = { blog: true, photos: true };
 
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Subscribing…'; }
 
