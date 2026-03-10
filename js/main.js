@@ -26,9 +26,9 @@ window.addEventListener('pageshow', (event) => {
 // ── Navbar scroll effect ─────────────────────
 const navbar = document.querySelector('.navbar');
 if (navbar) {
-  window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 30);
-  });
+  const updateNav = () => navbar.classList.toggle('scrolled', window.scrollY > 60);
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav(); // run on load in case page is already scrolled
 }
 
 // ── Hamburger / Mobile menu ──────────────────
