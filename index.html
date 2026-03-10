@@ -321,7 +321,7 @@
           });
           const kmEl = document.getElementById('stat-km');
           if (totalKm > 0) {
-            animateCounter(kmEl, Math.round(totalKm));
+            animateCounter(kmEl, totalKm);
           } else {
             kmEl.textContent = '0';
           }
