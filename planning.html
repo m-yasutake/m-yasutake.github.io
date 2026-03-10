@@ -839,7 +839,7 @@
     let html = '<div style="min-width:210px">';
     html += '<div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.6em">';
     html += '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + r.color + ';flex-shrink:0"></span>';
-    html += '<strong style="font-size:1em;color:var(--color-primary,#264653)">' + escapeHtml(r.routeName) + '</strong>';
+    html += '<strong style="font-size:1em;color:var(--color-primary)">' + escapeHtml(r.routeName) + '</strong>';
     html += '</div>';
     if (r.stats) {
       html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;margin-bottom:0.4em">';
@@ -850,7 +850,7 @@
       html += '</table>';
     }
     if (r.metadata.description) html += '<p style="font-size:0.85em;color:#6c757d;margin:0.3em 0">' + escapeHtml(r.metadata.description) + '</p>';
-    if (r.metadata.sourceUrl) html += '<a href="' + escapeAttr(r.metadata.sourceUrl) + '" target="_blank" rel="noopener" style="font-size:0.85em;color:#2A9D8F">🔗 Source</a>';
+    if (r.metadata.sourceUrl) html += '<a href="' + escapeAttr(r.metadata.sourceUrl) + '" target="_blank" rel="noopener" style="font-size:0.85em;color:#5B8C6B">🔗 Source</a>';
     if (r.firebaseDocId) {
       html += '<div style="margin-top:0.6em;display:flex;gap:0.4em;flex-wrap:wrap">';
       html += '<button class="roots-btn popup-info-btn" data-ridx="' + idx + '" style="font-size:0.8em;padding:0.25em 0.6em">ℹ Info</button>';
@@ -993,7 +993,7 @@
             routes: function(properties) {
               return {
                 weight: getRouteWeight(map.getZoom()),
-                color: properties.color || '#2A9D8F',
+                color: properties.color || '#5B8C6B',
                 opacity: 0.85,
                 fill: false
               };
@@ -1012,7 +1012,7 @@
             .setLatLng(e.latlng)
             .setContent(
               '<div style="min-width:160px">' +
-              '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + (props.color || '#2A9D8F') + ';margin-right:6px;vertical-align:middle"></span>' +
+              '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + (props.color || '#5B8C6B') + ';margin-right:6px;vertical-align:middle"></span>' +
               '<strong>' + name + '</strong>' +
               '<br><span style="color:#888;font-size:0.8em;font-style:italic">Toggle in route list for full details</span>' +
               '</div>'
@@ -1021,11 +1021,11 @@
         });
         layer.on('mouseover', function(e) {
           const props = e.layer.properties || {};
-          if (e.layer.setStyle) e.layer.setStyle({ weight: 5, color: props.color || '#2A9D8F', opacity: 1 });
+          if (e.layer.setStyle) e.layer.setStyle({ weight: 5, color: props.color || '#5B8C6B', opacity: 1 });
         });
         layer.on('mouseout', function(e) {
           const props = e.layer.properties || {};
-          if (e.layer.setStyle) e.layer.setStyle({ weight: getRouteWeight(map.getZoom()), color: props.color || '#2A9D8F', opacity: 0.85 });
+          if (e.layer.setStyle) e.layer.setStyle({ weight: getRouteWeight(map.getZoom()), color: props.color || '#5B8C6B', opacity: 0.85 });
         });
         return layer;
       });
