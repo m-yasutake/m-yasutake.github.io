@@ -343,6 +343,7 @@ async function main() {
       fileName,
       storagePath,
       metadata,
+      distanceKm:        distanceKm ? parseFloat(distanceKm) : null,
       uploadedAt:        admin.firestore.FieldValue.serverTimestamp(),
       source:            'strava',
       stravaActivityId:  activityId

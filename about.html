@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="About Mika and Tom – the two cyclists behind tomika.bike, cycling through Japan and Norway." />
+  <title>About Us – Tomika Bike</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+    }
+
+    .about-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .about-person h2 {
+      margin-bottom: 0.25rem;
+    }
+
+    .about-person .about-role {
+      color: var(--color-secondary);
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 1rem;
+    }
+
+    .about-person p {
+      color: var(--color-gray-700);
+      line-height: 1.75;
+    }
+
+    .about-highlight {
+      background: var(--color-gray-100);
+      border-left: 3px solid var(--color-secondary);
+      padding: 1.5rem 2rem;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin: 2rem 0;
+      font-style: italic;
+      color: var(--color-gray-700);
+      font-size: 1.05rem;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--color-gray-100);
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.85rem;
+      color: var(--color-gray-700);
+      margin: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Page Loader -->
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
+    <div class="loader-dots">
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="planning.html">Map</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li><a href="photos.html">Photos</a></li>
+      <li><a href="gear.html">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-subscribe-btn" onclick="openSubscribeModal()">🔔 Subscribe</button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="planning.html">🗺️ Map</a>
+  <a href="blog.html">✍️ Blog</a>
+  <a href="photos.html">📷 Photos</a>
+  <a href="gear.html">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">🚴 About Us</div>
+    <h1>Meet Mika &amp; Tom</h1>
+    <p>Two cyclists. One big dream. Japan to Norway.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ABOUT CONTENT
+════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+
+    <div class="about-highlight">
+      "We quit our jobs, packed our bikes, and set off on the adventure of a lifetime — cycling from the southern tip of Japan to the Arctic coast of Norway."
+    </div>
+
+    <div class="about-grid">
+
+      <!-- Mika -->
+      <div class="about-person">
+        <div class="about-avatar">🚴‍♀️</div>
+        <h2>Mika</h2>
+        <div class="about-role">Cyclist · Photographer · Navigator</div>
+        <p>
+          Originally from Japan, Mika brings a deep connection to the first leg of our journey.
+          She handles most of the photography, keeps the route planning on track, and has an
+          uncanny ability to find the best ramen shop within a 5 km radius.
+        </p>
+        <p style="margin-top:1rem">
+          Before this trip, Mika worked in design. She traded her desk for a saddle and hasn't
+          looked back — except occasionally to check Tom is still there.
+        </p>
+        <div style="margin-top:1.25rem">
+          <span class="stat-pill">🗾 From Japan</span>
+          <span class="stat-pill">📷 Photographer</span>
+          <span class="stat-pill">🍜 Ramen expert</span>
+        </div>
+      </div>
+
+      <!-- Tom -->
+      <div class="about-person">
+        <div class="about-avatar" style="background:linear-gradient(135deg,var(--color-accent),var(--color-warm))">🚴‍♂️</div>
+        <h2>Tom</h2>
+        <div class="about-role">Cyclist · Mechanic · Blog Writer</div>
+        <p>
+          Tom grew up in Norway, which makes the second half of our journey a homecoming of sorts.
+          He keeps the bikes running, writes most of the blog posts, and is responsible for the
+          overly optimistic daily distance estimates.
+        </p>
+        <p style="margin-top:1rem">
+          Previously working in software, Tom now spends his days fixing punctures, arguing with
+          GPS devices, and trying to convince Mika that headwinds build character.
+        </p>
+        <div style="margin-top:1.25rem">
+          <span class="stat-pill">🇳🇴 From Norway</span>
+          <span class="stat-pill">🔧 Mechanic</span>
+          <span class="stat-pill">✍️ Writer</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- The trip -->
+    <div class="section-header" style="margin-top:4rem">
+      <span class="eyebrow">The Journey</span>
+      <h2>Why we're doing this</h2>
+      <div class="divider"></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:2rem">
+      <div>
+        <h3 style="margin-bottom:.75rem">🗾 Japan</h3>
+        <p style="color:var(--color-gray-700);line-height:1.75">
+          We start in Kagoshima — the southernmost city of Kyushu — and cycle the length of Japan
+          to Cape Soya, the northernmost point. Through cherry blossom season, the Japanese Alps,
+          ancient temples, and Hokkaido's wild interior. Roughly 2,500 km of cycling.
+        </p>
+      </div>
+      <div>
+        <h3 style="margin-bottom:.75rem">🇳🇴 Norway</h3>
+        <p style="color:var(--color-gray-700);line-height:1.75">
+          From Egersund on Norway's southwest coast — Tom's maternal hometown — we head north
+          through fjords, past Bergen, and up through the Arctic landscape to Tromsø.
+          Another roughly 2,500 km, but with significantly more mountains and fewer convenience stores.
+        </p>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin-top:4rem;padding:3rem;background:var(--color-gray-100);border-radius:var(--radius-lg)">
+      <h3 style="margin-bottom:.5rem">Follow along 🔔</h3>
+      <p style="color:var(--color-gray-600);margin-bottom:1.5rem">
+        We share updates from the road — blog posts, photos, and route updates.
+      </p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openSubscribeModal()">🔔 Subscribe for Updates</button>
+        <a href="blog.html" class="btn btn-outline">✍️ Read the Blog</a>
+        <a href="planning.html" class="btn btn-dark">🗺️ See the Route</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
+        <p>A cycling adventure blog documenting our journey through Japan and Norway.</p>
+        <div class="social-links">
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="index.html">Home</a>
+        <a href="planning.html">Map</a>
+        <a href="blog.html">Blog</a>
+        <a href="photos.html">Photos</a>
+      </div>
+      <div class="footer-col">
+        <h4>Info</h4>
+        <a href="about.html">About Us</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Admin</h4>
+        <a href="#" data-auth>Login</a>
+        <a href="admin.html" class="admin-only-link" style="display:none">Dashboard</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bike</span>
+      <span>Made with ❤️ and 🚴</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -417,24 +417,16 @@
           <h3>Trip Overview</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
             <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">2</div>
+              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">1</div>
               <div style="font-size:.8rem;color:var(--color-gray-600)">Countries</div>
             </div>
             <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">~5,000</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">km total</div>
-            </div>
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-accent);font-family:var(--font-heading)">180</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">Days</div>
-            </div>
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-warm);font-family:var(--font-heading)">~2,500</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">km Japan</div>
+              <div id="map-stat-km" style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">—</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">km ridden</div>
             </div>
             <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem;grid-column:span 2">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-coral);font-family:var(--font-heading)">~2,500</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">km Norway</div>
+              <div id="map-stat-days" style="font-size:1.75rem;font-weight:700;color:var(--color-accent);font-family:var(--font-heading)">—</div>
+              <div style="font-size:.8rem;color:var(--color-gray-600)">Days on the Road</div>
             </div>
           </div>
         </div>
@@ -526,10 +518,8 @@
       </div>
       <div class="footer-col">
         <h4>Info</h4>
-        <a href="#">About Us</a>
+        <a href="about.html">About Us</a>
         <a href="#">Contact</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">tomika.bike</a>
       </div>
       <div class="footer-col">
         <h4>Admin</h4>
@@ -1386,6 +1376,28 @@
     renderToggles();
   }
 
+  // ── Update Trip Overview sidebar stats from Strava routes ──
+  function updateMapTripStats(snapshot) {
+    let totalKm = 0;
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.source !== 'strava') return;
+      if (typeof data.distanceKm === 'number') {
+        totalKm += data.distanceKm;
+      } else if (data.metadata && data.metadata.description) {
+        const m = data.metadata.description.match(/Distance:\s*([\d.]+)\s*km/i);
+        if (m) totalKm += parseFloat(m[1]);
+      }
+    });
+    const kmEl = document.getElementById('map-stat-km');
+    if (kmEl) kmEl.textContent = totalKm > 0 ? Math.round(totalKm).toLocaleString() : '0';
+
+    const START_DATE = new Date('2026-03-05T00:00:00');
+    const daysSince = Math.max(0, Math.floor((Date.now() - START_DATE.getTime()) / 86400000));
+    const daysEl = document.getElementById('map-stat-days');
+    if (daysEl) daysEl.textContent = daysSince.toLocaleString();
+  }
+
   // Change 1: Lazy-load routes — only fetch metadata on initial load.
   // gpxContent (which can be ~1 MB per route) is not processed until user clicks.
   function loadFirebaseRoutes() {
@@ -1402,6 +1414,8 @@
           // but doesn't eagerly parse or render it).
           addRoute(null, data.fileName, doc.id, meta, data.storagePath, data.gpxContent || null);
         });
+        // Update Trip Overview km stat from Strava routes
+        updateMapTripStats(snapshot);
         markLoaded('routes');
       })
       .catch(err => { console.error('Firestore read error:', err); markLoaded('routes'); });
