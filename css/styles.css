@@ -1730,7 +1730,8 @@ footer {
 
 @media (max-width: 768px) {
   .nav-links,
-  .nav-actions .nav-login-btn { display: none; }
+  .nav-actions .nav-login-btn,
+  .nav-actions .nav-subscribe-btn { display: none; }
   .hamburger { display: flex; }
 
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
@@ -1749,7 +1750,7 @@ footer {
 }
 
 @media (max-width: 480px) {
-  .gallery-grid { columns: 1; }
+  .gallery-grid { columns: 2; }
   .hero-content { padding: 1.5rem 1rem; }
   .section { padding: 3.5rem 0; }
 }

@@ -133,19 +133,19 @@
   <div class="container">
     <div class="stats-grid">
       <div class="stat-item">
-        <span class="stat-num" data-count="2">0</span>
+        <span class="stat-num" id="stat-countries">1</span>
         <div class="stat-label">Countries</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" data-count="5000">0</span>
-        <div class="stat-label">Kilometres of Routes</div>
+        <span class="stat-num" id="stat-km">—</span>
+        <div class="stat-label">Kilometres Ridden</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" data-count="180">0</span>
+        <span class="stat-num" id="stat-days">—</span>
         <div class="stat-label">Days on the Road</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" data-count="0">0</span>
+        <span class="stat-num" id="stat-photos">—</span>
         <div class="stat-label">Photos Captured</div>
       </div>
     </div>
@@ -256,10 +256,8 @@
       </div>
       <div class="footer-col">
         <h4>Info</h4>
-        <a href="#">About Us</a>
+        <a href="about.html">About Us</a>
         <a href="#">Contact</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">tomika.bike</a>
       </div>
       <div class="footer-col">
         <h4>Admin</h4>
@@ -274,28 +272,74 @@
   </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
 <script src="js/main.js"></script>
 <script>
-  // Animated counters
-  const counters = document.querySelectorAll('[data-count]');
-  const counterObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const el = entry.target;
-        const target = parseInt(el.dataset.count, 10);
-        let current = 0;
-        const step = Math.ceil(target / 50);
-        const interval = setInterval(() => {
-          current = Math.min(current + step, target);
-          el.textContent = current.toLocaleString();
-          if (current >= target) clearInterval(interval);
-        }, 40);
-        counterObserver.unobserve(el);
-      }
-    });
-  }, { threshold: 0.5 });
+  // ── Animated counter helper ────────────────────────────────
+  function animateCounter(el, target) {
+    const start = 0;
+    const duration = 1200;
+    const step = target / (duration / 16);
+    let current = start;
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = Math.round(current).toLocaleString();
+      if (current >= target) clearInterval(interval);
+    }, 16);
+  }
 
-  counters.forEach(c => counterObserver.observe(c));
+  // ── Days since March 5, 2026 ───────────────────────────────
+  const START_DATE = new Date('2026-03-05T00:00:00');
+  const daysEl = document.getElementById('stat-days');
+  const daysSince = Math.max(0, Math.floor((Date.now() - START_DATE.getTime()) / 86400000));
+  daysEl.textContent = daysSince.toLocaleString();
+
+  // ── Countries (fixed at 1 for now) ────────────────────────
+  // Already set in HTML as "1"
+
+  // ── Firebase: km from Strava routes + photo count ──────────
+  (function loadStats() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      const db = firebase.firestore();
+
+      // Strava km total
+      db.collection('routes').where('source', '==', 'strava').get()
+        .then(snap => {
+          let totalKm = 0;
+          snap.forEach(doc => {
+            const data = doc.data();
+            // Use stored distanceKm field if available, otherwise parse from description
+            if (typeof data.distanceKm === 'number') {
+              totalKm += data.distanceKm;
+            } else if (data.metadata && data.metadata.description) {
+              const m = data.metadata.description.match(/Distance:\s*([\d.]+)\s*km/i);
+              if (m) totalKm += parseFloat(m[1]);
+            }
+          });
+          const kmEl = document.getElementById('stat-km');
+          if (totalKm > 0) {
+            animateCounter(kmEl, totalKm);
+          } else {
+            kmEl.textContent = '0';
+          }
+        })
+        .catch(() => { document.getElementById('stat-km').textContent = '0'; });
+
+      // Photo count
+      db.collection('photos').get()
+        .then(snap => {
+          const photosEl = document.getElementById('stat-photos');
+          animateCounter(photosEl, snap.size);
+        })
+        .catch(() => { document.getElementById('stat-photos').textContent = '0'; });
+    } catch (e) {
+      document.getElementById('stat-km').textContent = '0';
+      document.getElementById('stat-photos').textContent = '0';
+    }
+  })();
 </script>
 </body>
 </html>
