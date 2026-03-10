@@ -262,8 +262,168 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   });
 });
 
+// ── Subscriber modal ─────────────────────────
+const SUBSCRIBERS_COLLECTION = 'subscribers';
+
+function _getSubscribeOverlay() {
+  let overlay = document.getElementById('subscribe-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'subscribe-overlay';
+    overlay.className = 'subscribe-overlay';
+    overlay.innerHTML = `
+      <div class="subscribe-modal" role="dialog" aria-modal="true" aria-labelledby="subscribe-modal-title">
+        <button class="auth-close" id="subscribe-close" aria-label="Close">✕</button>
+        <h2 id="subscribe-modal-title">Stay in the Loop 🔔</h2>
+        <p>Get notified when we share new adventures.</p>
+        <div class="form-group">
+          <label for="sub-email">Email Address</label>
+          <input type="email" id="sub-email" class="form-control" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <p style="font-size:.85rem;font-weight:600;color:var(--color-gray-800);margin-bottom:.4rem">Notify me about:</p>
+        <div class="sub-prefs">
+          <label class="sub-pref-item">
+            <input type="checkbox" id="sub-pref-blog" checked />
+            <span>✍️ New blog posts</span>
+          </label>
+          <label class="sub-pref-item">
+            <input type="checkbox" id="sub-pref-photos" checked />
+            <span>📷 New photos</span>
+          </label>
+        </div>
+        <button class="btn btn-primary" id="sub-submit-btn" style="width:100%;justify-content:center">🔔 Subscribe</button>
+        <p class="auth-note">You can unsubscribe or change your preferences at any time. No spam, ever.</p>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeSubscribeModal(); });
+    document.getElementById('subscribe-close').addEventListener('click', closeSubscribeModal);
+    document.getElementById('sub-submit-btn').addEventListener('click', handleSubscribe);
+    overlay.addEventListener('keydown', e => { if (e.key === 'Escape') closeSubscribeModal(); });
+  }
+  return overlay;
+}
+
+function openSubscribeModal() {
+  const overlay = _getSubscribeOverlay();
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => {
+    const emailInput = document.getElementById('sub-email');
+    if (emailInput) emailInput.focus();
+  }, 100);
+}
+
+function closeSubscribeModal() {
+  const overlay = document.getElementById('subscribe-overlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+function _generateToken() {
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function _ensureFirestoreLoaded() {
+  await ensureFirebaseAuth();
+  const src = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION + '/firebase-firestore-compat.js';
+  if (![...document.scripts].some(s => (s.getAttribute('src') || '') === src)) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  return firebase.firestore();
+}
+
+async function handleSubscribe() {
+  const emailInput = document.getElementById('sub-email');
+  const blogPref   = document.getElementById('sub-pref-blog');
+  const photosPref = document.getElementById('sub-pref-photos');
+  const submitBtn  = document.getElementById('sub-submit-btn');
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Please enter a valid email address', 'error');
+    if (emailInput) emailInput.focus();
+    return;
+  }
+
+  const prefs = {
+    blog:   blogPref   ? blogPref.checked   : true,
+    photos: photosPref ? photosPref.checked : true,
+  };
+
+  if (!prefs.blog && !prefs.photos) {
+    showToast('Please select at least one notification type', 'error');
+    return;
+  }
+
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Subscribing…'; }
+
+  try {
+    const db = await _ensureFirestoreLoaded();
+    const col = db.collection(SUBSCRIBERS_COLLECTION);
+
+    // Check for existing subscriber
+    const existing = await col.where('email', '==', email).limit(1).get();
+
+    const baseUrl = window.location.origin + (window.location.pathname.includes('/')
+      ? window.location.pathname.split('/').slice(0, -1).join('/') + '/'
+      : '/');
+    const manageUrl = baseUrl + 'unsubscribe.html?token=';
+
+    if (!existing.empty) {
+      // Update preferences for existing subscriber
+      const docRef = existing.docs[0].ref;
+      const token  = existing.docs[0].data().token;
+      await docRef.update({ preferences: prefs, updatedAt: new Date().toISOString() });
+      closeSubscribeModal();
+      showToast('Preferences updated! ✅', 'success');
+      _showSubscribeSuccessNote(manageUrl + token);
+    } else {
+      // New subscriber
+      const token = _generateToken();
+      await col.add({
+        email,
+        preferences: prefs,
+        subscribedAt: new Date().toISOString(),
+        token,
+      });
+      closeSubscribeModal();
+      showToast('Subscribed! Thanks for joining us 🎉', 'success');
+      _showSubscribeSuccessNote(manageUrl + token);
+    }
+  } catch (err) {
+    console.error('Subscribe error:', err);
+    showToast('Subscription failed. Please try again.', 'error');
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '🔔 Subscribe'; }
+  }
+}
+
+function _showSubscribeSuccessNote(manageUrl) {
+  let note = document.getElementById('subscribe-success-toast');
+  if (!note) {
+    note = document.createElement('div');
+    note.id = 'subscribe-success-toast';
+    note.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:var(--color-white);border:1px solid var(--color-gray-200);border-radius:var(--radius-lg);padding:1rem 1.5rem;box-shadow:var(--shadow-xl);z-index:4000;text-align:center;font-size:.875rem;max-width:340px;width:90%';
+    document.body.appendChild(note);
+  }
+  note.innerHTML = '📬 <strong>You\'re subscribed!</strong> <a href="' + manageUrl + '" style="color:var(--color-secondary);display:block;margin-top:.35rem">Manage or cancel your subscription →</a>';
+  note.style.display = 'block';
+  setTimeout(() => { note.style.display = 'none'; }, 8000);
+}
+
 // Expose helpers globally
-window.TomikaBikes = { showToast, openAuth, closeAuth, ensureFirebaseAuth };
+window.TomikaBikes = { showToast, openAuth, closeAuth, ensureFirebaseAuth, openSubscribeModal, closeSubscribeModal };
+window.openSubscribeModal = openSubscribeModal;
 
 // ── Eager auth state restore ─────────────────
 // If Firebase is already loaded on this page (e.g. admin/planning), or if we

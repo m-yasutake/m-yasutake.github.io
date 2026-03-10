@@ -759,6 +759,7 @@
     <button class="amn-tab" onclick="showSection('gear',this)" data-section="gear">🎒 Gear</button>
     <button class="amn-tab" onclick="showSection('mapdata',this)" data-section="mapdata">🗺️ Map Data</button>
     <button class="amn-tab" onclick="showSection('roots',this)" data-section="roots">🔧 Map Admin</button>
+    <button class="amn-tab" onclick="showSection('subscribers',this)" data-section="subscribers">📬 Subscribers</button>
     <button class="amn-tab" onclick="showSection('settings',this)" data-section="settings">⚙️ Settings</button>
   </div>
 
@@ -775,6 +776,7 @@
       <a href="#" onclick="showSection('gear',this)"><span class="nav-icon">🎒</span> Gear</a>
       <a href="#" onclick="showSection('mapdata',this)"><span class="nav-icon">🗺️</span> Map Data</a>
       <a href="#" onclick="showSection('roots',this)"><span class="nav-icon">🔧</span> Map Admin</a>
+      <a href="#" onclick="showSection('subscribers',this)"><span class="nav-icon">📬</span> Subscribers</a>
       <a href="#" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
       <a href="index.html" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1rem"><span class="nav-icon">🏠</span> View Site</a>
     </nav>
@@ -810,6 +812,11 @@
           <div class="stat-icon">📍</div>
           <span class="stat-value" id="dash-point-count">—</span>
           <div class="stat-label">Map Points</div>
+        </div>
+        <div class="admin-stat-card" style="cursor:pointer" onclick="showSection('subscribers',document.querySelector('.admin-nav a[onclick*=subscribers]'))">
+          <div class="stat-icon">📬</div>
+          <span class="stat-value" id="dash-subscriber-count">—</span>
+          <div class="stat-label">Subscribers</div>
         </div>
       </div>
 
@@ -1158,6 +1165,38 @@
         </div>
         <div class="mapdata-upload-status" id="gmaps-admin-status"></div>
         <button class="btn btn-primary" id="gmaps-admin-btn">📍 Add Point</button>
+      </div>
+    </div>
+
+    <!-- ── Subscribers ── -->
+    <div id="section-subscribers" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Subscribers 📬</h1>
+        <p>View and manage people who have signed up for update notifications.</p>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <span id="sub-admin-count" style="font-size:.9rem;color:var(--color-gray-600)">Loading…</span>
+        </div>
+        <button class="btn" style="padding:.4rem 1rem;font-size:.85rem;background:var(--color-gray-200)" onclick="adminSubscribersLoad()">🔄 Refresh</button>
+      </div>
+
+      <div class="admin-table-card">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:.6rem 1rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-primary);background:var(--color-gray-100);border-bottom:1px solid var(--color-gray-200)">Email</th>
+              <th style="text-align:center;padding:.6rem 1rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-primary);background:var(--color-gray-100);border-bottom:1px solid var(--color-gray-200)">Blog</th>
+              <th style="text-align:center;padding:.6rem 1rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-primary);background:var(--color-gray-100);border-bottom:1px solid var(--color-gray-200)">Photos</th>
+              <th style="text-align:left;padding:.6rem 1rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-primary);background:var(--color-gray-100);border-bottom:1px solid var(--color-gray-200)">Subscribed</th>
+              <th style="text-align:center;padding:.6rem 1rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-primary);background:var(--color-gray-100);border-bottom:1px solid var(--color-gray-200)">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sub-admin-tbody">
+            <tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--color-gray-500)">Loading subscribers…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -3363,6 +3402,91 @@ const GearManagerAdmin = (function () {
 </script>
 
 <script>
+// ── Subscribers Admin ────────────────────────────────────────
+let _adminSubsLoaded = false;
+let _adminSubsDb = null;
+
+async function _adminSubsEnsureDb() {
+  if (_adminSubsDb) return _adminSubsDb;
+  await window.TomikaBikes.ensureFirebaseAuth();
+  const src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+  if (![...document.scripts].some(s => (s.getAttribute('src') || '') === src)) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  _adminSubsDb = firebase.firestore();
+  return _adminSubsDb;
+}
+
+async function adminSubscribersLoad() {
+  const tbody   = document.getElementById('sub-admin-tbody');
+  const countEl = document.getElementById('sub-admin-count');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--color-gray-500)">Loading…</td></tr>';
+  try {
+    const db   = await _adminSubsEnsureDb();
+    const snap = await db.collection('subscribers').orderBy('subscribedAt', 'desc').get();
+    const rows = [];
+    snap.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
+
+    const dashEl = document.getElementById('dash-subscriber-count');
+    if (dashEl) dashEl.textContent = rows.length;
+    if (countEl) countEl.textContent = rows.length + ' subscriber' + (rows.length !== 1 ? 's' : '');
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--color-gray-500)">No subscribers yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+      const date  = r.subscribedAt ? r.subscribedAt.slice(0, 10) : '—';
+      const blog  = r.preferences && r.preferences.blog   ? '✅' : '—';
+      const photos = r.preferences && r.preferences.photos ? '✅' : '—';
+      return '<tr>' +
+        '<td style="padding:.65rem 1rem;font-size:.875rem;border-bottom:1px solid var(--color-gray-100)">' + escHtml(r.email || '—') + '</td>' +
+        '<td style="padding:.65rem 1rem;text-align:center;font-size:1rem;border-bottom:1px solid var(--color-gray-100)">' + blog + '</td>' +
+        '<td style="padding:.65rem 1rem;text-align:center;font-size:1rem;border-bottom:1px solid var(--color-gray-100)">' + photos + '</td>' +
+        '<td style="padding:.65rem 1rem;font-size:.8rem;color:var(--color-gray-600);border-bottom:1px solid var(--color-gray-100)">' + date + '</td>' +
+        '<td style="padding:.65rem 1rem;text-align:center;border-bottom:1px solid var(--color-gray-100)">' +
+          '<button onclick="adminSubscriberDelete(\'' + r.id + '\')" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:var(--radius-sm);padding:.25rem .65rem;font-size:.78rem;cursor:pointer">Remove</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:2rem;text-align:center;color:#dc2626">Error loading subscribers: ' + escHtml(e.message) + '</td></tr>';
+    if (countEl) countEl.textContent = 'Error';
+  }
+}
+
+async function adminSubscriberDelete(docId) {
+  if (!confirm('Remove this subscriber? This cannot be undone.')) return;
+  try {
+    const db = await _adminSubsEnsureDb();
+    await db.collection('subscribers').doc(docId).delete();
+    TomikaBikes.showToast('Subscriber removed', 'success');
+    adminSubscribersLoad();
+  } catch (e) {
+    TomikaBikes.showToast('Failed to remove subscriber: ' + e.message, 'error');
+  }
+}
+
+// Trigger load when Subscribers section is shown
+const _origShowSectionForSubs = window.showSection;
+window.showSection = function (name, linkEl) {
+  _origShowSectionForSubs(name, linkEl);
+  if (name === 'subscribers' && !_adminSubsLoaded) {
+    _adminSubsLoaded = true;
+    adminSubscribersLoad();
+  }
+};
+</script>
+
+<script>
 // ── Dashboard counts ──────────────────────────────────────────
 let _dashCountsLoaded = false;
 function adminDashLoadCounts() {
@@ -3381,6 +3505,9 @@ function adminDashLoadCounts() {
       .catch(() => {});
     db.collection('points').limit(1000).get()
       .then(s => { const el = document.getElementById('dash-point-count'); if (el) el.textContent = s.size; })
+      .catch(() => {});
+    db.collection('subscribers').limit(1000).get()
+      .then(s => { const el = document.getElementById('dash-subscriber-count'); if (el) el.textContent = s.size; })
       .catch(() => {});
   } catch (e) { /* Firebase not ready */ }
 }
