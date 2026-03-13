@@ -259,7 +259,11 @@
     background: transparent;
     border: none;
   }
-  #filter-popup #type-filters label:hover { background: var(--color-gray-100); }
+  #filter-popup #type-filters .filter-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
   .filter-popup-footer {
     display: flex;
     gap: 0.4rem;
@@ -449,7 +453,7 @@
         <!-- Map action buttons and filters -->
         <div class="roots-controls">
           <div class="filter-wrapper">
-            <button class="roots-btn" id="filter-btn">🔍 Filters<span id="filter-active-badge" style="display:none"></span></button>
+            <button class="roots-btn" id="filter-btn" aria-label="Open point filters">🔍 Filters<span id="filter-active-badge" style="display:none"></span></button>
             <div class="filter-popup" id="filter-popup">
               <div class="filter-popup-header">
                 <strong>Filter Points</strong>
@@ -676,9 +680,9 @@
     if (/hotel\s*onsen|onsen.*hotel/i.test(rawType)) return 'Hotel Onsen';
     if (/onsen/i.test(rawType)) return 'Onsen';
     // Campsite subcategories — check these before the generic camp test
-    if (/free\s*camp|camp.*free/i.test(rawType)) return 'Campsite - Free';
-    if (/cheap\s*camp|camp.*cheap/i.test(rawType)) return 'Campsite - Cheap';
-    if (/paid\s*camp|camp.*paid|expensive\s*camp|camp.*expensive/i.test(rawType)) return 'Campsite - Paid';
+    if (/(free.*camp|camp.*free)/i.test(rawType)) return 'Campsite - Free';
+    if (/(cheap.*camp|camp.*cheap)/i.test(rawType)) return 'Campsite - Cheap';
+    if (/(paid.*camp|camp.*paid|expensive.*camp|camp.*expensive)/i.test(rawType)) return 'Campsite - Paid';
     if (/camp/i.test(rawType)) return 'Campsite';
     if (/roadside\s*station/i.test(rawType)) return 'Roadside Station';
     if (/must\s*see/i.test(rawType)) return 'Must See';
@@ -833,7 +837,7 @@
     });
     filterCloseBtn.addEventListener('click', function() { filterPopup.classList.remove('open'); });
     document.addEventListener('click', function(e) {
-      if (!filterPopup.contains(e.target) && e.target !== filterBtn) filterPopup.classList.remove('open');
+      if (!filterPopup.contains(e.target) && !filterBtn.contains(e.target)) filterPopup.classList.remove('open');
     });
     filterPopup.addEventListener('click', function(e) { e.stopPropagation(); });
     filterSelectAll.addEventListener('click', function() {
@@ -1364,9 +1368,10 @@
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.checked = pointTypeFilters.has(type);
       cb.addEventListener('change', () => togglePointType(type, cb.checked));
-      // Inline SVG icon scaled to 16×16
+      // Icon scaled to 16×16 via CSS
       const iconSpan = document.createElement('span');
-      iconSpan.innerHTML = iconDef.svg.replace(/width="18" height="18"/, 'width="16" height="16"');
+      iconSpan.className = 'filter-icon';
+      iconSpan.innerHTML = iconDef.svg;
       iconSpan.style.flexShrink = '0';
       lbl.appendChild(cb);
       lbl.appendChild(iconSpan);
