@@ -743,6 +743,8 @@
 
   const layerControl = L.control.layers(baseLayers, overlayLayers, { position: 'bottomleft', collapsed: true }).addTo(map);
 
+  L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
+
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
       if (zoom >= 9) return 0;
