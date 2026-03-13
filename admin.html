@@ -1434,11 +1434,12 @@
     } catch(e) {
       // App already initialized - use existing instance
     }
-    // Use persistent multi-tab cache (replaces deprecated enablePersistence)
+    // Use single-tab persistent cache. persistentMultipleTabManager requires
+    // SharedWorker which is unavailable on iOS Safari and causes crashes.
     try {
       firebase.firestore().settings({
         localCache: firebase.firestore.persistentLocalCache({
-          tabManager: firebase.firestore.persistentMultipleTabManager()
+          tabManager: firebase.firestore.persistentSingleTabManager({})
         })
       });
     } catch (e) {
@@ -2172,7 +2173,20 @@
   });
 
   // ── Init ──────────────────────────────────────────────
-  initFirebase();
+  // Defer initialisation until the user actually navigates to the Map Data
+  // section. Eagerly running initFirebase() on every page load caused iOS
+  // Safari to crash: it would kick off heavy IndexedDB persistence setup and
+  // start fetching hundreds of Firestore documents before any map data was
+  // even needed.
+  let _rootsInited = false;
+  const _rootsOrigShowSection = window.showSection;
+  window.showSection = function (name, linkEl) {
+    if (typeof _rootsOrigShowSection === 'function') _rootsOrigShowSection(name, linkEl);
+    if (name === 'mapdata' && !_rootsInited) {
+      _rootsInited = true;
+      initFirebase();
+    }
+  };
 })();
 
 </script>
