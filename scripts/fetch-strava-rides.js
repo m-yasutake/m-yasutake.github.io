@@ -339,14 +339,19 @@ async function main() {
 
     // Save Firestore document (same schema as admin-uploaded routes)
     console.log(`  Saving Firestore document...`);
+    const elevationGain = typeof activity.total_elevation_gain === 'number'
+      ? activity.total_elevation_gain
+      : null;
     await db.collection('routes').add({
       fileName,
       storagePath,
       metadata,
-      distanceKm:        distanceKm ? parseFloat(distanceKm) : null,
-      uploadedAt:        admin.firestore.FieldValue.serverTimestamp(),
-      source:            'strava',
-      stravaActivityId:  activityId
+      distanceKm:           distanceKm ? parseFloat(distanceKm) : null,
+      totalElevationGain:   elevationGain,
+      uploadedAt:           admin.firestore.FieldValue.serverTimestamp(),
+      source:               'strava',
+      isOwner:              true,
+      stravaActivityId:     activityId
     });
 
     console.log(`  ✓ Saved: "${activityName}"`);
