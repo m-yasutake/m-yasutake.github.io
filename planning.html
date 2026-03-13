@@ -623,21 +623,13 @@
       color: '#9b3066',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#9b3066" stroke="#fff" stroke-width="1.5"/><rect x="8" y="11" width="8" height="5" rx="0.5" fill="none" stroke="#fff" stroke-width="1.2"/><path d="M9.5 9c0.2-.7 0.5-1 0.3-1.8M12 8.5c0.2-.7 0.5-1 0.3-1.8M14.5 9c0.2-.7 0.5-1 0.3-1.8" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
     },
+    'Super Sento': {
+      color: '#0277bd',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#0277bd" stroke="#fff" stroke-width="1.5"/><path d="M9.5 8.5c0.3-1 0.7-1.5 0.5-2.5M12 7.5c0.3-1 0.7-1.5 0.5-2.5M14.5 8.5c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/><rect x="7" y="12" width="10" height="4" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M8.5 14c0.7-0.5 1.3-0.5 2 0s1.3 0.5 2 0s1.3-0.5 2 0" fill="none" stroke="#fff" stroke-width="0.8" stroke-linecap="round"/></svg>'
+    },
     'Campsite': {
       color: '#27ae60',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#27ae60" stroke="#fff" stroke-width="1.5"/><path d="M12 6L6 17h12L12 6z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 17v-3h4v3" fill="none" stroke="#fff" stroke-width="1" stroke-linejoin="round"/></svg>'
-    },
-    'Campsite - Free': {
-      color: '#1a8a3c',
-      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#1a8a3c" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L6 16.5h12L12 5.5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><text x="12" y="15" text-anchor="middle" font-size="4.5" fill="#fff" font-family="sans-serif" font-weight="bold">F</text></svg>'
-    },
-    'Campsite - Cheap': {
-      color: '#8bc34a',
-      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#8bc34a" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L6 16.5h12L12 5.5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><text x="12" y="15" text-anchor="middle" font-size="4.5" fill="#fff" font-family="sans-serif" font-weight="bold">$</text></svg>'
-    },
-    'Campsite - Paid': {
-      color: '#e08c00',
-      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e08c00" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L6 16.5h12L12 5.5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><text x="12" y="15" text-anchor="middle" font-size="4.5" fill="#fff" font-family="sans-serif" font-weight="bold">$$</text></svg>'
     },
     'Roadside Station': {
       color: '#3498db',
@@ -678,11 +670,12 @@
     // Onsen subcategories — check these before the generic onsen test
     if (/foot\s*bath/i.test(rawType)) return 'Foot Bath';
     if (/hotel\s*onsen|onsen.*hotel/i.test(rawType)) return 'Hotel Onsen';
+    if (/Hotel\/Ryokan Onsen/i.test(rawType)) return 'Hotel Onsen';
+    if (/super\s*sento/i.test(rawType)) return 'Super Sento';
+    if (/Day-use Onsen/i.test(rawType)) return 'Onsen';
     if (/onsen/i.test(rawType)) return 'Onsen';
+    if (/Community Center/i.test(rawType)) return 'Onsen';
     // Campsite subcategories — check these before the generic camp test
-    if (/(free.*camp|camp.*free)/i.test(rawType)) return 'Campsite - Free';
-    if (/(cheap.*camp|camp.*cheap)/i.test(rawType)) return 'Campsite - Cheap';
-    if (/(paid.*camp|camp.*paid|expensive.*camp|camp.*expensive)/i.test(rawType)) return 'Campsite - Paid';
     if (/camp/i.test(rawType)) return 'Campsite';
     if (/roadside\s*station/i.test(rawType)) return 'Roadside Station';
     if (/must\s*see/i.test(rawType)) return 'Must See';
@@ -841,11 +834,13 @@
     });
     filterPopup.addEventListener('click', function(e) { e.stopPropagation(); });
     filterSelectAll.addEventListener('click', function() {
-      getAvailablePointTypes().forEach(t => pointTypeFilters.add(t));
+      getAvailablePointTypes().forEach(t => { pointTypeFilters.add(t); _seenPointTypes.add(t); });
       renderPointToggles();
     });
     filterClearAll.addEventListener('click', function() {
       pointTypeFilters.clear();
+      // Mark all types as seen so the auto-enable logic doesn't re-add them.
+      getAvailablePointTypes().forEach(t => _seenPointTypes.add(t));
       renderPointToggles();
     });
   })();
@@ -1288,6 +1283,7 @@
   function scheduleRenderPointToggles() { if (_toggleTimer) clearTimeout(_toggleTimer); _toggleTimer = setTimeout(renderPointToggles, 50); }
 
   const pointTypeFilters = new Set();
+  const _seenPointTypes = new Set(); // tracks types ever loaded; new ones are auto-enabled
 
   function getAvailablePointTypes() {
     const available = new Set();
@@ -1314,6 +1310,10 @@
       if (pointData.metadata) {
         const desc = pointData.metadata.description||pointData.metadata.Description||'';
         if (desc) content += '<br><span style="color:#6c757d;font-size:0.92em;">' + escapeHtml(desc) + '</span>';
+        const price = pointData.metadata.price||pointData.metadata.Price||'';
+        if (price) content += '<br><span style="font-size:0.9em;">💴 ' + escapeHtml(price) + '</span>';
+        const hours = pointData.metadata.hours||pointData.metadata.Hours||'';
+        if (hours) content += '<br><span style="font-size:0.9em;">🕐 ' + escapeHtml(hours) + '</span>';
         const notes = pointData.metadata.notes||pointData.metadata.Notes||'';
         if (notes) content += '<br><span style="color:#6c757d;font-size:0.88em;font-style:italic;">' + escapeHtml(notes) + '</span>';
       }
@@ -1359,8 +1359,9 @@
     if (!container) return;
     container.innerHTML = '';
     const availableTypes = getAvailablePointTypes();
-    if (pointTypeFilters.size === 0) availableTypes.forEach(t => pointTypeFilters.add(t));
-    else availableTypes.forEach(t => { if (!pointTypeFilters.has(t)) pointTypeFilters.add(t); });
+    // Auto-enable any type that is appearing for the first time, but never
+    // override an explicit user action (e.g. clicking None to clear all).
+    availableTypes.forEach(t => { if (!_seenPointTypes.has(t)) { pointTypeFilters.add(t); _seenPointTypes.add(t); } });
     availableTypes.forEach(type => {
       const count = points.filter(p => (p.type||'Other') === type).length;
       const iconDef = POINT_TYPE_ICONS[type] || POINT_TYPE_ICONS['_default'];

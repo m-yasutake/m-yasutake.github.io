@@ -348,37 +348,27 @@ async function handleSubscribe() {
 
   try {
     const db = await _ensureFirestoreLoaded();
-    const col = db.collection(SUBSCRIBERS_COLLECTION);
 
-    // Check for existing subscriber
-    const existing = await col.where('email', '==', email).limit(1).get();
+    // Use a base64-encoded email as the document ID. This is an upsert via
+    // set() — requires only write permission, not list/read, so it works for
+    // unauthenticated users. It also naturally deduplicates re-subscriptions.
+    const docId = btoa(email).replace(/=/g, '');
+    const token = _generateToken();
+    await db.collection(SUBSCRIBERS_COLLECTION).doc(docId).set({
+      email,
+      preferences: prefs,
+      subscribedAt: new Date().toISOString(),
+      token,
+    });
 
     const baseUrl = window.location.origin + (window.location.pathname.includes('/')
       ? window.location.pathname.split('/').slice(0, -1).join('/') + '/'
       : '/');
     const manageUrl = baseUrl + 'unsubscribe.html?token=';
 
-    if (!existing.empty) {
-      // Update preferences for existing subscriber
-      const docRef = existing.docs[0].ref;
-      const token  = existing.docs[0].data().token;
-      await docRef.update({ preferences: prefs, updatedAt: new Date().toISOString() });
-      closeSubscribeModal();
-      showToast('Preferences updated! ✅', 'success');
-      _showSubscribeSuccessNote(manageUrl + token);
-    } else {
-      // New subscriber
-      const token = _generateToken();
-      await col.add({
-        email,
-        preferences: prefs,
-        subscribedAt: new Date().toISOString(),
-        token,
-      });
-      closeSubscribeModal();
-      showToast('Subscribed! Thanks for joining us 🎉', 'success');
-      _showSubscribeSuccessNote(manageUrl + token);
-    }
+    closeSubscribeModal();
+    showToast('Subscribed! Thanks for joining us 🎉', 'success');
+    _showSubscribeSuccessNote(manageUrl + token);
   } catch (err) {
     console.error('Subscribe error:', err);
     showToast('Subscription failed. Please try again.', 'error');
