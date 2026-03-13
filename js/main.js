@@ -116,16 +116,26 @@ if (authOverlay) {
       googleBtn.textContent = 'Signing in…';
       ensureFirebaseAuth()
         .then(() => {
-          const p = new firebase.auth.GoogleAuthProvider();
-          // Mobile browsers block popups; use redirect flow instead
-          if (/Mobi|Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            return firebase.auth().signInWithRedirect(p);
+          // Already signed in — just close the modal
+          if (firebase.auth().currentUser) {
+            closeAuth();
+            return;
           }
-          return firebase.auth().signInWithPopup(p);
+          const p = new firebase.auth.GoogleAuthProvider();
+          // Try popup first; fall back to redirect if popup is blocked
+          return firebase.auth().signInWithPopup(p).catch(popupErr => {
+            if (popupErr.code === 'auth/popup-blocked' ||
+                popupErr.code === 'auth/popup-closed-by-browser') {
+              return firebase.auth().signInWithRedirect(p);
+            }
+            throw popupErr;
+          });
         })
         .catch(err => {
           console.error('Sign-in error:', err);
           showToast('Sign-in failed: ' + err.message, 'error');
+        })
+        .finally(() => {
           googleBtn.disabled = false;
           googleBtn.innerHTML = originalHTML;
         });
@@ -209,6 +219,12 @@ function _onAuthStateChanged(user) {
     } else {
       adminGate.style.display = '';
       adminDashboard.style.display = 'none';
+      // Restore the sign-in button if it was showing a loading state
+      const gateBtn = adminGate.querySelector('[data-auth]');
+      if (gateBtn) {
+        gateBtn.disabled = false;
+        gateBtn.textContent = 'Sign In with Google';
+      }
     }
   }
 }
@@ -395,6 +411,19 @@ window.TomikaBikes = { showToast, openAuth, closeAuth, ensureFirebaseAuth, openS
 window.openSubscribeModal = openSubscribeModal;
 
 // ── Eager auth state restore ─────────────────
-// If Firebase is already loaded on this page (e.g. admin/planning), or if we
-// can lazy-load it, restore the previous sign-in state so the nav reflects it.
-ensureFirebaseAuth().catch(() => {});
+// Load the Firebase Auth SDK and restore any previous sign-in state so the nav
+// and admin gate reflect the user's session immediately on page load.
+(function () {
+  var gateBtn = document.querySelector('#adminGate [data-auth]');
+  if (gateBtn) {
+    gateBtn.disabled = true;
+    gateBtn.textContent = 'Checking sign-in…';
+  }
+  ensureFirebaseAuth().catch(function () {
+    // Auth SDK failed to load — restore the button so the user can retry
+    if (gateBtn) {
+      gateBtn.disabled = false;
+      gateBtn.textContent = 'Sign In with Google';
+    }
+  });
+})();

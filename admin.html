@@ -1391,6 +1391,7 @@
 
   // ── Firebase Init ─────────────────────────────────────
   let authLoaded = false;
+  let _setupAuthDone = false;
 
   function loadAuthSDK() {
     if (authLoaded) return Promise.resolve();
@@ -1404,6 +1405,8 @@
   }
 
   function setupAuth() {
+    if (_setupAuthDone) return;
+    _setupAuthDone = true;
     firebase.auth().onAuthStateChanged(user => {
       currentUser = user;
       if (user && user.email === ADMIN_EMAIL) {
@@ -1453,7 +1456,7 @@
     loadAuthSDK().then(() => { setupAuth(); }).catch(() => {});
 
     authBtn.addEventListener('click', () => {
-      if (authLoaded && currentUser) {
+      if (authLoaded && firebase.auth().currentUser) {
         firebase.auth().signOut();
         return;
       }
@@ -1462,7 +1465,7 @@
       loadAuthSDK()
         .then(() => {
           setupAuth();
-          if (!currentUser) {
+          if (!firebase.auth().currentUser) {
             const provider = new firebase.auth.GoogleAuthProvider();
             return firebase.auth().signInWithPopup(provider);
           }
