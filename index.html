@@ -133,20 +133,20 @@
   <div class="container">
     <div class="stats-grid">
       <div class="stat-item">
-        <span class="stat-num" id="stat-countries">1</span>
-        <div class="stat-label">Countries</div>
+        <span class="stat-num" id="stat-sploops">—</span>
+        <div class="stat-label" aria-label="Sploops (Stanley Park loops)">Sploops 🌲</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" id="stat-km">—</span>
-        <div class="stat-label">Kilometres Ridden</div>
+        <span class="stat-num" id="stat-grinds">—</span>
+        <div class="stat-label" aria-label="Grouse Grinds">Grouse Grinds ⛰️</div>
       </div>
       <div class="stat-item">
         <span class="stat-num" id="stat-days">—</span>
         <div class="stat-label">Days on the Road</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" id="stat-photos">—</span>
-        <div class="stat-label">Photos Captured</div>
+        <span class="stat-num" id="stat-onsens">2</span>
+        <div class="stat-label" aria-label="Onsens">Onsens ♨️</div>
       </div>
     </div>
   </div>
@@ -299,45 +299,51 @@
   // ── Countries (fixed at 1 for now) ────────────────────────
   // Already set in HTML as "1"
 
-  // ── Firebase: km from Strava routes + photo count ──────────
+  // ── Firebase: Sploops + Grouse Grinds from owner's Strava routes ──────────
   (function loadStats() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       const db = firebase.firestore();
 
-      // Strava km total
-      db.collection('routes').where('source', '==', 'strava').get()
+      // Owner's Strava rides: Sploops (km ÷ 10) and Grouse Grinds (elevation ÷ 800)
+      db.collection('routes').where('isOwner', '==', true).get()
         .then(snap => {
           let totalKm = 0;
+          let totalElevation = 0;
           snap.forEach(doc => {
             const data = doc.data();
-            // Use stored distanceKm field if available, otherwise parse from description
             if (typeof data.distanceKm === 'number') {
               totalKm += data.distanceKm;
             } else if (data.metadata && data.metadata.description) {
               const m = data.metadata.description.match(/Distance:\s*([\d.]+)\s*km/i);
               if (m) totalKm += parseFloat(m[1]);
             }
+            if (typeof data.totalElevationGain === 'number') {
+              totalElevation += data.totalElevationGain;
+            }
           });
-          const kmEl = document.getElementById('stat-km');
+          const sploops = Math.floor(totalKm / 10);
+          const grinds  = Math.floor(totalElevation / 800);
+          const sploopsEl = document.getElementById('stat-sploops');
+          const grindsEl  = document.getElementById('stat-grinds');
           if (totalKm > 0) {
-            animateCounter(kmEl, totalKm);
+            animateCounter(sploopsEl, sploops);
           } else {
-            kmEl.textContent = '0';
+            sploopsEl.textContent = '0';
+          }
+          if (totalElevation > 0) {
+            animateCounter(grindsEl, grinds);
+          } else {
+            grindsEl.textContent = '0';
           }
         })
-        .catch(() => { document.getElementById('stat-km').textContent = '0'; });
-
-      // Photo count
-      db.collection('photos').get()
-        .then(snap => {
-          const photosEl = document.getElementById('stat-photos');
-          animateCounter(photosEl, snap.size);
-        })
-        .catch(() => { document.getElementById('stat-photos').textContent = '0'; });
+        .catch(() => {
+          document.getElementById('stat-sploops').textContent = '0';
+          document.getElementById('stat-grinds').textContent = '0';
+        });
     } catch (e) {
-      document.getElementById('stat-km').textContent = '0';
-      document.getElementById('stat-photos').textContent = '0';
+      document.getElementById('stat-sploops').textContent = '0';
+      document.getElementById('stat-grinds').textContent = '0';
     }
   })();
 </script>
