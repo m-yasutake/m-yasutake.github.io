@@ -201,13 +201,89 @@
   .marker-cluster-large div { background-color: rgba(231, 111, 81, 0.8); }
 
   .planning-grid {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 2rem;
-    align-items: start;
+    display: block;
   }
 
-  @media (max-width: 900px) { .planning-grid { grid-template-columns: 1fr; } }
+  /* Filter popup */
+  .filter-wrapper { position: relative; display: inline-block; }
+  .filter-popup {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    padding: 0.75rem;
+    z-index: 9001;
+    min-width: 230px;
+    max-height: 340px;
+    overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    color: var(--color-dark);
+  }
+  .filter-popup.open { display: block; }
+  .filter-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+  .filter-popup-header strong { font-size: 0.85em; color: var(--color-primary); }
+  .filter-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-gray-600);
+    font-size: 0.9em;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+  .filter-close-btn:hover { color: var(--color-dark); }
+  #filter-popup #type-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  #filter-popup #type-filters label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.35em 0.5em;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: var(--color-dark);
+    background: transparent;
+    border: none;
+  }
+  #filter-popup #type-filters .filter-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  .filter-popup-footer {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--color-gray-200);
+  }
+  #filter-active-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-secondary);
+    color: white;
+    border-radius: 999px;
+    font-size: 0.7em;
+    padding: 0.1em 0.45em;
+    margin-left: 0.3em;
+    min-width: 1.4em;
+    line-height: 1.4;
+  }
 
   .timeline { position: relative; padding-left: 2rem; }
   .timeline::before {
@@ -286,10 +362,13 @@
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 100dvh !important;
     z-index: 9998 !important;
     border-radius: 0 !important;
     margin: 0 !important;
+  }
+  @supports not (height: 100dvh) {
+    #map-wrapper.map-fullscreen { height: -webkit-fill-available !important; }
   }
   #map-wrapper.map-fullscreen #map {
     height: 100% !important;
@@ -373,7 +452,20 @@
 
         <!-- Map action buttons and filters -->
         <div class="roots-controls">
-          <span id="type-filters"></span>
+          <div class="filter-wrapper">
+            <button class="roots-btn" id="filter-btn" aria-label="Open point filters">🔍 Filters<span id="filter-active-badge" style="display:none"></span></button>
+            <div class="filter-popup" id="filter-popup">
+              <div class="filter-popup-header">
+                <strong>Filter Points</strong>
+                <button class="filter-close-btn" id="filter-close-btn" aria-label="Close filters">✕</button>
+              </div>
+              <div id="type-filters"></div>
+              <div class="filter-popup-footer">
+                <button class="roots-btn" id="filter-select-all" style="font-size:0.8em;padding:0.25em 0.6em">All</button>
+                <button class="roots-btn" id="filter-clear-all" style="font-size:0.8em;padding:0.25em 0.6em">None</button>
+              </div>
+            </div>
+          </div>
           <button class="roots-btn" id="fit-bounds-btn" title="Zoom to fit all routes">Fit All</button>
         </div>
 
@@ -410,90 +502,7 @@
         </div>
       </div>
 
-      <!-- Right: Sidebar -->
-      <div>
-        <!-- Trip Stats -->
-        <div class="sidebar-widget">
-          <h3>Trip Overview</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">1</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">Countries</div>
-            </div>
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div id="map-stat-km" style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">—</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">km ridden</div>
-            </div>
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem;grid-column:span 2">
-              <div id="map-stat-days" style="font-size:1.75rem;font-weight:700;color:var(--color-accent);font-family:var(--font-heading)">—</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)">Days on the Road</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Timeline -->
-        <div class="sidebar-widget">
-          <h3>Trip Timeline</h3>
-          <div class="timeline">
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-secondary)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">Mar 5, 2026 – Departure</div>
-                <h4>🛫 Tokyo, Japan</h4>
-                <p>Fly to Tokyo. One week visiting friends and family before the real journey begins.</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-accent)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">Mid Mar 2026</div>
-                <h4>🇯🇵 Kagoshima – Start of Bike Leg</h4>
-                <p>Fly south to Kagoshima. Begin cycling northward from the southern tip of Kyushu.</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-warm)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">Apr – May 2026</div>
-                <h4>🚴 Through Honshu</h4>
-                <p>Crossing through Hiroshima, Kyoto, and the Japanese Alps. Cherry blossom season!</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-secondary)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">Jun 2026</div>
-                <h4>🏔️ Hokkaido – Cape Soya</h4>
-                <p>Final push through Hokkaido to Cape Soya — the northernmost point of Japan.</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-coral)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">Jun 2026 – Norway Start</div>
-                <h4>🇳🇴 Egersund, Norway</h4>
-                <p>Fly to Norway. Begin from Egersund on the southwest coast — Tom's maternal hometown.</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-warm)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">Jul – Aug 2026</div>
-                <h4>🏔️ Up the Norwegian Coast</h4>
-                <p>Cycling north through fjords, past Bergen, and up through wild Arctic landscapes.</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-dot" style="background:var(--color-accent)"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">Sep 2026 – End</div>
-                <h4>🌅 Tromsø, Norway</h4>
-                <p>Final destination — the gateway to the Arctic. We did it! 🎉</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Right: Sidebar removed -->
     </div>
   </div>
 </section>
@@ -606,9 +615,29 @@
       color: '#e74c3c',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#fff" stroke-width="1.5"/><path d="M8 13c0-2.2 1.8-4 4-4s4 1.8 4 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M9.5 8.5c0.3-1 0.7-1.5 0.5-2.5M12 7.5c0.3-1 0.7-1.5 0.5-2.5M14.5 8.5c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
     },
+    'Foot Bath': {
+      color: '#e8906b',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e8906b" stroke="#fff" stroke-width="1.5"/><path d="M7 15c0-1.7 1.3-3 3-3h4c1.7 0 3 1.3 3 3v1H7v-1z" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M10 8.5c0.2-.8 0.5-1.2 0.4-2M12.5 8c0.2-.8 0.5-1.2 0.4-2" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
+    },
+    'Hotel Onsen': {
+      color: '#9b3066',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#9b3066" stroke="#fff" stroke-width="1.5"/><rect x="8" y="11" width="8" height="5" rx="0.5" fill="none" stroke="#fff" stroke-width="1.2"/><path d="M9.5 9c0.2-.7 0.5-1 0.3-1.8M12 8.5c0.2-.7 0.5-1 0.3-1.8M14.5 9c0.2-.7 0.5-1 0.3-1.8" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
+    },
     'Campsite': {
       color: '#27ae60',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#27ae60" stroke="#fff" stroke-width="1.5"/><path d="M12 6L6 17h12L12 6z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 17v-3h4v3" fill="none" stroke="#fff" stroke-width="1" stroke-linejoin="round"/></svg>'
+    },
+    'Campsite - Free': {
+      color: '#1a8a3c',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#1a8a3c" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L6 16.5h12L12 5.5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><text x="12" y="15" text-anchor="middle" font-size="4.5" fill="#fff" font-family="sans-serif" font-weight="bold">F</text></svg>'
+    },
+    'Campsite - Cheap': {
+      color: '#8bc34a',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#8bc34a" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L6 16.5h12L12 5.5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><text x="12" y="15" text-anchor="middle" font-size="4.5" fill="#fff" font-family="sans-serif" font-weight="bold">$</text></svg>'
+    },
+    'Campsite - Paid': {
+      color: '#e08c00',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e08c00" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L6 16.5h12L12 5.5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><text x="12" y="15" text-anchor="middle" font-size="4.5" fill="#fff" font-family="sans-serif" font-weight="bold">$$</text></svg>'
     },
     'Roadside Station': {
       color: '#3498db',
@@ -646,7 +675,14 @@
   function normalizePointType(type) {
     const rawType = type ? String(type).trim() : '';
     if (!rawType) return '_default';
+    // Onsen subcategories — check these before the generic onsen test
+    if (/foot\s*bath/i.test(rawType)) return 'Foot Bath';
+    if (/hotel\s*onsen|onsen.*hotel/i.test(rawType)) return 'Hotel Onsen';
     if (/onsen/i.test(rawType)) return 'Onsen';
+    // Campsite subcategories — check these before the generic camp test
+    if (/(free.*camp|camp.*free)/i.test(rawType)) return 'Campsite - Free';
+    if (/(cheap.*camp|camp.*cheap)/i.test(rawType)) return 'Campsite - Cheap';
+    if (/(paid.*camp|camp.*paid|expensive.*camp|camp.*expensive)/i.test(rawType)) return 'Campsite - Paid';
     if (/camp/i.test(rawType)) return 'Campsite';
     if (/roadside\s*station/i.test(rawType)) return 'Roadside Station';
     if (/must\s*see/i.test(rawType)) return 'Must See';
@@ -739,6 +775,80 @@
     }
   });
   markerClusterGroup.addTo(map);
+
+  // ── "Show My Location" control ─────────────────────────────
+  (function addLocationControl() {
+    const LocationControl = L.Control.extend({
+      onAdd: function() {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        const btn = L.DomUtil.create('a', '', container);
+        btn.innerHTML = '📍';
+        btn.href = '#';
+        btn.title = 'Show my location';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('aria-label', 'Show my location');
+        btn.style.cssText = 'display:flex;align-items:center;justify-content:center;width:30px;height:30px;font-size:1.1em;text-decoration:none;cursor:pointer;';
+        let _locationMarker = null;
+        let _locationCircle = null;
+        L.DomEvent.on(btn, 'click', function(e) {
+          L.DomEvent.preventDefault(e);
+          L.DomEvent.stopPropagation(e);
+          if (!navigator.geolocation) { alert('Geolocation is not supported by this browser.'); return; }
+          btn.innerHTML = '⏳';
+          navigator.geolocation.getCurrentPosition(
+            function(pos) {
+              btn.innerHTML = '📍';
+              const latlng = [pos.coords.latitude, pos.coords.longitude];
+              const accuracy = pos.coords.accuracy;
+              if (_locationMarker) { _locationMarker.remove(); _locationMarker = null; }
+              if (_locationCircle) { _locationCircle.remove(); _locationCircle = null; }
+              _locationCircle = L.circle(latlng, { radius: accuracy, color: '#4285f4', fillColor: '#4285f4', fillOpacity: 0.12, weight: 1 }).addTo(map);
+              _locationMarker = L.circleMarker(latlng, { radius: 8, fillColor: '#4285f4', fillOpacity: 0.9, color: 'white', weight: 2.5 })
+                .addTo(map)
+                .bindPopup('<b>You are here</b><br><span style="color:#888;font-size:0.85em;">Accuracy: ~' + Math.round(accuracy) + ' m</span>')
+                .openPopup();
+              map.setView(latlng, Math.max(map.getZoom(), 14));
+            },
+            function(err) {
+              btn.innerHTML = '📍';
+              const msgs = { 1: 'Location access denied. Please allow location access in your browser settings.', 2: 'Location unavailable.', 3: 'Location request timed out.' };
+              alert(msgs[err.code] || 'Could not get location: ' + err.message);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+          );
+        });
+        return container;
+      }
+    });
+    new LocationControl({ position: 'topleft' }).addTo(map);
+  })();
+
+  // ── Filter popup open / close ───────────────────────────────
+  (function setupFilterPopup() {
+    const filterBtn = document.getElementById('filter-btn');
+    const filterPopup = document.getElementById('filter-popup');
+    const filterCloseBtn = document.getElementById('filter-close-btn');
+    const filterSelectAll = document.getElementById('filter-select-all');
+    const filterClearAll = document.getElementById('filter-clear-all');
+    if (!filterBtn || !filterPopup) return;
+    filterBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      filterPopup.classList.toggle('open');
+    });
+    filterCloseBtn.addEventListener('click', function() { filterPopup.classList.remove('open'); });
+    document.addEventListener('click', function(e) {
+      if (!filterPopup.contains(e.target) && !filterBtn.contains(e.target)) filterPopup.classList.remove('open');
+    });
+    filterPopup.addEventListener('click', function(e) { e.stopPropagation(); });
+    filterSelectAll.addEventListener('click', function() {
+      getAvailablePointTypes().forEach(t => pointTypeFilters.add(t));
+      renderPointToggles();
+    });
+    filterClearAll.addEventListener('click', function() {
+      pointTypeFilters.clear();
+      renderPointToggles();
+    });
+  })();
 
   function parseGPX(xmlString) {
     const parser = new DOMParser();
@@ -867,10 +977,11 @@
 
   // ── Route line weight – scales down as you zoom in so roads stay visible ──
   function getRouteWeight(zoom) {
-    if (zoom >= 15) return 1;
-    if (zoom >= 13) return 1.5;
-    if (zoom >= 11) return 2;
-    if (zoom >= 9) return 2.5;
+    if (zoom >= 17) return 0.5;
+    if (zoom >= 15) return 0.75;
+    if (zoom >= 13) return 1.2;
+    if (zoom >= 11) return 1.8;
+    if (zoom >= 9) return 2.2;
     return 3;
   }
 
@@ -1252,14 +1363,34 @@
     else availableTypes.forEach(t => { if (!pointTypeFilters.has(t)) pointTypeFilters.add(t); });
     availableTypes.forEach(type => {
       const count = points.filter(p => (p.type||'Other') === type).length;
+      const iconDef = POINT_TYPE_ICONS[type] || POINT_TYPE_ICONS['_default'];
       const lbl = document.createElement('label');
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.checked = pointTypeFilters.has(type);
       cb.addEventListener('change', () => togglePointType(type, cb.checked));
-      lbl.appendChild(cb); lbl.appendChild(document.createTextNode(type + ' (' + count + ')'));
+      // Icon scaled to 16×16 via CSS
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'filter-icon';
+      iconSpan.innerHTML = iconDef.svg;
+      iconSpan.style.flexShrink = '0';
+      lbl.appendChild(cb);
+      lbl.appendChild(iconSpan);
+      lbl.appendChild(document.createTextNode(type + ' (' + count + ')'));
       container.appendChild(lbl);
     });
     applyPointTypeFilters();
+    // Update the active-filter badge on the filter button
+    const allChecked = availableTypes.every(t => pointTypeFilters.has(t));
+    const badge = document.getElementById('filter-active-badge');
+    if (badge) {
+      const hiddenCount = availableTypes.filter(t => !pointTypeFilters.has(t)).length;
+      if (hiddenCount > 0) {
+        badge.textContent = availableTypes.filter(t => pointTypeFilters.has(t)).length + '/' + availableTypes.length;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
   }
 
   function togglePointType(type, isChecked) { if (isChecked) pointTypeFilters.add(type); else pointTypeFilters.delete(type); applyPointTypeFilters(); }
