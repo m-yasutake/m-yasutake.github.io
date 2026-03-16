@@ -530,8 +530,8 @@
           <div id="map"></div>
         </div>
 
-        <!-- Route list panel (below map) -->
-        <div id="route-panel">
+        <!-- Route list panel (below map) — hidden; routes are toggled via the Layers button -->
+        <div id="route-panel" style="display:none">
           <div id="route-toggles"></div>
           <div id="route-stats"></div>
         </div>
@@ -741,7 +741,9 @@
     clearTimeout(_fitAllTimer);
     _fitAllTimer = setTimeout(() => {
       map.invalidateSize();
-      const visibleLayers = routes.filter(r => r.visible && r.polyline).map(r => r.polyline);
+      const visibleLayers = [];
+      if (map.hasLayer(ourTrackGroup) && ourTrackGroup.getLayers().length > 0) visibleLayers.push(ourTrackGroup);
+      if (map.hasLayer(planningRoutesGroup) && planningRoutesGroup.getLayers().length > 0) visibleLayers.push(planningRoutesGroup);
       if (markerClusterGroup && markerClusterGroup.getLayers().length > 0) visibleLayers.push(markerClusterGroup);
       if (_currentLocationMarker) visibleLayers.push(_currentLocationMarker);
       if (visibleLayers.length > 0) map.fitBounds(L.featureGroup(visibleLayers).getBounds(), { padding: [30, 30] });
@@ -809,6 +811,45 @@
     }
   });
   markerClusterGroup.addTo(map);
+
+  // ── Route layer groups — toggled via the Layers button ─────
+  const ourTrackGroup = L.featureGroup().addTo(map);   // isOwner (Strava) routes; on by default
+  const planningRoutesGroup = L.featureGroup();         // non-isOwner routes; off by default
+  layerControl.addOverlay(ourTrackGroup, '🚴 Our Track');
+  layerControl.addOverlay(planningRoutesGroup, '📋 Planning Routes');
+
+  // Helper: returns the layer group a route belongs to.
+  function routeLayerGroup(r) { return r.isOwner ? ourTrackGroup : planningRoutesGroup; }
+
+  // When the user enables Planning Routes, auto-load any GPX not yet fetched.
+  // When disabled, mark individual routes hidden so stats/toggles stay consistent.
+  map.on('overlayadd', function(e) {
+    if (e.layer === planningRoutesGroup) {
+      routes.forEach((r, idx) => {
+        if (!r.isOwner) {
+          r.visible = true;
+          if (!r.polyline && !r._loading) loadFullGpxForRoute(idx);
+          else if (r.polyline && !planningRoutesGroup.hasLayer(r.polyline)) planningRoutesGroup.addLayer(r.polyline);
+        }
+      });
+    }
+    if (e.layer === ourTrackGroup) {
+      routes.forEach((r, idx) => {
+        if (r.isOwner) {
+          r.visible = true;
+          if (!r.polyline && !r._loading) loadFullGpxForRoute(idx);
+        }
+      });
+    }
+  });
+  map.on('overlayremove', function(e) {
+    if (e.layer === planningRoutesGroup) {
+      routes.forEach(r => { if (!r.isOwner) r.visible = false; });
+    }
+    if (e.layer === ourTrackGroup) {
+      routes.forEach(r => { if (r.isOwner) r.visible = false; });
+    }
+  });
 
   // ── "Show My Location" control ─────────────────────────────
   (function addLocationControl() {
@@ -1048,7 +1089,8 @@
     const latlngs = pts.map(p => [p.lat, p.lon]);
     const weight = isOwner ? 5 : getRouteWeight(map.getZoom());
     const opacity = isOwner ? 1 : 0.85;
-    const polyline = L.polyline(latlngs, { color, weight, opacity }).addTo(map);
+    const polyline = L.polyline(latlngs, { color, weight, opacity });
+    routeLayerGroup({ isOwner }).addLayer(polyline);
     const routeName = name || fileName.replace(/\.gpx$/i, '');
     const stats = computeStats(pts);
     const meta = metadata || {};
@@ -1068,8 +1110,9 @@
     const r = routes[idx];
     if (r.polyline || r._loading) {
       // Already loaded: ensure it's on the map if visible and in viewport
-      if (r.polyline && r.visible && !map.hasLayer(r.polyline)) {
-        r.polyline.addTo(map);
+      if (r.polyline && r.visible) {
+        const grp = routeLayerGroup(r);
+        if (!grp.hasLayer(r.polyline)) grp.addLayer(r.polyline);
       }
       return;
     }
@@ -1087,13 +1130,15 @@
       r._loading = false;
       _bindPolylinePopup(r.polyline, r);
       if (r.visible) {
-        r.polyline.addTo(map);
+        routeLayerGroup(r).addLayer(r.polyline);
       }
       // Add "You are here" pin at the end of the most recent owner track
       if (r.isOwner && !_currentLocationPinAdded) {
         _currentLocationPinAdded = true;
         addCurrentLocationPin(result.latlngs[result.latlngs.length - 1], r.routeName);
       }
+      // Trigger fit-all once owner tracks have loaded so the map zooms to the route.
+      if (r.isOwner) scheduleFitAll();
       renderToggles();
       renderStats();
     }
@@ -1222,7 +1267,7 @@
 
   function removeRouteFromMap(idx) {
     const r = routes[idx];
-    if (r.polyline) map.removeLayer(r.polyline);
+    if (r.polyline) routeLayerGroup(r).removeLayer(r.polyline);
     routes.splice(idx, 1);
     renderToggles(); renderStats();
   }
@@ -1290,14 +1335,15 @@
 
   function toggleRoute(idx) {
     const r = routes[idx]; r.visible = !r.visible;
+    const grp = routeLayerGroup(r);
     if (r.visible) {
       if (r.polyline) {
-        r.polyline.addTo(map);
+        if (!grp.hasLayer(r.polyline)) grp.addLayer(r.polyline);
       } else {
         loadFullGpxForRoute(idx);
       }
     } else {
-      if (r.polyline && map.hasLayer(r.polyline)) map.removeLayer(r.polyline);
+      if (r.polyline && grp.hasLayer(r.polyline)) grp.removeLayer(r.polyline);
     }
     renderStats();
   }
@@ -1333,7 +1379,9 @@
   // ── Add Routes/Points/GMaps modal JS removed — use Admin page to upload data
 
   document.getElementById('fit-bounds-btn').addEventListener('click', () => {
-    const layers = routes.filter(r => r.visible && r.polyline).map(r => r.polyline);
+    const layers = [];
+    if (map.hasLayer(ourTrackGroup) && ourTrackGroup.getLayers().length > 0) layers.push(ourTrackGroup);
+    if (map.hasLayer(planningRoutesGroup) && planningRoutesGroup.getLayers().length > 0) layers.push(planningRoutesGroup);
     if (markerClusterGroup.getLayers().length > 0) layers.push(markerClusterGroup);
     if (_currentLocationMarker) layers.push(_currentLocationMarker);
     if (!layers.length) return;
@@ -1578,7 +1626,18 @@
         }
         firebaseReady = true;
         loadFirebaseRoutes(); loadFirebasePoints();
-        loadAuthAndStorage().then(setupAuth).catch(err => console.warn('Auth load:', err));
+        loadAuthAndStorage()
+          .then(() => {
+            // Retry loading GPX for owner routes that failed because storage wasn't
+            // available yet when loadFirebaseRoutes() first ran (storage is set inside
+            // loadAuthAndStorage, so any loadFullGpxForRoute call before it finishes
+            // would exit early with storage === null and never retry).
+            routes.forEach((r, idx) => {
+              if (r.isOwner && !r.polyline && !r._loading) loadFullGpxForRoute(idx);
+            });
+            return setupAuth();
+          })
+          .catch(err => console.warn('Auth load:', err));
       }
 
       if (!isIOS) {
