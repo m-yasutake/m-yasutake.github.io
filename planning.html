@@ -101,6 +101,35 @@
   .info-btn { background: none; border: none; color: var(--color-secondary); cursor: pointer; font-size: 0.8em; padding: 0.2em 0.4em; border-radius: 3px; margin-left: 0.3em; }
   .info-btn:hover { background: rgba(42, 157, 143, 0.12); }
 
+  /* Route toggles panel */
+  #route-panel {
+    margin-top: 1em;
+  }
+  .route-section {
+    margin-bottom: 0.75em;
+  }
+  .route-section-header {
+    font-size: 0.78em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-gray-600);
+    margin-bottom: 0.4em;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+  .route-section-header.our-track-header {
+    color: #c0501a;
+  }
+  .route-section .roots-controls {
+    margin-bottom: 0;
+    flex-wrap: wrap;
+  }
+  /* Current-location marker */
+  .current-location-icon {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+
   .meta-overlay {
     display: none;
     position: fixed;
@@ -500,6 +529,12 @@
           </div>
           <div id="map"></div>
         </div>
+
+        <!-- Route list panel (below map) -->
+        <div id="route-panel">
+          <div id="route-toggles"></div>
+          <div id="route-stats"></div>
+        </div>
       </div>
 
       <!-- Right: Sidebar removed -->
@@ -602,9 +637,12 @@
 (function() {
   // ── Map & Route Logic ──────────────────────────────────────
   const ROUTE_COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a29bfe','#fd79a8','#00b894','#e17055','#0984e3','#6c5ce7','#fdcb6e'];
+  const OUR_TRACK_COLOR = '#E76F51'; // Distinctive coral/orange for our Strava track
   const routes = [];
   const points = [];
   let colorIdx = 0;
+  let _currentLocationMarker = null;
+  let _currentLocationPinAdded = false;
 
   const POINT_ICON_SIZE = [18, 18];
   const POINT_ICON_ANCHOR = [9, 9];
@@ -705,6 +743,7 @@
       map.invalidateSize();
       const visibleLayers = routes.filter(r => r.visible && r.polyline).map(r => r.polyline);
       if (markerClusterGroup && markerClusterGroup.getLayers().length > 0) visibleLayers.push(markerClusterGroup);
+      if (_currentLocationMarker) visibleLayers.push(_currentLocationMarker);
       if (visibleLayers.length > 0) map.fitBounds(L.featureGroup(visibleLayers).getBounds(), { padding: [30, 30] });
     }, 600);
   }
@@ -983,30 +1022,38 @@
   }
 
   // ── addRoute: supports preview (gpxText=null) and full mode ───────────
-  function addRoute(gpxText, fileName, firebaseDocId, metadata, storagePath, cachedGpx) {
+  function addRoute(gpxText, fileName, firebaseDocId, metadata, storagePath, cachedGpx, isOwner) {
     if (!gpxText) {
       // Preview mode: only metadata, no polyline on map yet
-      const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
-      colorIdx++;
+      const color = isOwner ? OUR_TRACK_COLOR : ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
+      if (!isOwner) colorIdx++;
       const routeName = (metadata && metadata.name) || fileName.replace(/\.gpx$/i, '');
-      routes.push({ routeName, color, polyline: null, stats: null, visible: false,
+      routes.push({ routeName, color, polyline: null, stats: null, visible: !!isOwner,
+                    isOwner: !!isOwner,
                     firebaseDocId: firebaseDocId || null, metadata: metadata || {},
                     _loading: false, _gpxCached: cachedGpx || null,
                     _storagePath: storagePath || null, _fileName: fileName });
+      if (isOwner) {
+        // Auto-load the GPX for our track so it appears on the map immediately
+        loadFullGpxForRoute(routes.length - 1);
+      }
       scheduleRenderToggles();
       return;
     }
     // Full mode: parse GPX immediately and render polyline
     const { points: pts, name } = parseGPX(gpxText);
     if (pts.length === 0) { alert('No track points found in ' + fileName); return; }
-    const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
-    colorIdx++;
+    const color = isOwner ? OUR_TRACK_COLOR : ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
+    if (!isOwner) colorIdx++;
     const latlngs = pts.map(p => [p.lat, p.lon]);
-    const polyline = L.polyline(latlngs, { color, weight: getRouteWeight(map.getZoom()), opacity: 0.85 }).addTo(map);
+    const weight = isOwner ? 5 : getRouteWeight(map.getZoom());
+    const opacity = isOwner ? 1 : 0.85;
+    const polyline = L.polyline(latlngs, { color, weight, opacity }).addTo(map);
     const routeName = name || fileName.replace(/\.gpx$/i, '');
     const stats = computeStats(pts);
     const meta = metadata || {};
     const routeObj = { routeName, color, polyline, stats, visible: true,
+                       isOwner: !!isOwner,
                        firebaseDocId: firebaseDocId || null, metadata: meta,
                        _loading: false, _gpxCached: gpxText,
                        _storagePath: storagePath || null, _fileName: fileName };
@@ -1030,7 +1077,9 @@
 
     function onParsed(result) {
       if (!result || !result.latlngs || !result.latlngs.length) { r._loading = false; return; }
-      r.polyline = L.polyline(result.latlngs, { color: r.color, weight: getRouteWeight(map.getZoom()), opacity: 0.85 });
+      const weight = r.isOwner ? 5 : getRouteWeight(map.getZoom());
+      const opacity = r.isOwner ? 1 : 0.85;
+      r.polyline = L.polyline(result.latlngs, { color: r.color, weight, opacity });
       // Only update the route name from GPX if the current name is still the default
       // (derived from the file name) — avoids clobbering names set by the user.
       if (result.name && r.routeName === (r._fileName || '').replace(/\.gpx$/i, '')) r.routeName = result.name;
@@ -1039,6 +1088,11 @@
       _bindPolylinePopup(r.polyline, r);
       if (r.visible) {
         r.polyline.addTo(map);
+      }
+      // Add "You are here" pin at the end of the most recent owner track
+      if (r.isOwner && !_currentLocationPinAdded) {
+        _currentLocationPinAdded = true;
+        addCurrentLocationPin(result.latlngs[result.latlngs.length - 1], r.routeName);
       }
       renderToggles();
       renderStats();
@@ -1065,12 +1119,29 @@
       .catch(err => { console.error('Error loading route ' + r.routeName + ':', err); r._loading = false; });
   }
 
+  // ── "You are here" pin at the end of the most recent Strava track ──────
+  function addCurrentLocationPin(latlng, routeName) {
+    if (_currentLocationMarker) { map.removeLayer(_currentLocationMarker); }
+    const iconHtml =
+      '<div style="position:relative;width:36px;height:44px">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">' +
+          '<path d="M18 2C10.3 2 4 8.3 4 16c0 10.5 14 26 14 26S32 26.5 32 16C32 8.3 25.7 2 18 2z" fill="#E76F51" stroke="#fff" stroke-width="2"/>' +
+          '<circle cx="18" cy="16" r="7" fill="#fff"/>' +
+          '<text x="18" y="20" text-anchor="middle" font-size="10" font-family="sans-serif">🚴</text>' +
+        '</svg>' +
+      '</div>';
+    const icon = L.divIcon({ html: iconHtml, className: 'current-location-icon', iconSize: [36, 44], iconAnchor: [18, 44], popupAnchor: [0, -46] });
+    _currentLocationMarker = L.marker(latlng, { icon, zIndexOffset: 1000 })
+      .bindPopup('<strong style="color:#E76F51">📍 We are here!</strong><br><span style="font-size:0.9em;color:#555">' + escapeHtml(routeName) + '</span>')
+      .addTo(map);
+  }
+
   // Update route line weight when zoom changes – Leaflet's Canvas renderer
   // already clips off-screen content efficiently, so no viewport culling needed.
   map.on('zoomend', function() {
     const w = getRouteWeight(map.getZoom());
     routes.forEach(function(r) {
-      if (r.polyline && r.visible) r.polyline.setStyle({ weight: w });
+      if (r.polyline && r.visible) r.polyline.setStyle({ weight: r.isOwner ? 5 : w });
     });
   });
 
@@ -1131,7 +1202,8 @@
 
     function tryLoad(url) {
       return buildLayer(url).then(function(layer) {
-        layer.addTo(map);
+        // Planning routes tile layer is optional – not added to map by default.
+        // Users can enable it via the layer control.
         layerControl.addOverlay(layer, 'All Routes (tiles)');
       });
     }
@@ -1166,7 +1238,8 @@
     const container = document.getElementById('route-toggles');
     if (!container) return;
     container.innerHTML = '';
-    routes.forEach((r, i) => {
+
+    function appendRouteToggle(target, r, i) {
       const lbl = document.createElement('label');
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.checked = r.visible;
@@ -1186,8 +1259,33 @@
         del.addEventListener('click', (e) => { e.preventDefault(); deleteFirebaseRoute(i); });
         lbl.appendChild(del);
       }
-      container.appendChild(lbl);
-    });
+      target.appendChild(lbl);
+    }
+
+    const ourRoutes      = routes.map((r, i) => ({ r, i })).filter(({ r }) =>  r.isOwner);
+    const planningRoutes = routes.map((r, i) => ({ r, i })).filter(({ r }) => !r.isOwner);
+
+    if (ourRoutes.length > 0) {
+      const hdr = document.createElement('div');
+      hdr.className = 'route-section-header our-track-header';
+      hdr.textContent = '🚴 Our Track';
+      container.appendChild(hdr);
+      const sec = document.createElement('div');
+      sec.className = 'roots-controls route-section';
+      ourRoutes.forEach(({ r, i }) => appendRouteToggle(sec, r, i));
+      container.appendChild(sec);
+    }
+
+    if (planningRoutes.length > 0) {
+      const hdr = document.createElement('div');
+      hdr.className = 'route-section-header';
+      hdr.textContent = '📋 Planning Routes';
+      container.appendChild(hdr);
+      const sec = document.createElement('div');
+      sec.className = 'roots-controls route-section';
+      planningRoutes.forEach(({ r, i }) => appendRouteToggle(sec, r, i));
+      container.appendChild(sec);
+    }
   }
 
   function toggleRoute(idx) {
@@ -1237,6 +1335,7 @@
   document.getElementById('fit-bounds-btn').addEventListener('click', () => {
     const layers = routes.filter(r => r.visible && r.polyline).map(r => r.polyline);
     if (markerClusterGroup.getLayers().length > 0) layers.push(markerClusterGroup);
+    if (_currentLocationMarker) layers.push(_currentLocationMarker);
     if (!layers.length) return;
     map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [30, 30] });
   });
@@ -1361,9 +1460,8 @@
     if (!container) return;
     container.innerHTML = '';
     const availableTypes = getAvailablePointTypes();
-    // Auto-enable any type that is appearing for the first time, but never
-    // override an explicit user action (e.g. clicking None to clear all).
-    availableTypes.forEach(t => { if (!_seenPointTypes.has(t)) { pointTypeFilters.add(t); _seenPointTypes.add(t); } });
+    // New point types start hidden by default — user opts in via the Filters panel.
+    availableTypes.forEach(t => { if (!_seenPointTypes.has(t)) { _seenPointTypes.add(t); } });
     availableTypes.forEach(type => {
       const count = points.filter(p => (p.type||'Other') === type).length;
       const iconDef = POINT_TYPE_ICONS[type] || POINT_TYPE_ICONS['_default'];
@@ -1546,7 +1644,9 @@
           // Pass storagePath for on-demand fetch; pass gpxContent as cached value
           // only if it's already in the snapshot (avoids re-fetching from Firestore
           // but doesn't eagerly parse or render it).
-          addRoute(null, data.fileName, doc.id, meta, data.storagePath, data.gpxContent || null);
+          // isOwner (set by fetch-strava-rides.js) identifies our actual travel track.
+          const isOwner = !!(data.isOwner || data.source === 'strava');
+          addRoute(null, data.fileName, doc.id, meta, data.storagePath, data.gpxContent || null, isOwner);
         });
         // Update Trip Overview km stat from Strava routes
         updateMapTripStats(snapshot);
