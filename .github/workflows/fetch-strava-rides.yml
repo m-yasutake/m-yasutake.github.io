@@ -97,7 +97,7 @@ jobs:
         working-directory: scripts
         run: npm install
 
-      - name: Generate and upload PMTiles
+      - name: Generate and upload PMTiles (my-routes + planned-routes)
         working-directory: scripts
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

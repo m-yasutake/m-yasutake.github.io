@@ -1190,19 +1190,20 @@
     });
   });
 
-  // ── PMTiles route layer ─────────────────────────────────────
-  // Attempts to load routes.pmtiles from Firebase Storage and render all routes
-  // instantly as a vector tile layer. Gracefully skips if the file is not found.
+  // ── PMTiles route layers ────────────────────────────────────
+  // Loads two separate PMTiles files from Firebase Storage:
+  //   my-routes.pmtiles      – personal/Strava routes (isOwner)
+  //   planned-routes.pmtiles – manually uploaded planning routes
+  // Each is added as a separate overlay in the layer control.
   function initPMTilesLayer() {
     if (typeof pmtiles === 'undefined' || typeof L.vectorGrid === 'undefined') return;
-    const directUrl = 'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Froutes.pmtiles?alt=media';
 
-    function buildLayer(pmtilesUrl) {
+    function buildLayer(pmtilesUrl, instanceKey) {
       const p = new pmtiles.PMTiles(pmtilesUrl);
       // Register instance so the early-installed fetch interceptor can serve tiles.
-      if (window.__pmtilesInstances) window.__pmtilesInstances['routes'] = p;
+      if (window.__pmtilesInstances) window.__pmtilesInstances[instanceKey] = p;
       return p.getHeader().then(function(header) {
-        const layer = L.vectorGrid.protobuf('pmtiles://routes/{z}/{x}/{y}', {
+        const layer = L.vectorGrid.protobuf(`pmtiles://${instanceKey}/{z}/{x}/{y}`, {
           vectorTileLayerStyles: {
             routes: function(properties) {
               return {
@@ -1245,24 +1246,37 @@
       });
     }
 
-    function tryLoad(url) {
-      return buildLayer(url).then(function(layer) {
-        // Planning routes tile layer is optional – not added to map by default.
-        // Users can enable it via the layer control.
-        layerControl.addOverlay(layer, 'All Routes (tiles)');
+    function tryLoadTile(storageName, instanceKey, overlayLabel, directUrl) {
+      function tryLoad(url) {
+        return buildLayer(url, instanceKey).then(function(layer) {
+          layerControl.addOverlay(layer, overlayLabel);
+        });
+      }
+      const storagePromise = storage
+        ? storage.ref('tiles/' + storageName).getDownloadURL().then(tryLoad)
+        : Promise.reject(new Error('storage not ready'));
+      storagePromise.catch(function() {
+        tryLoad(directUrl).catch(function(err) {
+          console.warn('PMTiles layer "' + overlayLabel + '" unavailable:', err && err.message || err);
+        });
       });
     }
 
-    // Try Firebase Storage SDK URL first (available after sign-in), fall back to direct URL.
-    const storagePromise = storage
-      ? storage.ref('tiles/routes.pmtiles').getDownloadURL().then(tryLoad)
-      : Promise.reject(new Error('storage not ready'));
+    // Personal (Strava) routes
+    tryLoadTile(
+      'my-routes.pmtiles',
+      'my-routes',
+      'My Routes (tiles)',
+      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes.pmtiles?alt=media'
+    );
 
-    storagePromise.catch(function() {
-      tryLoad(directUrl).catch(function(err) {
-        console.warn('PMTiles routes layer unavailable:', err && err.message || err);
-      });
-    });
+    // Planned routes
+    tryLoadTile(
+      'planned-routes.pmtiles',
+      'planned-routes',
+      'Planned Routes (tiles)',
+      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fplanned-routes.pmtiles?alt=media'
+    );
   }
 
   function removeRouteFromMap(idx) {

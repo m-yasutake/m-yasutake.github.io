@@ -2,9 +2,12 @@
 #
 # Workflow: Generate PMTiles Tiles
 #
-# Regenerates routes.pmtiles from all GPX files in Firebase Storage and uploads
-# the result to tiles/routes.pmtiles in the same bucket, making all routes
-# instantly visible on the planning.html map via the "All Routes (tiles)" overlay.
+# Regenerates two separate PMTiles files from all GPX files in Firebase Storage
+# and uploads the results to Firebase Storage:
+#   - tiles/my-routes.pmtiles      – personal/Strava routes (isOwner: true)
+#   - tiles/planned-routes.pmtiles – manually uploaded planning routes
+#
+# Both files are rendered as separate overlays on the planning.html map page.
 #
 # Required secrets (add in Settings > Secrets and variables > Actions):
 #   FIREBASE_SERVICE_ACCOUNT: JSON string of a Firebase service account key
@@ -48,7 +51,7 @@ jobs:
         working-directory: scripts
         run: npm install
 
-      - name: Generate and upload PMTiles
+      - name: Generate and upload PMTiles (my-routes + planned-routes)
         working-directory: scripts
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
