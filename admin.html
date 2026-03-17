@@ -1972,10 +1972,9 @@ const GearManagerAdmin = (function () {
   async function uploadGpxFile(file, sourceUrl) {
     const storagePath = 'gpx/' + Date.now() + '_' + file.name;
     const metadata = sourceUrl ? { sourceUrl } : {};
-    const fileText = await file.text();
     await _mapStorage.ref(storagePath).put(file);
     await _mapDb.collection('routes').add({
-      fileName: file.name, storagePath, gpxContent: fileText,
+      fileName: file.name, storagePath,
       metadata, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
