@@ -731,7 +731,7 @@
 
   const map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 })   // Canvas for speed; tolerance widens clickable area around thin lines
-  }).setView([36.5, 138], 5);
+  }).setView([36.5, 138], 4);
 
   // Debounced fit-all: fires 600ms after the last route/point is added,
   // ensuring async Firebase Storage routes are included before zooming.
@@ -1239,6 +1239,15 @@
       'My Routes (tiles)',
       'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes.pmtiles?alt=media',
       true  // add to map by default
+    );
+
+    // Planned routes — off by default
+    tryLoadTile(
+      'planned-routes.pmtiles',
+      'planned-routes',
+      'Planned Routes (tiles)',
+      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fplanned-routes.pmtiles?alt=media',
+      false  // not added to map by default
     );
   }
 
