@@ -73,7 +73,8 @@ function gpxTextToFeatures(parser, xmlStr, storagePath, fallbackFileName, colorM
   const fileName = path.basename(storagePath || fallbackFileName || 'unknown.gpx');
   const meta = colorMap[storagePath] || colorMap[fileName] || {};
   const featureColor = meta.color || '#2A9D8F';
-  const featureName  = meta.name  || fileName.replace(/\.gpx$/i, '');
+  const featureName = meta.name || fileName.replace(/\.gpx$/i, '');
+  const featureSource = meta.sourceUrl || null;
   const produced = [];
   geojson.features.forEach(feat => {
     // Only include line/multiline geometries — skip Point features (waypoints)
@@ -83,6 +84,7 @@ function gpxTextToFeatures(parser, xmlStr, storagePath, fallbackFileName, colorM
     feat.properties.filename = fileName;
     feat.properties.color    = featureColor;
     feat.properties.name     = featureName;
+    if (featureSource) feat.properties.sourceUrl = featureSource;
     produced.push(feat);
   });
 
@@ -226,6 +228,7 @@ async function main() {
       const meta = {
         color,
         name:        (data.metadata && data.metadata.name) || data.fileName,
+        sourceUrl:   (data.metadata && data.metadata.sourceUrl) || null,
         gpxContent:  data.gpxContent || null, // backward-compat: legacy docs may have gpxContent cached inline
         storagePath: data.storagePath || null,
         fileName:    data.fileName    || null

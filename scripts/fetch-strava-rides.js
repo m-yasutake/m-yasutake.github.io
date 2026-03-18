@@ -326,6 +326,15 @@ async function main() {
       console.warn(`  Note: could not set public ACL (${err.message})`);
     }
 
+    // Extract start/end GPS coordinates from latlng stream
+    const latlngData = streams.latlng && streams.latlng.data;
+    const startLatLng = (latlngData && latlngData.length > 0)
+      ? [latlngData[0][0], latlngData[0][1]]
+      : null;
+    const endLatLng = (latlngData && latlngData.length > 0)
+      ? [latlngData[latlngData.length - 1][0], latlngData[latlngData.length - 1][1]]
+      : null;
+
     // Build route metadata for Firestore and the map page
     const distanceKm = activity.distance ? (activity.distance / 1000).toFixed(1) : null;
     const metadata = {
@@ -351,7 +360,9 @@ async function main() {
       uploadedAt:           admin.firestore.FieldValue.serverTimestamp(),
       source:               'strava',
       isOwner:              true,
-      stravaActivityId:     activityId
+      stravaActivityId:     activityId,
+      startLatLng:          startLatLng,
+      endLatLng:            endLatLng
     });
 
     console.log(`  ✓ Saved: "${activityName}"`);
