@@ -495,7 +495,6 @@
               </div>
             </div>
           </div>
-          <button class="roots-btn" id="fit-bounds-btn" title="Zoom to fit all routes">Fit All</button>
         </div>
 
         <!-- Metadata modal (for Firebase route info) -->
@@ -732,7 +731,7 @@
 
   const map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 })   // Canvas for speed; tolerance widens clickable area around thin lines
-  }).setView([49.25, -123.1], 11);
+  }).setView([36.5, 138], 5);
 
   // Debounced fit-all: fires 600ms after the last route/point is added,
   // ensuring async Firebase Storage routes are included before zooming.
@@ -812,44 +811,12 @@
   });
   markerClusterGroup.addTo(map);
 
-  // ── Route layer groups — toggled via the Layers button ─────
-  const ourTrackGroup = L.featureGroup().addTo(map);   // isOwner (Strava) routes; on by default
-  const planningRoutesGroup = L.featureGroup();         // non-isOwner routes; off by default
-  layerControl.addOverlay(ourTrackGroup, '🚴 Our Track');
-  layerControl.addOverlay(planningRoutesGroup, '📋 Planning Routes');
+  // ── Route layer groups ─────────────────────────────────────
+  const ourTrackGroup = L.featureGroup();         // isOwner (Strava) routes; kept off map — displayed via PMTiles tiles
+  const planningRoutesGroup = L.featureGroup();   // non-isOwner routes; off by default
 
   // Helper: returns the layer group a route belongs to.
   function routeLayerGroup(r) { return r.isOwner ? ourTrackGroup : planningRoutesGroup; }
-
-  // When the user enables Planning Routes, auto-load any GPX not yet fetched.
-  // When disabled, mark individual routes hidden so stats/toggles stay consistent.
-  map.on('overlayadd', function(e) {
-    if (e.layer === planningRoutesGroup) {
-      routes.forEach((r, idx) => {
-        if (!r.isOwner) {
-          r.visible = true;
-          if (!r.polyline && !r._loading) loadFullGpxForRoute(idx);
-          else if (r.polyline && !planningRoutesGroup.hasLayer(r.polyline)) planningRoutesGroup.addLayer(r.polyline);
-        }
-      });
-    }
-    if (e.layer === ourTrackGroup) {
-      routes.forEach((r, idx) => {
-        if (r.isOwner) {
-          r.visible = true;
-          if (!r.polyline && !r._loading) loadFullGpxForRoute(idx);
-        }
-      });
-    }
-  });
-  map.on('overlayremove', function(e) {
-    if (e.layer === planningRoutesGroup) {
-      routes.forEach(r => { if (!r.isOwner) r.visible = false; });
-    }
-    if (e.layer === ourTrackGroup) {
-      routes.forEach(r => { if (r.isOwner) r.visible = false; });
-    }
-  });
 
   // ── "Show My Location" control ─────────────────────────────
   (function addLocationControl() {
@@ -1138,7 +1105,7 @@
         addCurrentLocationPin(result.latlngs[result.latlngs.length - 1], r.routeName);
       }
       // Trigger fit-all once owner tracks have loaded so the map zooms to the route.
-      if (r.isOwner) scheduleFitAll();
+      // (scheduleFitAll removed — map stays at initial Japan view)
       renderToggles();
       renderStats();
     }
@@ -1229,7 +1196,9 @@
               '<div style="min-width:160px">' +
               '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + (props.color || '#5B8C6B') + ';margin-right:6px;vertical-align:middle"></span>' +
               '<strong>' + name + '</strong>' +
-              '<br><span style="color:#888;font-size:0.8em;font-style:italic">Toggle in route list for full details</span>' +
+              (props.sourceUrl
+                ? '<br><a href="' + escapeAttr(props.sourceUrl) + '" target="_blank" rel="noopener" style="font-size:0.85em;color:#5B8C6B">🔗 View on Strava</a>'
+                : '') +
               '</div>'
             )
             .openOn(map);
@@ -1246,10 +1215,11 @@
       });
     }
 
-    function tryLoadTile(storageName, instanceKey, overlayLabel, directUrl) {
+    function tryLoadTile(storageName, instanceKey, overlayLabel, directUrl, addToMap) {
       function tryLoad(url) {
         return buildLayer(url, instanceKey).then(function(layer) {
           layerControl.addOverlay(layer, overlayLabel);
+          if (addToMap) layer.addTo(map);
         });
       }
       const storagePromise = storage
@@ -1262,20 +1232,13 @@
       });
     }
 
-    // Personal (Strava) routes
+    // Personal (Strava) routes — on by default
     tryLoadTile(
       'my-routes.pmtiles',
       'my-routes',
       'My Routes (tiles)',
-      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes.pmtiles?alt=media'
-    );
-
-    // Planned routes
-    tryLoadTile(
-      'planned-routes.pmtiles',
-      'planned-routes',
-      'Planned Routes (tiles)',
-      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fplanned-routes.pmtiles?alt=media'
+      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes.pmtiles?alt=media',
+      true  // add to map by default
     );
   }
 
@@ -1391,16 +1354,6 @@
   }
 
   // ── Add Routes/Points/GMaps modal JS removed — use Admin page to upload data
-
-  document.getElementById('fit-bounds-btn').addEventListener('click', () => {
-    const layers = [];
-    if (map.hasLayer(ourTrackGroup) && ourTrackGroup.getLayers().length > 0) layers.push(ourTrackGroup);
-    if (map.hasLayer(planningRoutesGroup) && planningRoutesGroup.getLayers().length > 0) layers.push(planningRoutesGroup);
-    if (markerClusterGroup.getLayers().length > 0) layers.push(markerClusterGroup);
-    if (_currentLocationMarker) layers.push(_currentLocationMarker);
-    if (!layers.length) return;
-    map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [30, 30] });
-  });
 
   // ── CSV Point Logic ─────────────────────────────────────────
   function parseCSV(csvText) {
@@ -1583,7 +1536,6 @@
       clearTimeout(_loadingTimeoutId);
       const overlay = document.getElementById('map-loading');
       if (overlay) { overlay.classList.add('fade-out'); setTimeout(() => overlay.remove(), 500); }
-      scheduleFitAll();
     }
   }
 
@@ -1721,6 +1673,18 @@
           const isOwner = !!(data.isOwner || data.source === 'strava');
           addRoute(null, data.fileName, doc.id, meta, data.storagePath, data.gpxContent || null, isOwner);
         });
+        // Place "You are here" pin immediately from the most recent Strava route's endLatLng
+        // (snapshot is ordered by uploadedAt desc, so the first isOwner doc with endLatLng is most recent)
+        if (!_currentLocationPinAdded) {
+          snapshot.forEach(doc => {
+            if (_currentLocationPinAdded) return;
+            const data = doc.data();
+            if ((data.isOwner || data.source === 'strava') && data.endLatLng) {
+              _currentLocationPinAdded = true;
+              addCurrentLocationPin(data.endLatLng, (data.metadata && data.metadata.name) || data.fileName || 'Latest ride');
+            }
+          });
+        }
         // Update Trip Overview km stat from Strava routes
         updateMapTripStats(snapshot);
         markLoaded('routes');
@@ -1772,7 +1736,6 @@
             firebaseDocId: d.id || null
           }));
           addPointsBatch(batch);
-          scheduleFitAll();
           // After loading the snapshot, query Firestore for any points added AFTER
           // the snapshot was generated. This delta query replaces re-downloading all
           // documents and keeps the map current without waiting for a snapshot rebuild.
@@ -1787,7 +1750,7 @@
                   const d = doc.data();
                   deltaB.push({ pointData: { name: d.name, lat: d.lat, lon: d.lon, url: resolvePointUrl(d, d.metadata), metadata: d.metadata || {} }, fileName: d.fileName, firebaseDocId: doc.id });
                 });
-                if (deltaB.length > 0) { addPointsBatch(deltaB); scheduleFitAll(); }
+                if (deltaB.length > 0) { addPointsBatch(deltaB); }
                 markLoaded('points');
               })
               .catch(() => markLoaded('points'));
@@ -1821,7 +1784,6 @@
         });
         if (batch.length > 0) {
           addPointsBatch(batch);
-          scheduleFitAll();
         }
         if (snapshot.size === POINTS_BATCH_SIZE) {
           // More pages may exist — schedule next batch during idle time
@@ -1933,7 +1895,6 @@
   const _loadingTimeoutId = setTimeout(function() {
     const overlay = document.getElementById('map-loading');
     if (overlay) { overlay.classList.add('fade-out'); setTimeout(() => overlay.remove(), 500); }
-    scheduleFitAll();
   }, 30000);
 
   // ── Initialise ─────────────────────────────────────────────
