@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bike – Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning." />
-  <title>Map - Tomika Bike</title>
+  <meta name="description" content="Tomika Bike – Japan. Map, blog and photos from our cycling journey through Japan." />
+  <title>Japan – Tomika Bike</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>🚴</text></svg>" />
 
   <style>
   #map {
@@ -405,16 +405,208 @@
     margin-bottom: 0 !important;
   }
   </style>
+
+  <style>
+    .blog-search-wrap {
+      background: var(--color-white);
+      border-radius: 0;
+      padding: 1.25rem 1.5rem;
+      box-shadow: none;
+      margin-bottom: 3rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      border: 1px solid var(--color-gray-200);
+    }
+
+    .blog-search-wrap input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--color-gray-300);
+      border-radius: 0;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color var(--transition);
+      background: var(--color-white);
+    }
+
+    .blog-search-wrap input:focus {
+      border-color: var(--color-secondary);
+    }
+
+    .featured-post {
+      background: var(--color-white);
+      border-radius: 0;
+      overflow: hidden;
+      border: 1px solid var(--color-gray-200);
+      margin-bottom: 2.5rem;
+      box-shadow: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .featured-post-img {
+      background: linear-gradient(160deg, var(--color-primary), var(--color-secondary));
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7rem;
+    }
+
+    .featured-post-body {
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .featured-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--color-secondary);
+      color: var(--color-secondary);
+      padding: 0;
+      border-radius: 0;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .featured-post-body h2 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      margin-bottom: 1rem;
+      line-height: 1.3;
+      font-weight: 400;
+    }
+
+    .featured-post-body p {
+      color: var(--color-gray-600);
+      margin-bottom: 1.5rem;
+      line-height: 1.75;
+    }
+
+    @media (max-width: 700px) {
+      .featured-post { grid-template-columns: 1fr; }
+      .featured-post-img { min-height: 200px; font-size: 5rem; }
+    }
+
+    .post-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .author-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--color-gray-600);
+    }
+
+    .author-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--color-white);
+    }
+
+    .post-date { font-size: 0.78rem; color: var(--color-gray-600); }
+    .read-time { font-size: 0.78rem; color: var(--color-gray-600); }
+  </style>
+
+  <style>
+    .upload-zone {
+      border: 1px dashed var(--color-gray-300);
+      border-radius: 0;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: var(--color-white);
+      margin-bottom: 2.5rem;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--color-secondary);
+      background: rgba(91,140,107,.03);
+    }
+
+    .upload-zone .upload-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .upload-zone p { color: var(--color-gray-600); font-size: .875rem; margin-top: .5rem; }
+
+    .photos-stats {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .photos-stat {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-size: .875rem;
+      color: var(--color-gray-600);
+    }
+
+    .photos-stat strong { color: var(--color-primary); font-weight: 600; }
+  </style>
+
+  <style>
+    /* ── Section dividers ──────────────────── */
+    .japan-section-divider {
+      border: none;
+      border-top: 2px solid var(--color-gray-200);
+      margin: 0;
+    }
+
+    .japan-section-header {
+      background: var(--color-gray-100);
+      border-bottom: 1px solid var(--color-gray-200);
+      padding: 1.25rem 0;
+    }
+
+    .japan-section-header .container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .japan-section-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--color-primary);
+    }
+
+    .japan-section-header .section-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+  </style>
 </head>
 <body>
 
-<!-- Page Loader -->
 <div class="page-loader">
   <div class="loader-inner">
     <div class="loader-logo">tomika<span class="accent">.bike</span></div>
-    <div class="loader-dots">
-      <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
-    </div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
   </div>
 </div>
 
@@ -424,7 +616,7 @@
     <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="japan.html">🆯 Japan</a></li>
+      <li><a href="japan.html" class="active">🆯 Japan</a></li>
       <li><a href="norway.html">🇳🇴 Norway</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
@@ -436,7 +628,6 @@
   </div>
 </nav>
 
-<!-- Mobile Menu -->
 <div class="mobile-menu">
   <a href="index.html">🏠 Home</a>
   <a href="japan.html">🆯 Japan</a>
@@ -446,11 +637,10 @@
   <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
 </div>
 
-<!-- Auth Modal -->
 <div class="auth-overlay">
   <div class="auth-modal">
     <button class="auth-close">✕</button>
-    <h2>Welcome back 👋</h2>
+    <h2>Welcome back ��</h2>
     <p>Sign in to access admin tools</p>
     <button class="google-btn">
       <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -459,15 +649,28 @@
     <p class="auth-note">Firebase auth coming soon</p>
   </div>
 </div>
+
+<!-- Page Hero -->
 <div class="page-hero">
   <div class="container">
-    <div class="hero-badge" style="margin-bottom:.75rem">🗺️ Interactive Map</div>
-    <h1>Map</h1>
-    <p>Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning</p>
+    <div class="hero-badge" style="margin-bottom:.75rem">🆯 Japan</div>
+    <h1>Japan</h1>
+    <p>Cycling from the southern tip of Kyushu to Hokkaido – the map, the blog, and photos from the road.</p>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════
+     MAP SECTION
+════════════════════════════════════════════ -->
+<div id="map-section">
+  <div class="japan-section-header">
+    <div class="container">
+      <span class="section-icon">🗺️</span>
+      <h2>Route Map</h2>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
      MAP CONTENT
 ════════════════════════════════════════════ -->
 <section class="section" style="padding-top:2rem">
@@ -539,6 +742,236 @@
   </div>
 </section>
 
+</div>
+
+<hr class="japan-section-divider" />
+
+<!-- ══════════════════════════════════════════
+     BLOG SECTION
+════════════════════════════════════════════ -->
+<div id="blog-section">
+  <div class="japan-section-header">
+    <div class="container">
+      <span class="section-icon">✍️</span>
+      <h2>Blog</h2>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     BLOG CONTENT
+════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+
+    <!-- Search & Filter -->
+    <div class="blog-search-wrap">
+      <input type="text" id="blogSearch" placeholder="🔍 Search posts..." />
+      <div class="gallery-filters" style="margin:0">
+        <button class="filter-btn active" data-cat="all">All</button>
+        <button class="filter-btn" data-cat="japan">🆯 Japan</button>
+        <button class="filter-btn" data-cat="norway">🇳🇴 Norway</button>
+        <button class="filter-btn" data-cat="gear">Gear</button>
+      </div>
+    </div>
+
+    <!-- Featured Post -->
+    <article class="featured-post" data-cat="japan">
+      <div class="featured-post-img">🗾</div>
+      <div class="featured-post-body">
+        <div class="featured-badge">⭐ Latest Post</div>
+        <div class="post-meta-row">
+          <div class="author-chip">
+            <div class="author-avatar" style="background:var(--color-secondary)">T</div>
+            <span>Tomika &amp; Tom</span>
+          </div>
+          <span class="post-date">March 4, 2026</span>
+          <span class="read-time">5 min read</span>
+        </div>
+        <h2>We Quit Our Jobs and We're Going to Japan 🆯🇵</h2>
+        <p>It started as a joke, then a spreadsheet, then a very serious conversation about pension contributions and whether we really needed them. Spoiler: we decided we didn't. Tomorrow morning we fly to Tokyo, and we genuinely can't believe it's happening.</p>
+        <a href="#post-japan-1" class="btn btn-primary">Read Full Post →</a>
+      </div>
+    </article>
+
+    <!-- Blog Main + Sidebar -->
+    <div class="blog-grid">
+      <div class="blog-main" id="postList">
+
+        <!-- POST 1: We Quit & Going to Japan -->
+        <article class="blog-post-card" id="post-japan-1" data-cat="japan">
+          <div class="blog-post-img" style="height:200px;background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem">🗾</div>
+          <div class="blog-post-body" style="padding:1.5rem">
+            <div class="post-meta-row">
+              <span class="card-tag">Japan</span>
+              <div class="author-chip">
+                <div class="author-avatar" style="background:var(--color-secondary)">T</div>
+                <span>Tomika &amp; Tom</span>
+              </div>
+              <span class="post-date">March 4, 2026</span>
+              <span class="read-time">5 min read</span>
+            </div>
+
+            <h2>We Quit Our Jobs and We're Going to Japan 🆯🇵</h2>
+
+            <p>Here's the short version: we handed in our notices, spent three frantic months building our bikes, buying gear, and trying not to think too hard about what we were doing — and tomorrow morning we fly to Tokyo.</p>
+
+            <p>The longer version is messier and more honest. We'd been talking about doing something big for years. A proper trip. Not a two-week holiday with a return flight already booked, but a real, open-ended, see-what-happens adventure. The kind where you don't know exactly what the end will look like when you're standing at the beginning.</p>
+
+            <p>Japan came up because of Mika's family connections — and because the idea of cycling from one end of Japan to the other, from the southern tip of Kyushu all the way north through Honshu and up into Hokkaido, felt like exactly the scale of thing we were dreaming of. Then Tom said "and we could do Norway after" and somehow that stuck too. His mum's family is from Egersund — a tiny harbour town on the southwest coast — and cycling from there to Tromsø, up past the Arctic Circle, felt equal parts beautiful and completely mad. So obviously we said yes to both.</p>
+
+            <p>The bikes took longer than expected. Of course they did. Tom's rear derailleur situation was a saga that involved three different mechanics and a lot of YouTube tutorials. Mika's front rack broke during a test ride three weeks ago and had to be re-welded. We did a fully loaded overnight test in Wales last month and came back drenched, exhausted, and completely convinced this was a good idea.</p>
+
+            <p>The weeks leading up to this were a blur of bike prep, packing lists, and the surprisingly emotional process of putting our lives into storage. Everything that didn't fit into four panniers and a handlebar bag went into boxes. There was a brief moment of irony when we spotted the moving company's name on the biggest box in our storage unit: Håkull — based in Stavanger, just down the coast from Egersund. Even our cardboard boxes are pointing us toward Norway.</p>
+
+            <p>Right now, as I type this, there are two fully loaded touring bikes standing in the hallway. We have four panniers, a handlebar bag, one drybag each strapped to the rear rack, a small tent, two sleeping bags, and approximately one too many pairs of cycling socks. We've booked our flights and a hotel in Tokyo for the first week — we're visiting friends and family there before flying down to Kagoshima to start the actual bike journey. After that? We'll figure it out as we go.</p>
+
+            <p>We don't have a fixed itinerary. We don't have every night planned. What we do have is each other, working bikes, and an extremely optimistic attitude about our ability to read a Japanese map.</p>
+
+            <p>Tomorrow it starts. We leave at 6am. Neither of us has slept properly in a week.</p>
+
+            <p style="font-style:italic;color:var(--color-gray-500)">&#8212; Mika &amp; Tom, the night before</p>
+
+            <h3 style="margin-top:2rem;margin-bottom:.75rem">📷 Photos</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:.5rem">
+              <img src="https://github.com/user-attachments/assets/e82596a0-c4d5-4d43-952e-ed4b6ae014fc" alt="Our storage unit — everything that didn't fit in the panniers" style="width:100%;border-radius:var(--radius-md);object-fit:cover;aspect-ratio:3/4" />
+              <img src="https://github.com/user-attachments/assets/29585223-4127-4caf-b322-cf0ec79de344" alt="Gear and bags packed up before departure" style="width:100%;border-radius:var(--radius-md);object-fit:cover;aspect-ratio:3/4" />
+              <img src="https://github.com/user-attachments/assets/c3cbe55b-b933-41a6-9969-4d3e7d86cb4b" alt="The Håkull box — a Norwegian moving company, fittingly" style="width:100%;border-radius:var(--radius-md);object-fit:cover;aspect-ratio:3/4" />
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Sidebar -->
+      <div class="blog-sidebar">
+        <div class="sidebar-widget">
+          <h3>About the Blog</h3>
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--color-secondary),var(--color-accent));display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🚴</div>
+            <p style="font-size:.875rem;color:var(--color-gray-600);margin:0">Two cyclists. Japan to Norway. Documenting every beautiful, difficult, and hilarious moment.</p>
+          </div>
+          <a href="#map-section" class="btn btn-dark" style="width:100%;justify-content:center">See Our Route 🗺️</a>
+        </div>
+
+        <div class="sidebar-widget">
+          <h3>Categories</h3>
+          <ul class="category-list">
+            <li><a href="#" onclick="filterByTag('planning')">🗺️ Planning</a><span class="category-count">3</span></li>
+            <li><a href="#" onclick="filterByTag('gear')">🔧 Gear</a><span class="category-count">2</span></li>
+            <li><a href="#" onclick="filterByTag('stories')">📖 Stories</a><span class="category-count">1</span></li>
+            <li><a href="#" onclick="filterByTag('food')">🍝 Food & Nutrition</a><span class="category-count">1</span></li>
+            <li><a href="#" onclick="filterByTag('tips')">💡 Tips & Tricks</a><span class="category-count">1</span></li>
+          </ul>
+        </div>
+
+        <div class="sidebar-widget">
+          <h3>Tags</h3>
+          <div class="tag-cloud">
+            <span class="tag" onclick="filterByTag('japan')">japan</span>
+            <span class="tag" onclick="filterByTag('norway')">norway</span>
+            <span class="tag" onclick="filterByTag('bikepacking')">bikepacking</span>
+            <span class="tag" onclick="filterByTag('touring')">touring</span>
+            <span class="tag" onclick="filterByTag('gear')">gear</span>
+          </div>
+        </div>
+
+        <div class="sidebar-widget">
+          <h3>Newsletter</h3>
+          <p style="font-size:.875rem;color:var(--color-gray-600);margin-bottom:1rem">Get updates from the road.</p>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Follow along!</h2>
+    <p>We're starting tomorrow — check back for updates from the road.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a href="#map-section" class="btn btn-outline">🗺️ See Our Route</a>
+      <button class="btn btn-accent" onclick="openSubscribeModal()">🔔 Get Updates</button>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<hr class="japan-section-divider" />
+
+<!-- ══════════════════════════════════════════
+     PHOTOS SECTION
+════════════════════════════════════════════ -->
+<div id="photos-section">
+  <div class="japan-section-header">
+    <div class="container">
+      <span class="section-icon">📷</span>
+      <h2>Photos</h2>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     PHOTOS CONTENT
+════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+
+    <div class="photos-stats">
+      <div class="photos-stat">📷 <strong id="photo-count">…</strong> photos</div>
+      <div class="photos-stat">🗺️ <strong id="album-count">…</strong> albums</div>
+    </div>
+
+    <!-- Upload zone (admin only) -->
+    <div class="upload-zone" id="uploadZone" style="display:none" onclick="TomikaBikes.showToast('Sign in to upload photos','info')">
+      <div class="upload-icon">📤</div>
+      <h3>Add New Photos</h3>
+      <p>Drag &amp; drop photos here, or click to browse.</p>
+    </div>
+
+    <!-- Gallery Filters (populated dynamically) -->
+    <div class="gallery-filters" id="gallery-filters">
+      <button class="filter-btn active" data-gcat="all">🌍 All Photos</button>
+    </div>
+
+    <!-- Loading state -->
+    <div id="gallery-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
+      <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
+      <p>Loading photos…</p>
+    </div>
+
+    <!-- Photo grid (populated by JS) -->
+    <div class="gallery-grid" id="gallery" style="display:none"></div>
+
+    <!-- Empty state (shown when Firestore returns 0 photos) -->
+    <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
+      <div style="font-size:4rem;margin-bottom:1rem">📷</div>
+      <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Photos coming soon!</h2>
+      <p style="font-size:.95rem;max-width:420px;margin:0 auto">We leave tomorrow — check back once we're on the road. The first photos from Tokyo and Kagoshima will be up as soon as we can manage it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-content">
+    <button class="lightbox-close" id="lightboxClose">✕</button>
+    <div id="lightboxBody"></div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Check back soon!</h2>
+    <p>We leave tomorrow — photos from Tokyo and Kagoshima coming shortly.</p>
+    <a href="#map-section" class="btn btn-outline">🗺️ See the Route</a>
+  </div>
+</section>
+
+</div>
+
 <!-- Footer -->
 <footer>
   <div class="container">
@@ -550,23 +983,9 @@
           <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
         </div>
       </div>
-      <div class="footer-col">
-        <h4>Explore</h4>
-        <a href="index.html">Home</a>
-        <a href="japan.html">Japan</a>
-        <a href="norway.html">Norway</a>
-        <a href="gear.html">Gear</a>
-      </div>
-      <div class="footer-col">
-        <h4>Info</h4>
-        <a href="about.html">About Us</a>
-        <a href="#">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h4>Admin</h4>
-        <a href="#" data-auth>Login</a>
-        <a href="admin.html" class="admin-only-link" style="display:none">Dashboard</a>
-      </div>
+      <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="japan.html">Japan</a><a href="norway.html">Norway</a><a href="gear.html">Gear</a></div>
+      <div class="footer-col"><h4>Info</h4><a href="about.html">About Us</a><a href="#">Contact</a></div>
+      <div class="footer-col"><h4>Admin</h4><a href="#" data-auth>Login</a><a href="admin.html" class="admin-only-link" style="display:none">Dashboard</a></div>
     </div>
     <div class="footer-bottom">
       <span>© 2026 tomika.bike</span>
@@ -575,7 +994,7 @@
   </div>
 </footer>
 
-<!-- Firebase SDK — app + firestore loaded upfront (auth & storage lazy-loaded on sign-in) -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="assets/js/firebase-config.js"></script>
@@ -585,10 +1004,7 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
 <script>
-// PMTiles protocol interceptor – installed BEFORE VectorGrid.bundled.js so that
-// the bundle captures our patched `fetch` rather than the native one.
-// tile requests matching pmtiles://<key>/<z>/<x>/<y> are served from the
-// PMTiles instance registered in window.__pmtilesInstances[key].
+// PMTiles protocol interceptor
 (function () {
   var _orig = window.fetch;
   window.__pmtilesInstances = {};
@@ -609,15 +1025,10 @@
       }
       return Promise.reject(new TypeError('pmtiles:// – no instance registered for: ' + u));
     }
-    // Pass all other requests through, but strip cache modes that some browsers
-    // (iOS WebView, Android WebView) reject with ERR_CACHE_OPERATION_NOT_SUPPORTED.
-    // pmtiles.js internally uses cache:'reload' when fetching the .pmtiles source file;
-    // we degrade it to 'default' so the request still succeeds.
     if (options && options.cache &&
         (options.cache === 'reload' || options.cache === 'no-store' || options.cache === 'no-cache')) {
       var safeOptions = Object.assign({}, options, { cache: 'default' });
       return _orig.call(window, resource, safeOptions).catch(function(err) {
-        // Final fallback: retry with no options at all if even 'default' fails.
         var bare = Object.assign({}, options);
         delete bare.cache;
         return _orig.call(window, resource, bare);
@@ -1951,5 +2362,183 @@ function toggleCheck(el) {
   });
 }());
 </script>
+
+
+
+<script>
+  // Search
+  document.getElementById('blogSearch').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.blog-post-card, .featured-post').forEach(post => {
+      const text = post.textContent.toLowerCase();
+      post.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+
+  // Category filter
+  document.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.dataset.cat;
+      document.querySelectorAll('.blog-post-card').forEach(post => {
+        post.style.display = (cat === 'all' || post.dataset.cat === cat) ? '' : 'none';
+      });
+    });
+  });
+
+  function filterByTag(tag) {
+    document.getElementById('blogSearch').value = tag;
+    document.getElementById('blogSearch').dispatchEvent(new Event('input'));
+    TomikaBikes.showToast(`Filtering by: ${tag}`, 'info');
+    return false;
+  }
+</script>
+
+
+
+<script>
+(function () {
+  // ── Lightbox helpers
+  const lightbox     = document.getElementById('lightbox');
+  const lightboxBody = document.getElementById('lightboxBody');
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openLightbox(url, caption, location) {
+    lightboxBody.innerHTML =
+      '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + (caption || '').replace(/"/g, '&quot;') + '">' +
+      (location ? '<p style="color:rgba(255,255,255,.7);text-align:center;margin-top:.75rem;font-size:.8rem">📍 ' + escHtml(location) + '</p>' : '') +
+      (caption ? '<p style="color:#fff;text-align:center;margin-top:.25rem;font-size:.9rem">' + escHtml(caption) + '</p>' : '');
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxBody.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox(); });
+
+  // ── Filter helpers
+  let currentCat = 'all';
+
+  function setFilter(cat) {
+    currentCat = cat;
+    document.querySelectorAll('#gallery-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.gcat === cat));
+    document.querySelectorAll('.gallery-item').forEach(item => {
+      item.style.display = (cat === 'all' || item.dataset.gcat === cat) ? '' : 'none';
+    });
+  }
+
+  document.getElementById('gallery-filters').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (btn) setFilter(btn.dataset.gcat);
+  });
+
+  // ── Slugify album name for data-gcat attribute
+  function slugify(str) {
+    return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  // ── Render gallery from Firestore docs
+  function renderGallery(docs) {
+    const grid      = document.getElementById('gallery');
+    const loading   = document.getElementById('gallery-loading');
+    const empty     = document.getElementById('gallery-empty');
+    const filters   = document.getElementById('gallery-filters');
+    const countEl   = document.getElementById('photo-count');
+    const albumsEl  = document.getElementById('album-count');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      empty.style.display = '';
+      countEl.textContent = '0';
+      albumsEl.textContent = '0';
+      return;
+    }
+
+    // Build album list and inject filter buttons
+    const albums = [...new Set(docs.map(d => d.album).filter(Boolean))].sort();
+    albums.forEach(album => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.dataset.gcat = slugify(album);
+      btn.textContent = '📁 ' + album;
+      filters.appendChild(btn);
+    });
+
+    // Build gallery items
+    // Use thumbUrl (600px) for the grid and url (1920px) for the lightbox.
+    // Fall back to url for photos uploaded before thumbnails were introduced.
+    grid.innerHTML = docs.map(doc => {
+      const cat      = slugify(doc.album || 'general');
+      const caption  = doc.caption || doc.fileName || '';
+      const location = doc.location || '';
+      const fullUrl  = doc.url      || '';
+      const thumbUrl = doc.thumbUrl || fullUrl;
+      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + fullUrl.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '" data-location="' + location.replace(/"/g, '&quot;') + '">' +
+        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
+        '<div class="gallery-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(caption) + '</p>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Lightbox click delegation
+    grid.addEventListener('click', e => {
+      const item = e.target.closest('.gallery-item');
+      if (item) openLightbox(item.dataset.url, item.dataset.caption, item.dataset.location);
+    });
+
+    grid.style.display = '';
+    countEl.textContent  = docs.length;
+    albumsEl.textContent = albums.length;
+
+    // Re-apply any active filter
+    if (currentCat !== 'all') setFilter(currentCat);
+  }
+
+  // ── Load from Firestore
+  function loadPhotos() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      const db = firebase.firestore();
+      db.collection('photos').orderBy('uploadedAt', 'desc').get()
+        .then(snapshot => {
+          const docs = [];
+          snapshot.forEach(doc => docs.push(doc.data()));
+          renderGallery(docs);
+        })
+        .catch(err => {
+          console.error('Photos load error:', err);
+          document.getElementById('gallery-loading').innerHTML = '<p style="color:#e74c3c">Could not load photos. Please try again later.</p>';
+        });
+    } catch (err) {
+      console.error('Firebase init error:', err);
+    }
+  }
+
+  // Defer photo loading until user scrolls to Photos section
+  (function deferPhotos() {
+    var sentinel = document.getElementById('photos-section');
+    if (!sentinel || !window.IntersectionObserver) { loadPhotos(); return; }
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) { obs.disconnect(); loadPhotos(); }
+    }, { rootMargin: '200px' });
+    obs.observe(sentinel);
+  })();
+})();
+</script>
+
+
 </body>
 </html>
