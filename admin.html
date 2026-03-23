@@ -844,6 +844,24 @@
 
 <script src="js/main.js"></script>
 <script>
+// ── iOS Safari Firestore fix ──────────────────────────────────
+// Force Firestore to use long-polling instead of WebChannel on iOS Safari.
+// WebChannel can silently hang or crash the page on that platform.
+// iPadOS 13+ reports itself as 'Macintosh' — use maxTouchPoints to detect it.
+const _adminIsIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
+                 || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+let _adminDbInstance = null;
+function _getAdminDb() {
+  if (_adminDbInstance) return _adminDbInstance;
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  _adminDbInstance = firebase.firestore();
+  if (_adminIsIOS) {
+    try { _adminDbInstance.settings({ experimentalForceLongPolling: true }); } catch(e) { /* already set */ }
+  }
+  return _adminDbInstance;
+}
+</script>
+<script>
   function showSection(name, linkEl) {
     // Hide all sections
     document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
@@ -915,8 +933,7 @@
   function ensureReady() {
     return loadStorageSdk().then(() => {
       if (photosDb) return;
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      photosDb = firebase.firestore();
+      photosDb = _getAdminDb();
       photosStorage = firebase.storage();
     });
   }
@@ -1396,8 +1413,7 @@ const BLOG_STATIC_POST = {
 
 async function adminBlogEnsureDb() {
   if (adminBlogDb) return;
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  adminBlogDb = firebase.firestore();
+  adminBlogDb = _getAdminDb();
 }
 
 async function adminBlogLoadPosts() {
@@ -1622,13 +1638,13 @@ const GearManagerAdmin = (function () {
   }
 
   async function fetchFromFirestore() {
-    const snap = await firebase.firestore().collection(GEAR_COLLECTION).orderBy('order').get();
+    const snap = await _getAdminDb().collection(GEAR_COLLECTION).orderBy('order').get();
     if (snap.empty) return null;
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
   async function saveToFirestore(data) {
-    const db = firebase.firestore();
+    const db = _getAdminDb();
     const batch = db.batch();
     const existing = await db.collection(GEAR_COLLECTION).get();
     existing.docs.forEach(doc => batch.delete(doc.ref));
@@ -1836,8 +1852,7 @@ const GearManagerAdmin = (function () {
   async function ensureMapReady() {
     await loadMapSdks();
     if (!_mapDb) {
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      _mapDb = firebase.firestore();
+      _mapDb = _getAdminDb();
       _mapStorage = firebase.storage();
     }
   }
@@ -2115,8 +2130,7 @@ async function _adminSubsEnsureDb() {
       document.head.appendChild(s);
     });
   }
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  _adminSubsDb = firebase.firestore();
+  _adminSubsDb = _getAdminDb();
   return _adminSubsDb;
 }
 
@@ -2193,8 +2207,7 @@ function adminDashLoadCounts() {
   if (typeof firebase === 'undefined' || typeof FIREBASE_CONFIG === 'undefined'
       || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return;
   try {
-    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    const db = firebase.firestore();
+    const db = _getAdminDb();
     db.collection('photos').limit(1000).get()
       .then(s => { const el = document.getElementById('dash-photo-count'); if (el) el.textContent = s.size; })
       .catch(() => {});
