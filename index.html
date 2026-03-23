@@ -11,8 +11,42 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+  #home-map {
+    height: 50vh;
+    width: 100%;
+    border-radius: var(--radius-lg, 8px);
+    z-index: 1;
+  }
+  #home-map-wrapper {
+    position: relative;
+    border-radius: var(--radius-lg, 8px);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg, 0 4px 24px rgba(0,0,0,0.12));
+  }
+  #home-map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-gray-100, #f5f5f5);
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  #home-map-loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  </style>
 </head>
 <body>
 
@@ -151,37 +185,24 @@
 </section>
 
 <!-- ══════════════════════════════════════════
-     FEATURES
+     CURRENT ROUTE MAP
 ════════════════════════════════════════════ -->
 <section class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">What we're building</span>
-      <h2>Everything in one place</h2>
-      <p>A home for our adventure – plan routes, share stories, capture memories.</p>
+      <span class="eyebrow">On the Road</span>
+      <h2>Our Current Route</h2>
+      <p>Follow where we've been – updated live from Strava.</p>
       <div class="divider"></div>
     </div>
-    <div class="feature-grid">
-      <a href="japan.html" class="feature-box" style="text-decoration:none;color:inherit">
-        <span class="feature-icon">🗺️</span>
-        <h3>Trip Planning</h3>
-        <p>Interactive map with waypoints, routes, and a visual trip timeline to plan every stage.</p>
-      </a>
-      <a href="japan.html#blog-section" class="feature-box" style="text-decoration:none;color:inherit">
-        <span class="feature-icon">✍️</span>
-        <h3>Travel Blog</h3>
-        <p>Stories from the road – destinations, food, people, and everything in between.</p>
-      </a>
-      <a href="japan.html#photos-section" class="feature-box" style="text-decoration:none;color:inherit">
-        <span class="feature-icon">📷</span>
-        <h3>Photo Gallery</h3>
-        <p>A beautiful masonry gallery of all the moments we want to remember forever.</p>
-      </a>
-      <a href="gear.html" class="feature-box" style="text-decoration:none;color:inherit">
-        <span class="feature-icon">🎒</span>
-        <h3>Gear List</h3>
-        <p>Everything we're packing – bikes, camping kit, clothes, and the essentials.</p>
-      </a>
+    <div id="home-map-wrapper">
+      <div id="home-map-loading">
+        <span style="color:var(--color-gray-500)">⏳ Loading route…</span>
+      </div>
+      <div id="home-map"></div>
+    </div>
+    <div style="text-align:center;margin-top:1.5rem">
+      <a href="japan.html" class="btn btn-dark">See Full Map 🗺️</a>
     </div>
   </div>
 </section>
@@ -273,8 +294,32 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="assets/js/firebase-config.js"></script>
+
+<!-- Leaflet + PMTiles + VectorGrid for home-page route map -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+<script src="js/route-map.js"></script>
+
 <script src="js/main.js"></script>
 <script>
+  // ── Home-page route map ────────────────────────────────────
+  (function initHomeMap() {
+    if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
+    var map = RouteMap.init('home-map', { center: [36.5, 138], zoom: 5 });
+    // Hide the loading overlay once the base tiles start rendering
+    map.once('load', function () {
+      var el = document.getElementById('home-map-loading');
+      if (el) el.classList.add('hidden');
+    });
+    // Fallback: hide loading after a short delay regardless
+    setTimeout(function () {
+      var el = document.getElementById('home-map-loading');
+      if (el) el.classList.add('hidden');
+    }, 2000);
+  })();
+
   // ── Animated counter helper ────────────────────────────────
   function animateCounter(el, target) {
     const start = 0;
