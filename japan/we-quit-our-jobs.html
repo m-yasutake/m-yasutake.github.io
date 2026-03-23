@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="We quit our jobs and we're going to Japan — the story of how we decided to cycle Japan and Norway." />
+  <title>We Quit Our Jobs and We're Going to Japan – Tomika Bike</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    .post-hero {
+      background: linear-gradient(160deg, var(--color-primary), var(--color-secondary));
+      padding: 5rem 0 4rem;
+      text-align: center;
+      color: var(--color-white);
+    }
+
+    .post-hero .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 100px;
+      padding: .35rem 1rem;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .post-hero h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 400;
+      max-width: 780px;
+      margin: 0 auto 1rem;
+      line-height: 1.25;
+      color: var(--color-white);
+    }
+
+    .post-hero .post-meta-row {
+      justify-content: center;
+      color: rgba(255,255,255,.8);
+      margin-bottom: 0;
+    }
+
+    .post-hero .post-date,
+    .post-hero .read-time { color: rgba(255,255,255,.8); }
+
+    .post-hero .author-chip { color: rgba(255,255,255,.8); }
+
+    .post-body {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+
+    .post-body p {
+      color: var(--color-gray-700);
+      line-height: 1.85;
+      margin-bottom: 1.5rem;
+      font-size: 1.05rem;
+    }
+
+    .post-body h3 {
+      font-size: 1.25rem;
+      margin-top: 2.5rem;
+      margin-bottom: .75rem;
+    }
+
+    .post-body .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .post-body .photo-grid img {
+      width: 100%;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      aspect-ratio: 3/4;
+    }
+
+    .post-back {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      color: var(--color-secondary);
+      font-weight: 600;
+      font-size: .9rem;
+      text-decoration: none;
+      margin-bottom: 2.5rem;
+    }
+
+    .post-back:hover { text-decoration: underline; }
+
+    .post-footer-nav {
+      border-top: 1px solid var(--color-gray-200);
+      padding-top: 2rem;
+      margin-top: 3rem;
+      text-align: center;
+    }
+
+    .post-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: .75rem;
+    }
+
+    .author-chip {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .8rem;
+      color: var(--color-gray-600);
+    }
+
+    .author-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--color-white);
+    }
+
+    .post-date { font-size: .78rem; color: var(--color-gray-600); }
+    .read-time { font-size: .78rem; color: var(--color-gray-600); }
+  </style>
+</head>
+<body>
+
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
+    <ul class="nav-links">
+      <li><a href="../index.html">Home</a></li>
+      <li><a href="../japan.html" class="active">🇯🇵 Japan</a></li>
+      <li><a href="../norway.html">🇳🇴 Norway</a></li>
+      <li><a href="../gear.html">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="../admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-subscribe-btn" onclick="openSubscribeModal()">🔔 Subscribe</button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu">
+  <a href="../index.html">🏠 Home</a>
+  <a href="../japan.html">🇯🇵 Japan</a>
+  <a href="../norway.html">🇳🇴 Norway</a>
+  <a href="../gear.html">🎒 Gear</a>
+  <a href="../admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
+</div>
+
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- Post Hero -->
+<div class="post-hero">
+  <div class="container">
+    <div class="hero-badge">🇯🇵 Japan</div>
+    <h1>We Quit Our Jobs and We're Going to Japan</h1>
+    <div class="post-meta-row">
+      <div class="author-chip">
+        <div class="author-avatar" style="background:var(--color-secondary)">T</div>
+        <span>Tomika &amp; Tom</span>
+      </div>
+      <span class="post-date">March 4, 2026</span>
+      <span class="read-time">5 min read</span>
+    </div>
+  </div>
+</div>
+
+<!-- Post Body -->
+<div class="post-body">
+  <a href="../japan.html#blog-section" class="post-back">← Back to Japan</a>
+
+  <p>Here's the short version: we handed in our notices, spent three frantic months building our bikes, buying gear, and trying not to think too hard about what we were doing — and tomorrow morning we fly to Tokyo.</p>
+
+  <p>The longer version is messier and more honest. We'd been talking about doing something big for years. A proper trip. Not a two-week holiday with a return flight already booked, but a real, open-ended, see-what-happens adventure. The kind where you don't know exactly what the end will look like when you're standing at the beginning.</p>
+
+  <p>Japan came up because of Mika's family connections — and because the idea of cycling from one end of Japan to the other, from the southern tip of Kyushu all the way north through Honshu and up into Hokkaido, felt like exactly the scale of thing we were dreaming of. Then Tom said "and we could do Norway after" and somehow that stuck too. His mum's family is from Egersund — a tiny harbour town on the southwest coast — and cycling from there to Tromsø, up past the Arctic Circle, felt equal parts beautiful and completely mad. So obviously we said yes to both.</p>
+
+  <p>The bikes took longer than expected. Of course they did. Tom's rear derailleur situation was a saga that involved three different mechanics and a lot of YouTube tutorials. Mika's front rack broke during a test ride three weeks ago and had to be re-welded. We did a fully loaded overnight test in Wales last month and came back drenched, exhausted, and completely convinced this was a good idea.</p>
+
+  <p>The weeks leading up to this were a blur of bike prep, packing lists, and the surprisingly emotional process of putting our lives into storage. Everything that didn't fit into four panniers and a handlebar bag went into boxes. There was a brief moment of irony when we spotted the moving company's name on the biggest box in our storage unit: Håkull — based in Stavanger, just down the coast from Egersund. Even our cardboard boxes are pointing us toward Norway.</p>
+
+  <p>Right now, as I type this, there are two fully loaded touring bikes standing in the hallway. We have four panniers, a handlebar bag, one drybag each strapped to the rear rack, a small tent, two sleeping bags, and approximately one too many pairs of cycling socks. We've booked our flights and a hotel in Tokyo for the first week — we're visiting friends and family there before flying down to Kagoshima to start the actual bike journey. After that? We'll figure it out as we go.</p>
+
+  <p>We don't have a fixed itinerary. We don't have every night planned. What we do have is each other, working bikes, and an extremely optimistic attitude about our ability to read a Japanese map.</p>
+
+  <p>Tomorrow it starts. We leave at 6am. Neither of us has slept properly in a week.</p>
+
+  <p style="font-style:italic;color:var(--color-gray-500)">&#8212; Mika &amp; Tom, the night before</p>
+
+  <h3>📷 Photos</h3>
+  <div class="photo-grid">
+    <img src="https://github.com/user-attachments/assets/e82596a0-c4d5-4d43-952e-ed4b6ae014fc" alt="Our storage unit — everything that didn't fit in the panniers" />
+    <img src="https://github.com/user-attachments/assets/29585223-4127-4caf-b322-cf0ec79de344" alt="Gear and bags packed up before departure" />
+    <img src="https://github.com/user-attachments/assets/c3cbe55b-b933-41a6-9969-4d3e7d86cb4b" alt="The Håkull box — a Norwegian moving company, fittingly" />
+  </div>
+
+  <div class="post-footer-nav">
+    <a href="../japan.html#blog-section" class="btn btn-dark">← Back to Japan</a>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
+        <p>A cycling adventure blog documenting our journey through Japan and Norway.</p>
+        <div class="social-links">
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
+      </div>
+      <div class="footer-col"><h4>Explore</h4><a href="../index.html">Home</a><a href="../japan.html">Japan</a><a href="../norway.html">Norway</a><a href="../gear.html">Gear</a></div>
+      <div class="footer-col"><h4>Info</h4><a href="../about.html">About Us</a><a href="#">Contact</a></div>
+      <div class="footer-col"><h4>Admin</h4><a href="#" data-auth>Login</a><a href="../admin.html" class="admin-only-link" style="display:none">Dashboard</a></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bike</span>
+      <span>Made with ❤️ and 🚴</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>
