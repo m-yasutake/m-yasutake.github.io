@@ -986,6 +986,17 @@ function _getAdminDb() {
     return null;
   }
 
+  // ── Extract date taken from EXIF using exifr (if loaded)
+  async function tryExtractDate(file) {
+    if (!window.exifr) return null;
+    try {
+      const data = await window.exifr.parse(file, ['DateTimeOriginal', 'DateTime']);
+      if (data && data.DateTimeOriginal instanceof Date) return data.DateTimeOriginal;
+      if (data && data.DateTime instanceof Date) return data.DateTime;
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
   // ── Reverse-geocode lat/lon to nearest city via Nominatim
   async function reverseGeocode(lat, lon) {
     try {
@@ -1055,12 +1066,16 @@ function _getAdminDb() {
         barEl:     el.querySelector('.photo-queue-bar'),
         statusEl:  el.querySelector('.photo-queue-status'),
         captionEl,
-        locationEl });
+        locationEl,
+        takenAt:   null });
       document.getElementById('photos-queue').appendChild(el);
 
-      // Async GPS detection
+      // Async GPS + date detection
       (async () => {
-        const gps = await tryExtractGps(file);
+        const [gps, dateTaken] = await Promise.all([tryExtractGps(file), tryExtractDate(file)]);
+        // Store date taken for upload
+        const queueItem = queue.find(q => q.id === id);
+        if (queueItem && dateTaken) queueItem.takenAt = dateTaken;
         if (!gps) {
           locationEl.placeholder = '📍 No GPS data — enter manually';
           return;
@@ -1205,7 +1220,8 @@ function _getAdminDb() {
             caption: caption || '',
             location: location || '',
             fileName: item.file.name,
-            uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+            uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            ...(item.takenAt ? { takenAt: firebase.firestore.Timestamp.fromDate(item.takenAt) } : {})
           });
         })
         .then(() => {
