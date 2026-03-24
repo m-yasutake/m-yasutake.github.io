@@ -2190,7 +2190,13 @@ async function adminSubscribersLoad() {
     const rows = [];
     snap.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
     // Sort client-side in case we fell back to unordered query
-    rows.sort((a, b) => (b.subscribedAt || '').localeCompare(a.subscribedAt || ''));
+    function toSortKey(v) {
+      if (!v) return '';
+      if (typeof v === 'string') return v;
+      if (v.seconds) return new Date(v.seconds * 1000).toISOString();
+      return String(v);
+    }
+    rows.sort((a, b) => toSortKey(b.subscribedAt).localeCompare(toSortKey(a.subscribedAt)));
 
     const dashEl = document.getElementById('dash-subscriber-count');
     if (dashEl) dashEl.textContent = rows.length;
