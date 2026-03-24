@@ -809,6 +809,10 @@ const _adminIsIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSS
 let _adminDbInstance = null;
 function _getAdminDb() {
   if (_adminDbInstance) return _adminDbInstance;
+  if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) {
+    console.error('Firebase config not loaded. Check that assets/js/firebase-config.js is accessible.');
+    return null;
+  }
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   _adminDbInstance = firebase.firestore();
   if (_adminIsIOS) {
