@@ -763,36 +763,6 @@
 <section class="section">
   <div class="container">
 
-    <!-- Search & Filter -->
-    <div class="blog-search-wrap">
-      <input type="text" id="blogSearch" placeholder="🔍 Search posts..." />
-      <div class="gallery-filters" style="margin:0">
-        <button class="filter-btn active" data-cat="all">All</button>
-        <button class="filter-btn" data-cat="japan">🇯🇵 Japan</button>
-        <button class="filter-btn" data-cat="norway">🇳🇴 Norway</button>
-        <button class="filter-btn" data-cat="gear">Gear</button>
-      </div>
-    </div>
-
-    <!-- Featured Post -->
-    <article class="featured-post" data-cat="japan">
-      <div class="featured-post-img">🇯🇵</div>
-      <div class="featured-post-body">
-        <div class="featured-badge">⭐ Latest Post</div>
-        <div class="post-meta-row">
-          <div class="author-chip">
-            <div class="author-avatar" style="background:var(--color-secondary)">T</div>
-            <span>Tomika &amp; Tom</span>
-          </div>
-          <span class="post-date">March 4, 2026</span>
-          <span class="read-time">5 min read</span>
-        </div>
-        <h2>We Quit Our Jobs and We're Going to Japan</h2>
-        <p>It started as a joke, then a spreadsheet, then a very serious conversation about pension contributions and whether we really needed them. Spoiler: we decided we didn't. Tomorrow morning we fly to Tokyo, and we genuinely can't believe it's happening.</p>
-        <a href="japan/we-quit-our-jobs.html" class="btn btn-primary">Read Full Post →</a>
-      </div>
-    </article>
-
     <!-- Blog Main + Sidebar -->
     <div class="blog-grid">
       <div class="blog-main" id="postList">
@@ -836,6 +806,11 @@
           <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
         </div>
       </div>
+    </div>
+
+    <!-- Show More blogs button -->
+    <div id="blog-show-more-wrap" style="text-align:center;margin-top:1.5rem;display:none">
+      <button id="blog-show-more-btn" class="btn btn-outline" onclick="blogShowMore()">Show More ↓</button>
     </div>
   </div>
 </section>
@@ -886,6 +861,11 @@
 
     <!-- Photo grid (populated by JS) -->
     <div class="gallery-grid" id="gallery" style="display:none"></div>
+
+    <!-- Show More photos button -->
+    <div id="photos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
+      <button id="photos-show-more-btn" class="btn btn-outline" onclick="photosShowMore()">Show More ↓</button>
+    </div>
 
     <!-- Empty state (shown when Firestore returns 0 photos) -->
     <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
@@ -2300,33 +2280,27 @@ function toggleCheck(el) {
 
 
 <script>
-  // Search
-  document.getElementById('blogSearch').addEventListener('input', function() {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('.blog-post-card, .featured-post').forEach(post => {
-      const text = post.textContent.toLowerCase();
-      post.style.display = text.includes(q) ? '' : 'none';
-    });
-  });
+  // ── Blog: show first 2 posts, reveal 2 more per "Show More" click
+  (function () {
+    const BLOG_PAGE = 2;
+    let shownCount = BLOG_PAGE;
 
-  // Category filter
-  document.querySelectorAll('[data-cat]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const cat = btn.dataset.cat;
-      document.querySelectorAll('.blog-post-card').forEach(post => {
-        post.style.display = (cat === 'all' || post.dataset.cat === cat) ? '' : 'none';
+    function refreshBlogPosts() {
+      const posts = Array.from(document.querySelectorAll('#postList .blog-post-card'));
+      posts.forEach(function (post, i) {
+        post.style.display = i < shownCount ? '' : 'none';
       });
-    });
-  });
+      const wrap = document.getElementById('blog-show-more-wrap');
+      if (wrap) wrap.style.display = shownCount < posts.length ? '' : 'none';
+    }
 
-  function filterByTag(tag) {
-    document.getElementById('blogSearch').value = tag;
-    document.getElementById('blogSearch').dispatchEvent(new Event('input'));
-    TomikaBikes.showToast(`Filtering by: ${tag}`, 'info');
-    return false;
-  }
+    window.blogShowMore = function () {
+      shownCount += BLOG_PAGE;
+      refreshBlogPosts();
+    };
+
+    refreshBlogPosts();
+  })();
 </script>
 
 
@@ -2366,9 +2340,11 @@ function toggleCheck(el) {
   function setFilter(cat) {
     currentCat = cat;
     document.querySelectorAll('#gallery-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.gcat === cat));
-    document.querySelectorAll('.gallery-item').forEach(item => {
-      item.style.display = (cat === 'all' || item.dataset.gcat === cat) ? '' : 'none';
-    });
+    // Reset pagination and re-render from allDocs for new filter
+    const grid = document.getElementById('gallery');
+    if (grid) grid.innerHTML = '';
+    shownPhotos = 0;
+    appendPhotos(PHOTOS_PAGE);
   }
 
   document.getElementById('gallery-filters').addEventListener('click', e => {
@@ -2380,6 +2356,19 @@ function toggleCheck(el) {
   function slugify(str) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
+
+  // ── Helper: get sortable timestamp (ms) from a Firestore doc
+  function docTimestamp(doc) {
+    const t = doc.takenAt || doc.uploadedAt;
+    if (!t) return 0;
+    if (typeof t.toMillis === 'function') return t.toMillis();
+    if (t instanceof Date) return t.getTime();
+    return 0;
+  }
+
+  const PHOTOS_PAGE = 20;
+  let allDocs = [];
+  let shownPhotos = 0;
 
   // ── Render gallery from Firestore docs
   function renderGallery(docs) {
@@ -2399,8 +2388,11 @@ function toggleCheck(el) {
       return;
     }
 
+    // Sort newest first by takenAt, falling back to uploadedAt
+    allDocs = docs.slice().sort((a, b) => docTimestamp(b) - docTimestamp(a));
+
     // Build album list and inject filter buttons
-    const albums = [...new Set(docs.map(d => d.album).filter(Boolean))].sort();
+    const albums = [...new Set(allDocs.map(d => d.album).filter(Boolean))].sort();
     albums.forEach(album => {
       const btn = document.createElement('button');
       btn.className = 'filter-btn';
@@ -2409,44 +2401,65 @@ function toggleCheck(el) {
       filters.appendChild(btn);
     });
 
-    // Build gallery items
-    // Use thumbUrl (600px) for the grid and url (1920px) for the lightbox.
-    // Fall back to url for photos uploaded before thumbnails were introduced.
-    grid.innerHTML = docs.map(doc => {
-      const cat      = slugify(doc.album || 'general');
-      const caption  = doc.caption || doc.fileName || '';
-      const location = doc.location || '';
-      const fullUrl  = doc.url      || '';
-      const thumbUrl = doc.thumbUrl || fullUrl;
-      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + fullUrl.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '" data-location="' + location.replace(/"/g, '&quot;') + '">' +
-        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
-        '<div class="gallery-item-overlay">' +
-          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
-          '<p>' + escHtml(caption) + '</p>' +
-        '</div>' +
-      '</div>';
-    }).join('');
+    countEl.textContent  = allDocs.length;
+    albumsEl.textContent = albums.length;
 
-    // Lightbox click delegation
+    // Lightbox click delegation (once)
     grid.addEventListener('click', e => {
       const item = e.target.closest('.gallery-item');
       if (item) openLightbox(item.dataset.url, item.dataset.caption, item.dataset.location);
     });
 
+    shownPhotos = 0;
+    appendPhotos(PHOTOS_PAGE);
     grid.style.display = '';
-    countEl.textContent  = docs.length;
-    albumsEl.textContent = albums.length;
-
-    // Re-apply any active filter
-    if (currentCat !== 'all') setFilter(currentCat);
   }
+
+  // ── Append next batch of photos to the grid
+  function appendPhotos(count) {
+    const grid = document.getElementById('gallery');
+    const visibleDocs = currentCat === 'all'
+      ? allDocs
+      : allDocs.filter(d => slugify(d.album || 'general') === currentCat);
+
+    const batch = visibleDocs.slice(shownPhotos, shownPhotos + count);
+    batch.forEach(doc => {
+      const cat      = slugify(doc.album || 'general');
+      const caption  = doc.caption || doc.fileName || '';
+      const location = doc.location || '';
+      const fullUrl  = doc.url      || '';
+      const thumbUrl = doc.thumbUrl || fullUrl;
+      const el = document.createElement('div');
+      el.className = 'gallery-item';
+      el.dataset.gcat     = cat;
+      el.dataset.url      = fullUrl;
+      el.dataset.caption  = caption;
+      el.dataset.location = location;
+      el.innerHTML =
+        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
+        '<div class="gallery-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(caption) + '</p>' +
+        '</div>';
+      grid.appendChild(el);
+    });
+    shownPhotos += batch.length;
+
+    const visibleTotal = visibleDocs.length;
+    const wrap = document.getElementById('photos-show-more-wrap');
+    if (wrap) wrap.style.display = shownPhotos < visibleTotal ? '' : 'none';
+  }
+
+  window.photosShowMore = function () {
+    appendPhotos(PHOTOS_PAGE);
+  };
 
   // ── Load from Firestore
   function loadPhotos() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       const db = firebase.firestore();
-      db.collection('photos').orderBy('uploadedAt', 'desc').get()
+      db.collection('photos').get()
         .then(snapshot => {
           const docs = [];
           snapshot.forEach(doc => docs.push(doc.data()));
@@ -2461,15 +2474,7 @@ function toggleCheck(el) {
     }
   }
 
-  // Defer photo loading until user scrolls to Photos section
-  (function deferPhotos() {
-    var sentinel = document.getElementById('photos-section');
-    if (!sentinel || !window.IntersectionObserver) { loadPhotos(); return; }
-    var obs = new IntersectionObserver(function(entries) {
-      if (entries[0].isIntersecting) { obs.disconnect(); loadPhotos(); }
-    }, { rootMargin: '200px' });
-    obs.observe(sentinel);
-  })();
+  loadPhotos();
 })();
 </script>
 

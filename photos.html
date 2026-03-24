@@ -140,6 +140,11 @@
     <!-- Photo grid (populated by JS) -->
     <div class="gallery-grid" id="gallery" style="display:none"></div>
 
+    <!-- Show More photos button -->
+    <div id="photos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
+      <button id="photos-show-more-btn" class="btn btn-outline" onclick="photosShowMore()">Show More ↓</button>
+    </div>
+
     <!-- Empty state (shown when Firestore returns 0 photos) -->
     <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
       <div style="font-size:4rem;margin-bottom:1rem">📷</div>
@@ -225,9 +230,11 @@
   function setFilter(cat) {
     currentCat = cat;
     document.querySelectorAll('#gallery-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.gcat === cat));
-    document.querySelectorAll('.gallery-item').forEach(item => {
-      item.style.display = (cat === 'all' || item.dataset.gcat === cat) ? '' : 'none';
-    });
+    // Reset pagination and re-render from allDocs for new filter
+    const grid = document.getElementById('gallery');
+    if (grid) grid.innerHTML = '';
+    shownPhotos = 0;
+    appendPhotos(PHOTOS_PAGE);
   }
 
   document.getElementById('gallery-filters').addEventListener('click', e => {
@@ -239,6 +246,19 @@
   function slugify(str) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
+
+  // ── Helper: get sortable timestamp (ms) from a Firestore doc
+  function docTimestamp(doc) {
+    const t = doc.takenAt || doc.uploadedAt;
+    if (!t) return 0;
+    if (typeof t.toMillis === 'function') return t.toMillis();
+    if (t instanceof Date) return t.getTime();
+    return 0;
+  }
+
+  const PHOTOS_PAGE = 20;
+  let allDocs = [];
+  let shownPhotos = 0;
 
   // ── Render gallery from Firestore docs
   function renderGallery(docs) {
@@ -258,8 +278,11 @@
       return;
     }
 
+    // Sort newest first by takenAt, falling back to uploadedAt
+    allDocs = docs.slice().sort((a, b) => docTimestamp(b) - docTimestamp(a));
+
     // Build album list and inject filter buttons
-    const albums = [...new Set(docs.map(d => d.album).filter(Boolean))].sort();
+    const albums = [...new Set(allDocs.map(d => d.album).filter(Boolean))].sort();
     albums.forEach(album => {
       const btn = document.createElement('button');
       btn.className = 'filter-btn';
@@ -268,44 +291,65 @@
       filters.appendChild(btn);
     });
 
-    // Build gallery items
-    // Use thumbUrl (600px) for the grid and url (1920px) for the lightbox.
-    // Fall back to url for photos uploaded before thumbnails were introduced.
-    grid.innerHTML = docs.map(doc => {
-      const cat      = slugify(doc.album || 'general');
-      const caption  = doc.caption || doc.fileName || '';
-      const location = doc.location || '';
-      const fullUrl  = doc.url      || '';
-      const thumbUrl = doc.thumbUrl || fullUrl;
-      return '<div class="gallery-item" data-gcat="' + cat + '" data-url="' + fullUrl.replace(/"/g, '&quot;') + '" data-caption="' + caption.replace(/"/g, '&quot;') + '" data-location="' + location.replace(/"/g, '&quot;') + '">' +
-        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
-        '<div class="gallery-item-overlay">' +
-          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
-          '<p>' + escHtml(caption) + '</p>' +
-        '</div>' +
-      '</div>';
-    }).join('');
+    countEl.textContent  = allDocs.length;
+    albumsEl.textContent = albums.length;
 
-    // Lightbox click delegation
+    // Lightbox click delegation (once)
     grid.addEventListener('click', e => {
       const item = e.target.closest('.gallery-item');
       if (item) openLightbox(item.dataset.url, item.dataset.caption, item.dataset.location);
     });
 
+    shownPhotos = 0;
+    appendPhotos(PHOTOS_PAGE);
     grid.style.display = '';
-    countEl.textContent  = docs.length;
-    albumsEl.textContent = albums.length;
-
-    // Re-apply any active filter
-    if (currentCat !== 'all') setFilter(currentCat);
   }
+
+  // ── Append next batch of photos to the grid
+  function appendPhotos(count) {
+    const grid = document.getElementById('gallery');
+    const visibleDocs = currentCat === 'all'
+      ? allDocs
+      : allDocs.filter(d => slugify(d.album || 'general') === currentCat);
+
+    const batch = visibleDocs.slice(shownPhotos, shownPhotos + count);
+    batch.forEach(doc => {
+      const cat      = slugify(doc.album || 'general');
+      const caption  = doc.caption || doc.fileName || '';
+      const location = doc.location || '';
+      const fullUrl  = doc.url      || '';
+      const thumbUrl = doc.thumbUrl || fullUrl;
+      const el = document.createElement('div');
+      el.className = 'gallery-item';
+      el.dataset.gcat     = cat;
+      el.dataset.url      = fullUrl;
+      el.dataset.caption  = caption;
+      el.dataset.location = location;
+      el.innerHTML =
+        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
+        '<div class="gallery-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(caption) + '</p>' +
+        '</div>';
+      grid.appendChild(el);
+    });
+    shownPhotos += batch.length;
+
+    const visibleTotal = visibleDocs.length;
+    const wrap = document.getElementById('photos-show-more-wrap');
+    if (wrap) wrap.style.display = shownPhotos < visibleTotal ? '' : 'none';
+  }
+
+  window.photosShowMore = function () {
+    appendPhotos(PHOTOS_PAGE);
+  };
 
   // ── Load from Firestore
   function loadPhotos() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       const db = firebase.firestore();
-      db.collection('photos').orderBy('uploadedAt', 'desc').get()
+      db.collection('photos').get()
         .then(snapshot => {
           const docs = [];
           snapshot.forEach(doc => docs.push(doc.data()));
