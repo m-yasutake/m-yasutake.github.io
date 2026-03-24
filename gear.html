@@ -807,7 +807,35 @@ updatePackProgress();
       _gearData = GEAR_DEFAULT;
     }
     renderGear(_gearData, false);
+    loadBikeLinks();
     watchAdminState();
+  }
+
+  // ── Load bike links from Firestore and apply to setup cards ──
+  async function loadBikeLinks() {
+    try {
+      const doc = await firebase.firestore().collection('site_config').doc('gear').get();
+      if (!doc.exists) return;
+      const d = doc.data();
+      if (d.mikaBikeUrl) {
+        const cards = document.querySelectorAll('.bike-setup-card');
+        cards.forEach(card => {
+          const label = card.querySelector('.bike-setup-label');
+          if (label && label.textContent.trim() === "Mika's Bike") {
+            label.innerHTML = '<a href="' + d.mikaBikeUrl + '" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary);text-decoration:none">Mika\'s Bike <span style="font-size:.75em;vertical-align:middle">🔗</span></a>';
+          }
+        });
+      }
+      if (d.tomBikeUrl) {
+        const cards = document.querySelectorAll('.bike-setup-card');
+        cards.forEach(card => {
+          const label = card.querySelector('.bike-setup-label');
+          if (label && label.textContent.trim() === "Tom's Bike") {
+            label.innerHTML = '<a href="' + d.tomBikeUrl + '" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary);text-decoration:none">Tom\'s Bike <span style="font-size:.75em;vertical-align:middle">🔗</span></a>';
+          }
+        });
+      }
+    } catch (e) { /* non-critical */ }
   }
 
   init();

@@ -363,7 +363,6 @@
     <button class="amn-tab" onclick="showSection('gear',this)" data-section="gear">🎒 Gear</button>
     <button class="amn-tab" onclick="showSection('mapdata',this)" data-section="mapdata">🗺️ Map Data</button>
     <button class="amn-tab" onclick="showSection('subscribers',this)" data-section="subscribers">📬 Subscribers</button>
-    <button class="amn-tab" onclick="showSection('settings',this)" data-section="settings">⚙️ Settings</button>
   </div>
 
   <!-- Sidebar -->
@@ -379,7 +378,6 @@
       <a href="#" onclick="showSection('gear',this)"><span class="nav-icon">🎒</span> Gear</a>
       <a href="#" onclick="showSection('mapdata',this)"><span class="nav-icon">🗺️</span> Map Data</a>
       <a href="#" onclick="showSection('subscribers',this)"><span class="nav-icon">📬</span> Subscribers</a>
-      <a href="#" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
       <a href="index.html" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1rem"><span class="nav-icon">🏠</span> View Site</a>
     </nav>
   </div>
@@ -445,37 +443,6 @@
             <div class="qa-icon">🗺️</div>
             <h4>Upload Map Data</h4>
             <p>Add GPX routes or points</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent activity -->
-      <div class="admin-table-card">
-        <h3>Recent Activity</h3>
-        <div class="activity-list">
-          <div class="activity-item">
-            <div class="activity-icon">✍️</div>
-            <div class="activity-body">
-              <strong>Blog post published</strong>
-              <span>"We Quit Our Jobs and We're Going to Japan"</span>
-            </div>
-            <div class="activity-time">Mar 4</div>
-          </div>
-          <div class="activity-item">
-            <div class="activity-icon">📷</div>
-            <div class="activity-body">
-              <strong>Photos uploaded</strong>
-              <span>3 photos — Storage unit, packed bags &amp; Håkull box</span>
-            </div>
-            <div class="activity-time">Mar 4</div>
-          </div>
-          <div class="activity-item">
-            <div class="activity-icon">🗺️</div>
-            <div class="activity-body">
-              <strong>Map routes loaded</strong>
-              <span>Routes and points live from Firebase</span>
-            </div>
-            <div class="activity-time">Live</div>
           </div>
         </div>
       </div>
@@ -658,6 +625,10 @@
             <label>Album</label>
             <input type="text" id="photo-edit-album" class="form-control" placeholder="e.g. Spain 2026">
           </div>
+          <div class="form-group">
+            <label>Date Taken</label>
+            <input type="date" id="photo-edit-date" class="form-control">
+          </div>
           <div style="display:flex;gap:.75rem;margin-top:1.25rem">
             <button class="btn btn-primary" id="photo-edit-save">💾 Save Changes</button>
             <button class="btn" id="photo-edit-cancel" style="background:var(--color-gray-200)">Cancel</button>
@@ -671,6 +642,23 @@
       <div class="admin-header">
         <h1>Gear 🎒</h1>
         <p>Edit the gear list for both riders. Changes are saved to Firebase.</p>
+      </div>
+
+      <!-- Bike Links -->
+      <div class="new-post-form" style="margin-bottom:1.5rem">
+        <h3 style="margin-bottom:1rem">🚲 Bike Links</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-500);margin-bottom:1rem">These links appear at the top of the Gear page. Paste the full URL to a product page, review, or spec sheet for each bike.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mika's Bike URL</label>
+            <input type="url" id="bike-link-mika" class="form-control" placeholder="https://…" />
+          </div>
+          <div class="form-group">
+            <label>Tom's Bike URL</label>
+            <input type="url" id="bike-link-tom" class="form-control" placeholder="https://…" />
+          </div>
+        </div>
+        <button class="btn btn-primary" id="bike-links-save-btn" onclick="saveBikeLinks()">💾 Save Bike Links</button>
       </div>
 
       <div class="admin-gear-bar" id="gearAdminBar" style="display:none">
@@ -799,38 +787,6 @@
             <tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--color-gray-500)">Loading subscribers…</td></tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- ── Settings ── -->
-    <div id="section-settings" class="admin-section" style="display:none">
-      <div class="admin-header">
-        <h1>Settings ⚙️</h1>
-        <p>Site configuration and Firebase setup.</p>
-      </div>
-      <div class="new-post-form">
-        <h3 style="margin-bottom:1.5rem">Site Settings</h3>
-        <div class="form-group">
-          <label>Site Name</label>
-          <input type="text" class="form-control" value="tomika.bike" />
-        </div>
-        <div class="form-group">
-          <label>Site Tagline</label>
-          <input type="text" class="form-control" value="A cycling adventure blog" />
-        </div>
-        <div class="form-group">
-          <label>Firebase Project ID</label>
-          <input type="text" class="form-control" placeholder="your-firebase-project-id" />
-        </div>
-        <div class="form-group">
-          <label>Firebase API Key</label>
-          <input type="text" class="form-control" placeholder="AIza..." />
-        </div>
-        <div class="form-group">
-          <label>Authorized Emails (one per line)</label>
-          <textarea class="form-control" rows="3" placeholder="admin1@gmail.com&#10;admin2@gmail.com"></textarea>
-        </div>
-        <button class="btn btn-primary" onclick="TomikaBikes.showToast('Settings saved! Firebase integration pending','success')">💾 Save Settings</button>
       </div>
     </div>
 
@@ -1330,6 +1286,15 @@ function _getAdminDb() {
     document.getElementById('photo-edit-caption').value = data.caption || '';
     document.getElementById('photo-edit-location').value = data.location || '';
     document.getElementById('photo-edit-album').value = data.album || '';
+    // Populate date field from takenAt (Firestore Timestamp) or uploadedAt as fallback
+    const dateEl = document.getElementById('photo-edit-date');
+    let dateVal = '';
+    if (data.takenAt && typeof data.takenAt.toDate === 'function') {
+      dateVal = data.takenAt.toDate().toISOString().slice(0, 10);
+    } else if (data.takenAt && data.takenAt.seconds) {
+      dateVal = new Date(data.takenAt.seconds * 1000).toISOString().slice(0, 10);
+    }
+    if (dateEl) dateEl.value = dateVal;
     document.getElementById('photo-edit-overlay').classList.add('open');
   }
 
@@ -1343,18 +1308,31 @@ function _getAdminDb() {
     const caption  = document.getElementById('photo-edit-caption').value.trim();
     const location = document.getElementById('photo-edit-location').value.trim();
     const album    = document.getElementById('photo-edit-album').value.trim().replace(/[^a-zA-Z0-9 _-]/g, '_');
+    const dateVal  = (document.getElementById('photo-edit-date') || {}).value || '';
     const saveBtn  = document.getElementById('photo-edit-save');
     saveBtn.disabled = true;
     saveBtn.textContent = '⏳ Saving…';
 
+    const updates = { caption, location, album };
+    if (dateVal) {
+      updates.takenAt = firebase.firestore.Timestamp.fromDate(new Date(dateVal));
+    } else {
+      updates.takenAt = firebase.firestore.FieldValue.delete();
+    }
+
     ensureReady()
-      .then(() => photosDb.collection('photos').doc(editDocId).update({ caption, location, album }))
+      .then(() => photosDb.collection('photos').doc(editDocId).update(updates))
       .then(() => {
         const idx = galleryDocs.findIndex(d => d.id === editDocId);
         if (idx >= 0) {
           galleryDocs[idx].data.caption  = caption;
           galleryDocs[idx].data.location = location;
           galleryDocs[idx].data.album    = album;
+          if (dateVal) {
+            galleryDocs[idx].data.takenAt = firebase.firestore.Timestamp.fromDate(new Date(dateVal));
+          } else {
+            delete galleryDocs[idx].data.takenAt;
+          }
         }
         closeEditModal();
         populateAlbumFilter();
@@ -1818,6 +1796,18 @@ const GearManagerAdmin = (function () {
   return {
     get _initialized() { return _initialized; },
     init,
+    loadBikeLinks: async function() {
+      try {
+        const doc = await _getAdminDb().collection('site_config').doc('gear').get();
+        if (doc.exists) {
+          const d = doc.data();
+          const mikaEl = document.getElementById('bike-link-mika');
+          const tomEl  = document.getElementById('bike-link-tom');
+          if (mikaEl) mikaEl.value = d.mikaBikeUrl || '';
+          if (tomEl)  tomEl.value  = d.tomBikeUrl  || '';
+        }
+      } catch (e) { /* non-critical */ }
+    },
     deleteCategory(catId) {
       _gearData = collectFromDOM();
       _gearData = _gearData.filter(c => c.id !== catId);
@@ -1922,16 +1912,48 @@ const GearManagerAdmin = (function () {
   }
 
   function expandShortUrl(shortUrl) {
-    return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(shortUrl))
-      .then(res => { if (!res.ok) throw new Error('Proxy failed'); return res.json(); })
-      .then(data => {
-        const finalUrl = data && data.status && data.status.url ? data.status.url : null;
-        if (finalUrl && /google\.com\/maps/.test(finalUrl) && finalUrl !== shortUrl) return finalUrl;
-        const html = data && data.contents ? data.contents : '';
-        const m = html.match(/https:\/\/www\.google\.com\/maps\/[^\s"'<>\\]+/);
-        if (m) return m[0].replace(/\\u003d/g,'=').replace(/\\u0026/g,'&');
-        throw new Error('Could not resolve URL');
-      });
+    // Try allorigins.win first, then corsproxy.io as fallback
+    function tryProxy(proxyUrl) {
+      return fetch(proxyUrl)
+        .then(res => { if (!res.ok) throw new Error('Proxy failed'); return res.json(); })
+        .then(data => {
+          const finalUrl = data && data.status && data.status.url ? data.status.url : null;
+          if (finalUrl && /google\.com\/maps/.test(finalUrl) && finalUrl !== shortUrl) return finalUrl;
+          const html = data && data.contents ? data.contents : '';
+          // Try several patterns used by Google Maps URLs
+          const patterns = [
+            /https:\/\/www\.google\.com\/maps\/[^\s"'<>\\]+/,
+            /https:\/\/maps\.google\.com\/[^\s"'<>\\]+/,
+          ];
+          for (const pat of patterns) {
+            const m = html.match(pat);
+            if (m) return m[0].replace(/\\u003d/g,'=').replace(/\\u0026/g,'&');
+          }
+          // Try to find coordinates embedded in the HTML (data attributes or JSON)
+          const coordInHtml = html.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+          if (coordInHtml) return 'https://www.google.com/maps/@' + coordInHtml[1] + ',' + coordInHtml[2] + ',15z';
+          const embedCoord = html.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+          if (embedCoord) return 'https://www.google.com/maps?q=' + embedCoord[1] + ',' + embedCoord[2];
+          throw new Error('Could not resolve URL from proxy response');
+        });
+    }
+
+    const allOriginsUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(shortUrl);
+    return tryProxy(allOriginsUrl).catch(() => {
+      // Fallback: corsproxy.io returns the raw response, not JSON — handle differently
+      return fetch('https://corsproxy.io/?' + encodeURIComponent(shortUrl), { redirect: 'follow' })
+        .then(res => {
+          const finalUrl = res.url;
+          if (finalUrl && /google\.com\/maps/.test(finalUrl) && finalUrl !== shortUrl) return finalUrl;
+          return res.text().then(html => {
+            const m = html.match(/https:\/\/www\.google\.com\/maps\/[^\s"'<>\\]+/);
+            if (m) return m[0].replace(/\\u003d/g,'=').replace(/\\u0026/g,'&');
+            const coordInHtml = html.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+            if (coordInHtml) return 'https://www.google.com/maps/@' + coordInHtml[1] + ',' + coordInHtml[2] + ',15z';
+            throw new Error('Could not resolve URL');
+          });
+        });
+    });
   }
 
   // ── GPX wiring
@@ -2158,9 +2180,17 @@ async function adminSubscribersLoad() {
   tbody.innerHTML = '<tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--color-gray-500)">Loading…</td></tr>';
   try {
     const db   = await _adminSubsEnsureDb();
-    const snap = await db.collection('subscribers').orderBy('subscribedAt', 'desc').get();
+    // Try ordered query first; fall back to unordered if index is missing
+    let snap;
+    try {
+      snap = await db.collection('subscribers').orderBy('subscribedAt', 'desc').get();
+    } catch (e) {
+      snap = await db.collection('subscribers').get();
+    }
     const rows = [];
     snap.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
+    // Sort client-side in case we fell back to unordered query
+    rows.sort((a, b) => (b.subscribedAt || '').localeCompare(a.subscribedAt || ''));
 
     const dashEl = document.getElementById('dash-subscriber-count');
     if (dashEl) dashEl.textContent = rows.length;
@@ -2244,6 +2274,36 @@ document.addEventListener('DOMContentLoaded', () => {
   adminDashLoadCounts();
   // Also load blog posts list lazily
 });
+</script>
+
+<script>
+// ── Bike Links Admin ──────────────────────────────────────────
+async function saveBikeLinks() {
+  const mikaUrl = (document.getElementById('bike-link-mika') || {}).value || '';
+  const tomUrl  = (document.getElementById('bike-link-tom')  || {}).value || '';
+  const btn = document.getElementById('bike-links-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
+  try {
+    await _getAdminDb().collection('site_config').doc('gear').set(
+      { mikaBikeUrl: mikaUrl.trim(), tomBikeUrl: tomUrl.trim() },
+      { merge: true }
+    );
+    TomikaBikes.showToast('Bike links saved!', 'success');
+  } catch (e) {
+    TomikaBikes.showToast('Save failed: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save Bike Links'; }
+  }
+}
+
+// Load bike links when gear section is shown
+const _origShowSectionForGear = window.showSection;
+window.showSection = function (name, linkEl) {
+  _origShowSectionForGear(name, linkEl);
+  if (name === 'gear' && typeof GearManagerAdmin !== 'undefined') {
+    GearManagerAdmin.loadBikeLinks();
+  }
+};
 </script>
 </body>
 </html>
