@@ -763,49 +763,30 @@
 <section class="section">
   <div class="container">
 
-    <!-- Blog Main + Sidebar -->
-    <div class="blog-grid">
-      <div class="blog-main" id="postList">
+    <!-- Blog Posts -->
+    <div id="postList">
 
-        <!-- POST 1: We Quit & Going to Japan -->
-        <article class="blog-post-card" id="post-japan-1" data-cat="japan">
-          <div class="blog-post-img" style="height:200px;background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem">🇯🇵</div>
-          <div class="blog-post-body" style="padding:1.5rem">
-            <div class="post-meta-row">
-              <div class="author-chip">
-                <div class="author-avatar" style="background:var(--color-secondary)">T</div>
-                <span>Tomika &amp; Tom</span>
-              </div>
-              <span class="post-date">March 4, 2026</span>
-              <span class="read-time">5 min read</span>
+      <!-- POST 1: We Quit & Going to Japan -->
+      <article class="blog-post-card" id="post-japan-1" data-cat="japan">
+        <div class="blog-post-img" style="height:200px;background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem">🇯🇵</div>
+        <div class="blog-post-body" style="padding:1.5rem">
+          <div class="post-meta-row">
+            <div class="author-chip">
+              <div class="author-avatar" style="background:var(--color-secondary)">T</div>
+              <span>Tomika &amp; Tom</span>
             </div>
-
-            <h2>We Quit Our Jobs and We're Going to Japan</h2>
-
-            <p>Here's the short version: we handed in our notices, spent three frantic months building our bikes, buying gear, and trying not to think too hard about what we were doing — and tomorrow morning we fly to Tokyo.</p>
-
-            <a href="japan/we-quit-our-jobs.html" class="btn btn-primary" style="margin-top:.5rem">Read Full Post →</a>
+            <span class="post-date">March 4, 2026</span>
+            <span class="read-time">5 min read</span>
           </div>
-        </article>
 
-      </div>
+          <h2>We Quit Our Jobs and We're Going to Japan</h2>
 
-      <!-- Sidebar -->
-      <div class="blog-sidebar">
-        <div class="sidebar-widget">
-          <h3>About the Blog</h3>
-          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
-            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--color-secondary),var(--color-accent));display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🚴</div>
-            <p style="font-size:.875rem;color:var(--color-gray-600);margin:0">Two cyclists. Japan to Norway. Documenting every beautiful, difficult, and hilarious moment.</p>
-          </div>
+          <p>Here's the short version: we handed in our notices, spent three frantic months building our bikes, buying gear, and trying not to think too hard about what we were doing — and tomorrow morning we fly to Tokyo.</p>
+
+          <a href="japan/we-quit-our-jobs.html" class="btn btn-primary" style="margin-top:.5rem">Read Full Post →</a>
         </div>
+      </article>
 
-        <div class="sidebar-widget">
-          <h3>Newsletter</h3>
-          <p style="font-size:.875rem;color:var(--color-gray-600);margin-bottom:1rem">Get updates from the road.</p>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
-        </div>
-      </div>
     </div>
 
     <!-- Show More blogs button -->
@@ -848,11 +829,6 @@
       <p>Drag &amp; drop photos here, or click to browse.</p>
     </div>
 
-    <!-- Gallery Filters (populated dynamically) -->
-    <div class="gallery-filters" id="gallery-filters">
-      <button class="filter-btn active" data-gcat="all">🌍 All Photos</button>
-    </div>
-
     <!-- Loading state -->
     <div id="gallery-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
       <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
@@ -864,7 +840,7 @@
 
     <!-- Show More photos button -->
     <div id="photos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
-      <button id="photos-show-more-btn" class="btn btn-outline" onclick="photosShowMore()">Show More ↓</button>
+      <button id="photos-show-more-btn" class="btn btn-primary" onclick="photosShowMore()">Show More ↓</button>
     </div>
 
     <!-- Empty state (shown when Firestore returns 0 photos) -->
@@ -2339,18 +2315,12 @@ function toggleCheck(el) {
 
   function setFilter(cat) {
     currentCat = cat;
-    document.querySelectorAll('#gallery-filters .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.gcat === cat));
     // Reset pagination and re-render from allDocs for new filter
     const grid = document.getElementById('gallery');
     if (grid) grid.innerHTML = '';
     shownPhotos = 0;
     appendPhotos(PHOTOS_PAGE);
   }
-
-  document.getElementById('gallery-filters').addEventListener('click', e => {
-    const btn = e.target.closest('.filter-btn');
-    if (btn) setFilter(btn.dataset.gcat);
-  });
 
   // ── Slugify album name for data-gcat attribute
   function slugify(str) {
@@ -2375,7 +2345,6 @@ function toggleCheck(el) {
     const grid      = document.getElementById('gallery');
     const loading   = document.getElementById('gallery-loading');
     const empty     = document.getElementById('gallery-empty');
-    const filters   = document.getElementById('gallery-filters');
     const countEl   = document.getElementById('photo-count');
     const albumsEl  = document.getElementById('album-count');
 
@@ -2391,15 +2360,8 @@ function toggleCheck(el) {
     // Sort newest first by takenAt, falling back to uploadedAt
     allDocs = docs.slice().sort((a, b) => docTimestamp(b) - docTimestamp(a));
 
-    // Build album list and inject filter buttons
+    // Build album list for count display
     const albums = [...new Set(allDocs.map(d => d.album).filter(Boolean))].sort();
-    albums.forEach(album => {
-      const btn = document.createElement('button');
-      btn.className = 'filter-btn';
-      btn.dataset.gcat = slugify(album);
-      btn.textContent = '📁 ' + album;
-      filters.appendChild(btn);
-    });
 
     countEl.textContent  = allDocs.length;
     albumsEl.textContent = albums.length;

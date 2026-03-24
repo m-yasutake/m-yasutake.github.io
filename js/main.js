@@ -162,10 +162,16 @@ let _authListenerSet = false;
 
 function ensureFirebaseAuth() {
   const needsApp = typeof firebase === 'undefined';
-  const chain = needsApp
-    ? loadScript('https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION + '/firebase-app-compat.js')
-        .then(() => loadScript('assets/js/firebase-config.js'))
-    : Promise.resolve();
+  const needsConfig = typeof FIREBASE_CONFIG === 'undefined';
+  let chain;
+  if (needsApp) {
+    chain = loadScript('https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION + '/firebase-app-compat.js')
+      .then(() => loadScript('assets/js/firebase-config.js'));
+  } else if (needsConfig) {
+    chain = loadScript('assets/js/firebase-config.js');
+  } else {
+    chain = Promise.resolve();
+  }
   return chain
     .then(() => loadScript('https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION + '/firebase-auth-compat.js'))
     .then(() => {
