@@ -74,8 +74,8 @@
 
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="japan.html">🇯🇵 Japan</a></li>
-      <li><a href="norway.html">🇳🇴 Norway</a></li>
+      <li><a href="japan.html">Japan</a></li>
+      <li><a href="norway.html">Norway</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -92,12 +92,12 @@
 
 <!-- Mobile Menu -->
 <div class="mobile-menu">
-  <a href="index.html">🏠 Home</a>
-  <a href="japan.html">🇯🇵 Japan</a>
-  <a href="norway.html">🇳🇴 Norway</a>
-  <a href="gear.html">🎒 Gear</a>
-  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
-  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
+  <a href="index.html">Home</a>
+  <a href="japan.html">Japan</a>
+  <a href="norway.html">Norway</a>
+  <a href="gear.html">Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none">Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">Subscribe to Updates</button>
 </div>
 
 <!-- Auth Modal -->
@@ -153,8 +153,8 @@
       to the Arctic coast, this is our story.
     </p>
     <div class="hero-actions">
-      <a href="japan.html" class="btn btn-primary">🇯🇵 Japan</a>
-      <a href="norway.html" class="btn btn-outline">🇳🇴 Norway</a>
+      <a href="japan.html" class="btn btn-primary">Japan</a>
+      <a href="norway.html" class="btn btn-outline">Norway</a>
     </div>
   </div>
   <div class="hero-scroll">
@@ -221,20 +221,7 @@
       <h2>Latest Adventures</h2>
       <div class="divider"></div>
     </div>
-    <div class="grid-3">
-      <article class="card">
-        <div class="card-img" style="background:linear-gradient(135deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:4rem;">🇯🇵</div>
-        <div class="card-body">
-          <h3 class="card-title">We Quit Our Jobs and We're Going to Japan</h3>
-          <p class="card-text">Bikes built, bags packed, flights booked. We leave tomorrow and we can barely contain ourselves.</p>
-        </div>
-        <div class="card-footer">
-          <span>Mar 2026</span>
-          <a href="japan/we-quit-our-jobs.html" style="color:var(--color-secondary);font-weight:600">Read →</a>
-        </div>
-      </article>
-
-
+    <div class="grid-3" id="index-post-list">
     </div>
   </div>
 </section>
@@ -376,6 +363,58 @@
 
   // ── Countries (fixed at 1 for now) ────────────────────────
   // Already set in HTML as "1"
+
+  // ── Firebase: Latest blog posts ────────────────────────────────────────────
+  (function loadLatestPosts() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      var db = firebase.firestore();
+      function esc(str) {
+        var d = document.createElement('div');
+        d.textContent = String(str == null ? '' : str);
+        return d.innerHTML;
+      }
+      function fmtMonthYear(s) {
+        if (!s) return '';
+        var d = new Date(s + 'T00:00:00');
+        return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      }
+      var GRADIENTS = [
+        'linear-gradient(160deg,#2c3e50,#3498db)',
+        'linear-gradient(160deg,#1a2a1a,#27ae60)',
+        'linear-gradient(160deg,#4a1a4a,#8e44ad)'
+      ];
+      db.collection('blog_posts').where('status', '==', 'published').get()
+        .then(function (snap) {
+          var docs = [];
+          snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
+          docs.sort(function (a, b) { return (b.data.date || '').localeCompare(a.data.date || ''); });
+          docs = docs.slice(0, 3);
+          var grid = document.getElementById('index-post-list');
+          if (!grid) return;
+          grid.innerHTML = '';
+          docs.forEach(function (p, i) {
+            var d = p.data;
+            var card = document.createElement('article');
+            card.className = 'card';
+            card.innerHTML =
+              '<div class="card-img" style="background:' + GRADIENTS[i % GRADIENTS.length] + ';display:flex;align-items:center;justify-content:center;font-size:4rem">' +
+                esc(d.emoji || '\u270d\ufe0f') +
+              '</div>' +
+              '<div class="card-body">' +
+                '<h3 class="card-title">' + esc(d.title || '') + '</h3>' +
+                (d.excerpt ? '<p class="card-text">' + esc(d.excerpt) + '</p>' : '') +
+              '</div>' +
+              '<div class="card-footer">' +
+                '<span>' + esc(fmtMonthYear(d.date)) + '</span>' +
+                '<a href="post.html?id=' + encodeURIComponent(p.id) + '">Read \u2192</a>' +
+              '</div>';
+            grid.appendChild(card);
+          });
+        })
+        .catch(function () {});
+    } catch (e) {}
+  })();
 
   // ── Firebase: Sploops + Grouse Grinds from owner's Strava routes ──────────
   (function loadStats() {

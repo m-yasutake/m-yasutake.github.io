@@ -571,14 +571,7 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>We Quit Our Jobs and We're Going to Japan</td>
-              <td>Mika &amp; Tom</td>
-              <td>Japan</td>
-              <td><span class="status-badge status-published">Published</span></td>
-              <td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="showSection('posts',document.querySelector('.admin-nav a[onclick*=posts]'));adminBlogEditStatic()">Edit</button></td>
-            </tr>
+          <tbody id="dash-posts-tbody">
           </tbody>
         </table>
       </div>
@@ -1534,23 +1527,6 @@ let adminBlogPosts = []; // { id, data }
 let adminBlogDb = null;
 const BLOG_COLLECTION = 'blog_posts';
 
-// Built-in static post (from blog.html)
-const BLOG_STATIC_POST = {
-  id: 'static-japan-1',
-  data: {
-    title: "We Quit Our Jobs and We're Going to Japan",
-    author: 'Mika & Tom',
-    date: '2026-03-04',
-    category: 'japan',
-    status: 'published',
-    emoji: '🇯🇵',
-    tags: 'japan, cycling, touring',
-    excerpt: 'We handed in our notices and tomorrow morning we fly to Tokyo. Here\'s the story of how a joke became a spreadsheet became an extremely real plane ticket.',
-    content: '',
-    source: 'static'  // indicates it lives in blog.html
-  }
-};
-
 async function adminBlogEnsureDb() {
   if (adminBlogDb) return;
   await window.TomikaBikes.ensureFirebaseAuth();
@@ -1564,10 +1540,10 @@ async function adminBlogLoadPosts() {
   try {
     await adminBlogEnsureDb();
     const snap = await adminBlogDb.collection(BLOG_COLLECTION).orderBy('date', 'desc').get();
-    adminBlogPosts = [BLOG_STATIC_POST];
+    adminBlogPosts = [];
     snap.forEach(doc => adminBlogPosts.push({ id: doc.id, data: doc.data() }));
   } catch (e) {
-    adminBlogPosts = [BLOG_STATIC_POST];
+    adminBlogPosts = [];
   }
   adminBlogRenderList();
 }
@@ -1641,13 +1617,8 @@ function adminBlogEditPost(id) {
   document.getElementById('blog-tags').value = d.tags || '';
   document.getElementById('blog-excerpt').value = d.excerpt || '';
   document.getElementById('blog-content').value = d.content || '';
-  document.getElementById('blog-delete-btn').style.display = (id === BLOG_STATIC_POST.id) ? 'none' : '';
+  document.getElementById('blog-delete-btn').style.display = id ? '' : 'none';
   document.getElementById('blog-editor-save-status').textContent = '';
-}
-
-function adminBlogEditStatic() {
-  adminBlogShowList();
-  setTimeout(() => adminBlogEditPost(BLOG_STATIC_POST.id), 0);
 }
 
 async function adminBlogSave(asDraft) {
@@ -1667,15 +1638,6 @@ async function adminBlogSave(asDraft) {
     updatedAt: new Date().toISOString()
   };
   if (!data.title) { TomikaBikes.showToast('Please enter a post title', 'error'); return; }
-  if (id === BLOG_STATIC_POST.id) {
-    // Static post — update in-memory only and show note
-    BLOG_STATIC_POST.data = { ...BLOG_STATIC_POST.data, ...data, source: 'static' };
-    const idx = adminBlogPosts.findIndex(p => p.id === BLOG_STATIC_POST.id);
-    if (idx >= 0) adminBlogPosts[idx].data = BLOG_STATIC_POST.data;
-    statusEl.textContent = '✓ Updated in preview (blog.html stores this post as static HTML)';
-    TomikaBikes.showToast('Preview updated. To publish edits, update blog.html directly.', 'info');
-    return;
-  }
   statusEl.textContent = 'Saving…';
   try {
     await adminBlogEnsureDb();
@@ -1700,7 +1662,7 @@ async function adminBlogSave(asDraft) {
 
 async function adminBlogDelete() {
   const id = document.getElementById('blog-post-id').value;
-  if (!id || id === BLOG_STATIC_POST.id) return;
+  if (!id) return;
   if (!confirm('Delete this post? This cannot be undone.')) return;
   try {
     await adminBlogEnsureDb();
@@ -1719,8 +1681,8 @@ async function adminBlogPreview() {
   if (!title) { TomikaBikes.showToast('Please enter a post title before previewing', 'error'); return; }
   await adminBlogSave(false);
   const id = document.getElementById('blog-post-id').value;
-  if (!id || id === BLOG_STATIC_POST.id) {
-    TomikaBikes.showToast('Preview is not available for static posts', 'info');
+  if (!id) {
+    TomikaBikes.showToast('Save the post first before previewing', 'info');
     return;
   }
   window.open('post.html?id=' + encodeURIComponent(id), '_blank');
@@ -2554,6 +2516,39 @@ function adminDashLoadCounts() {
       .catch(() => {});
     db.collection('subscribers').limit(1000).get()
       .then(s => { const el = document.getElementById('dash-subscriber-count'); if (el) el.textContent = s.size; })
+      .catch(() => {});
+    // Populate the dashboard posts table
+    db.collection('blog_posts').orderBy('date', 'desc').limit(20).get()
+      .then(snap => {
+        const tbody = document.getElementById('dash-posts-tbody');
+        if (!tbody) return;
+        if (snap.empty) {
+          tbody.innerHTML = '<tr><td colspan="5" style="color:var(--color-gray-500);padding:.75rem 1rem">No posts yet.</td></tr>';
+          const statEl = document.querySelector('.admin-stat-card .stat-value');
+          if (statEl && statEl.closest('.admin-stat-card').querySelector('.stat-label')?.textContent === 'Blog Posts') statEl.textContent = 0;
+          return;
+        }
+        const rows = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          const badgeCls = d.status === 'published' ? 'status-published' : 'status-draft';
+          const badgeTxt = d.status === 'published' ? 'Published' : 'Draft';
+          rows.push('<tr>' +
+            '<td>' + escHtml(d.title || 'Untitled') + '</td>' +
+            '<td>' + escHtml(d.author || '') + '</td>' +
+            '<td>' + escHtml(d.category || '') + '</td>' +
+            '<td><span class="status-badge ' + badgeCls + '">' + badgeTxt + '</span></td>' +
+            '<td><button class="btn" style="padding:.3rem .75rem;font-size:.75rem" onclick="showSection(\'posts\',document.querySelector(\'.admin-nav a[onclick*=posts]\'));adminBlogLoadPosts()">Edit</button></td>' +
+          '</tr>');
+        });
+        tbody.innerHTML = rows.join('');
+        // Update the stat counter
+        document.querySelectorAll('.admin-stat-card').forEach(card => {
+          if (card.querySelector('.stat-label')?.textContent === 'Blog Posts') {
+            card.querySelector('.stat-value').textContent = snap.size;
+          }
+        });
+      })
       .catch(() => {});
   } catch (e) { /* Firebase not ready */ }
 }
