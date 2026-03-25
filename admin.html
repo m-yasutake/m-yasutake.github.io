@@ -262,6 +262,60 @@
   .mapdata-upload-block .upload-drop.drag-over { border-color: var(--color-secondary); background: rgba(91,140,107,.04); }
   .mapdata-upload-status { font-size: .82rem; margin-top: .5rem; color: var(--color-secondary); min-height: 1.2em; }
 
+  /* ── Blog content formatting toolbar ─────────────────── */
+  .fmt-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    padding: .4rem .5rem;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-300);
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .fmt-toolbar .fmt-sep {
+    width: 1px;
+    background: var(--color-gray-300);
+    margin: .15rem .1rem;
+    align-self: stretch;
+  }
+  .fmt-toolbar button {
+    padding: .2rem .5rem;
+    font-size: .78rem;
+    font-weight: 600;
+    line-height: 1.4;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background .15s;
+    min-width: 2rem;
+    text-align: center;
+  }
+  .fmt-toolbar button:hover { background: var(--color-gray-200); }
+  .fmt-toolbar button[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    font-size: .7rem;
+    padding: .2rem .45rem;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .fmt-toolbar button { position: relative; }
+  /* Remove top radius from textarea when toolbar is above it */
+  .fmt-toolbar + textarea.form-control {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
   /* ── Photo picker modal ──────────────────────────────── */
   .photo-picker-overlay {
     display: none;
@@ -658,6 +712,35 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
               <label style="margin:0">Content <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
               <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openPhotoPicker()">📷 Insert Photo</button>
+            </div>
+            <div class="fmt-toolbar" id="blog-fmt-toolbar">
+              <!-- Block elements -->
+              <button onclick="blogFmt('p')" title="Paragraph">¶&nbsp;P</button>
+              <button onclick="blogFmt('h2')" title="Heading 2">H2</button>
+              <button onclick="blogFmt('h3')" title="Heading 3">H3</button>
+              <div class="fmt-sep"></div>
+              <!-- Inline -->
+              <button onclick="blogFmt('strong')" title="Bold"><strong>B</strong></button>
+              <button onclick="blogFmt('em')" title="Italic"><em>I</em></button>
+              <button onclick="blogFmt('u')" title="Underline"><u>U</u></button>
+              <button onclick="blogFmt('mark')" title="Highlight">&#x2FFF;&#xFE0F;</button>
+              <div class="fmt-sep"></div>
+              <!-- Link -->
+              <button onclick="blogFmt('a')" title="Link">🔗</button>
+              <div class="fmt-sep"></div>
+              <!-- Lists -->
+              <button onclick="blogFmt('ul')" title="Bullet list">• List</button>
+              <button onclick="blogFmt('ol')" title="Numbered list">1. List</button>
+              <button onclick="blogFmt('li')" title="List item">• Item</button>
+              <div class="fmt-sep"></div>
+              <!-- Other blocks -->
+              <button onclick="blogFmt('blockquote')" title="Blockquote">&ldquo;&rdquo;</button>
+              <button onclick="blogFmt('code')" title="Inline code">&lt;&gt;</button>
+              <button onclick="blogFmt('pre')" title="Code block">pre</button>
+              <div class="fmt-sep"></div>
+              <!-- Void elements -->
+              <button onclick="blogFmt('hr')" title="Horizontal rule">&mdash;</button>
+              <button onclick="blogFmt('br')" title="Line break">&#x21B5;</button>
             </div>
             <textarea id="blog-content" class="form-control" rows="16" placeholder="Write your post here…&#10;&#10;You can use basic HTML: &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a href=&quot;…&quot;&gt;, &lt;img src=&quot;…&quot;&gt;"></textarea>
           </div>
@@ -1690,6 +1773,58 @@ async function adminBlogPreview() {
 
 // Set default date on new post on page load
 document.getElementById('blog-date').value = new Date().toISOString().slice(0, 10);
+</script>
+
+<script>
+// ── Blog content formatting toolbar ────────────────────────────────────────
+function blogFmt(tag) {
+  var ta = document.getElementById('blog-content');
+  ta.focus();
+  var start = ta.selectionStart;
+  var end   = ta.selectionEnd;
+  var sel   = ta.value.substring(start, end);
+  var before = ta.value.substring(0, start);
+  var after  = ta.value.substring(end);
+  var insert = '';
+  var cursorOffset = 0;
+
+  if (tag === 'hr') {
+    insert = '\n<hr>\n';
+    cursorOffset = insert.length;
+  } else if (tag === 'br') {
+    insert = '<br>\n';
+    cursorOffset = insert.length;
+  } else if (tag === 'a') {
+    var url = prompt('Enter URL:', 'https://');
+    if (!url) { ta.focus(); return; }
+    var linkText = sel || 'Link text';
+    insert = '<a href="' + url + '">' + linkText + '</a>';
+    cursorOffset = insert.length;
+  } else if (tag === 'ul') {
+    var items = sel ? sel.split('\n') : ['Item 1', 'Item 2'];
+    insert = '<ul>\n' + items.map(function(l){ return '  <li>' + (l.trim() || 'Item') + '</li>'; }).join('\n') + '\n</ul>';
+    cursorOffset = insert.length;
+  } else if (tag === 'ol') {
+    var items = sel ? sel.split('\n') : ['Item 1', 'Item 2'];
+    insert = '<ol>\n' + items.map(function(l){ return '  <li>' + (l.trim() || 'Item') + '</li>'; }).join('\n') + '\n</ol>';
+    cursorOffset = insert.length;
+  } else if (tag === 'pre') {
+    var code = sel || 'code here';
+    insert = '<pre><code>' + code + '</code></pre>';
+    cursorOffset = sel ? insert.length : '<pre><code>'.length;
+  } else {
+    var open  = '<' + tag + '>';
+    var close = '</' + tag + '>';
+    var defaults = { p: 'Paragraph text.', h2: 'Heading', h3: 'Sub-heading' };
+    var inner = sel || defaults[tag] || 'text';
+    insert = open + inner + close;
+    cursorOffset = sel ? insert.length : open.length;
+  }
+
+  ta.value = before + insert + after;
+  ta.selectionStart = ta.selectionEnd = start + cursorOffset;
+  ta.focus();
+}
 </script>
 
 <script>
