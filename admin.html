@@ -454,6 +454,199 @@
   .admin-gear-bar .gear-admin-btn.save { background: var(--color-primary); color: #fff; }
   .admin-gear-bar .gear-admin-btn.cancel { background: var(--color-gray-300); color: var(--color-gray-800); }
 
+  /* ── Email composer ──────────────────────────────────── */
+  .email-composer-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-top: 1.5rem;
+  }
+  .email-composer-card h3 {
+    font-size: 1.05rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .email-audience-pills {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .email-audience-pill {
+    padding: .3rem .85rem;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-gray-300);
+    font-size: .82rem;
+    cursor: pointer;
+    background: transparent;
+    color: var(--color-gray-700);
+    font-family: var(--font-body);
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .email-audience-pill.active {
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: #fff;
+    font-weight: 600;
+  }
+  .email-recipient-summary {
+    font-size: .8rem;
+    color: var(--color-gray-600);
+    margin-bottom: 1rem;
+  }
+  .email-fmt-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .2rem;
+    align-items: center;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    padding: .35rem .5rem;
+  }
+  .email-fmt-toolbar .fmt-sep {
+    width: 1px;
+    background: var(--color-gray-300);
+    margin: .15rem .1rem;
+    align-self: stretch;
+  }
+  .email-fmt-toolbar button {
+    padding: .2rem .5rem;
+    font-size: .78rem;
+    font-weight: 600;
+    line-height: 1.4;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--color-dark);
+    cursor: pointer;
+    transition: background .15s;
+    min-width: 2rem;
+    text-align: center;
+  }
+  .email-fmt-toolbar button:hover { background: var(--color-gray-200); }
+  .email-fmt-toolbar + textarea.form-control {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  /* ── Email preview modal ─────────────────────────────── */
+  .email-preview-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 4500;
+    padding: 1rem;
+  }
+  .email-preview-overlay.open { display: flex; }
+  .email-preview-modal {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+  }
+  .email-preview-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+  .email-preview-header h3 { margin: 0; flex: 1; font-size: 1rem; }
+  .email-preview-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.25rem; color: var(--color-gray-500); line-height: 1;
+  }
+  .email-preview-close:hover { color: var(--color-dark); }
+  .email-preview-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--color-gray-200);
+    flex-shrink: 0;
+  }
+  .email-preview-tab {
+    padding: .65rem 1.25rem;
+    font-size: .85rem;
+    font-family: var(--font-body);
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--color-gray-600);
+    border-bottom: 2.5px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .email-preview-tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-secondary);
+    font-weight: 600;
+  }
+  .email-preview-body {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+  .email-preview-panel {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+  }
+  .email-preview-panel.active { display: block; }
+  .email-preview-panel iframe {
+    width: 100%;
+    height: calc(90vh - 200px);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    background: #fff;
+  }
+  .email-preview-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--color-gray-200);
+    display: flex;
+    gap: .75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .email-recipients-textarea {
+    width: 100%;
+    height: 100px;
+    font-size: .82rem;
+    font-family: var(--font-mono);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    padding: .65rem .85rem;
+    resize: vertical;
+    color: var(--color-gray-800);
+    background: var(--color-gray-100);
+  }
+  .email-html-textarea {
+    width: 100%;
+    height: 280px;
+    font-size: .75rem;
+    font-family: var(--font-mono);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    padding: .65rem .85rem;
+    resize: vertical;
+    color: var(--color-gray-800);
+    background: var(--color-gray-100);
+  }
+
   </style>
 </head>
 <body>
@@ -979,9 +1172,103 @@
           </tbody>
         </table>
       </div>
+
+      <!-- ── Email Composer ── -->
+      <div class="email-composer-card">
+        <h3>✉️ Compose Newsletter</h3>
+
+        <!-- Audience -->
+        <div style="margin-bottom:.5rem">
+          <label style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-gray-600)">Send to</label>
+        </div>
+        <div class="email-audience-pills">
+          <button class="email-audience-pill active" data-audience="all" onclick="emailSetAudience('all',this)">📬 All subscribers</button>
+          <button class="email-audience-pill" data-audience="blog" onclick="emailSetAudience('blog',this)">✍️ Blog subscribers</button>
+          <button class="email-audience-pill" data-audience="photos" onclick="emailSetAudience('photos',this)">📷 Photo subscribers</button>
+        </div>
+        <div class="email-recipient-summary" id="email-recipient-summary">Load subscribers above to see recipient count.</div>
+
+        <!-- Subject -->
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Subject line</label>
+          <input type="text" id="email-subject" class="form-control" placeholder="🚴 New update from tomika.bike!" />
+        </div>
+
+        <!-- Preheader -->
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Preheader <span style="font-weight:400;color:var(--color-gray-500)">(short preview text shown in inbox)</span></label>
+          <input type="text" id="email-preheader" class="form-control" placeholder="A short teaser shown below the subject in most email clients…" />
+        </div>
+
+        <!-- Body -->
+        <div class="form-group">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
+            <label style="margin:0">Body <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
+            <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openEmailPhotoPicker()">📷 Insert Photo</button>
+          </div>
+          <div class="email-fmt-toolbar" id="email-fmt-toolbar">
+            <button onclick="emailFmt('p')" title="Paragraph">¶&nbsp;P</button>
+            <button onclick="emailFmt('h2')" title="Heading 2">H2</button>
+            <button onclick="emailFmt('h3')" title="Heading 3">H3</button>
+            <div class="fmt-sep"></div>
+            <button onclick="emailFmt('strong')" title="Bold"><strong>B</strong></button>
+            <button onclick="emailFmt('em')" title="Italic"><em>I</em></button>
+            <button onclick="emailFmt('u')" title="Underline"><u>U</u></button>
+            <div class="fmt-sep"></div>
+            <button onclick="emailFmt('a')" title="Link">🔗</button>
+            <div class="fmt-sep"></div>
+            <button onclick="emailFmt('ul')" title="Bullet list">• List</button>
+            <button onclick="emailFmt('ol')" title="Numbered list">1. List</button>
+            <div class="fmt-sep"></div>
+            <button onclick="emailFmt('hr')" title="Horizontal rule">&mdash;</button>
+            <button onclick="emailFmt('br')" title="Line break">&#x21B5;</button>
+          </div>
+          <textarea id="email-body" class="form-control" rows="14" placeholder="Write your newsletter here…&#10;&#10;Use the toolbar above to format text, or type basic HTML like &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;a href=&quot;…&quot;&gt;, &lt;img src=&quot;…&quot;&gt;"></textarea>
+        </div>
+
+        <div style="display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="adminEmailPreview()">👁 Preview &amp; Prepare</button>
+          <button class="btn" style="background:var(--color-gray-200)" onclick="adminEmailClear()">🗑 Clear</button>
+        </div>
+      </div>
     </div>
 
   </main>
+</div>
+
+<!-- Email preview / prepare modal -->
+<div class="email-preview-overlay" id="email-preview-overlay">
+  <div class="email-preview-modal">
+    <div class="email-preview-header">
+      <h3>✉️ Preview &amp; Prepare Email</h3>
+      <button class="email-preview-close" onclick="closeEmailPreview()">✕</button>
+    </div>
+    <div class="email-preview-tabs">
+      <button class="email-preview-tab active" id="epTab-preview" onclick="emailPreviewSwitchTab('preview')">👁 Preview</button>
+      <button class="email-preview-tab" id="epTab-html" onclick="emailPreviewSwitchTab('html')">📋 HTML Source</button>
+      <button class="email-preview-tab" id="epTab-recipients" onclick="emailPreviewSwitchTab('recipients')">📬 Recipients</button>
+    </div>
+    <div class="email-preview-body">
+      <div class="email-preview-panel active" id="epPanel-preview">
+        <p style="font-size:.8rem;color:var(--color-gray-500);margin-bottom:.75rem">This is how your email will look. Paste the HTML into Gmail's compose window using the instructions on the <strong>HTML Source</strong> tab.</p>
+        <iframe id="email-preview-iframe" title="Email preview" sandbox=""></iframe>
+      </div>
+      <div class="email-preview-panel" id="epPanel-html">
+        <p style="font-size:.8rem;color:var(--color-gray-500);margin-bottom:.75rem">Copy the HTML below, then in Gmail compose click the <strong>⋮ More options → Insert HTML</strong> (or use a browser extension like <em>Markdown Here</em> / <em>Gmail HTML</em>) to paste it.</p>
+        <textarea class="email-html-textarea" id="email-html-output" readonly></textarea>
+      </div>
+      <div class="email-preview-panel" id="epPanel-recipients">
+        <p style="font-size:.8rem;color:var(--color-gray-500);margin-bottom:.75rem">Copy these addresses and paste them into the <strong>BCC</strong> field in Gmail so recipients can't see each other's addresses.</p>
+        <textarea class="email-recipients-textarea" id="email-recipients-output" readonly></textarea>
+        <p style="font-size:.75rem;color:var(--color-gray-500);margin-top:.6rem" id="email-recipients-count"></p>
+      </div>
+    </div>
+    <div class="email-preview-footer">
+      <button class="btn btn-primary" id="ep-copy-btn" onclick="emailCopyActive()">📋 Copy</button>
+      <button class="btn" style="background:var(--color-gray-200)" onclick="closeEmailPreview()">Close</button>
+      <a id="ep-gmail-link" href="#" target="_blank" rel="noopener" class="btn" style="background:#ea4335;color:#fff;text-decoration:none;margin-left:auto" title="Open Gmail compose with subject pre-filled">📧 Open in Gmail</a>
+    </div>
+  </div>
 </div>
 
 <!-- Photo picker modal -->
@@ -1928,14 +2215,16 @@ function blogFmt(tag) {
       ).join('\n');
     }
 
-    // Insert at cursor position in the content textarea
-    const ta    = document.getElementById('blog-content');
+    // Insert at cursor position in the target textarea (blog-content by default, or email-body)
+    const ta    = window._ppTargetTextarea ? document.getElementById(window._ppTargetTextarea) : document.getElementById('blog-content');
+    if (!ta) { closePhotoPicker(); window._ppTargetTextarea = null; return; }
     const start = ta.selectionStart;
     const end   = ta.selectionEnd;
     ta.value    = ta.value.slice(0, start) + html + ta.value.slice(end);
     ta.selectionStart = ta.selectionEnd = start + html.length;
     ta.focus();
     closePhotoPicker();
+    window._ppTargetTextarea = null;
     TomikaBikes.showToast('Photo' + (photos.length > 1 ? 's' : '') + ' inserted ✅', 'success');
   };
 
@@ -2536,6 +2825,7 @@ const GearManagerAdmin = (function () {
 // ── Subscribers Admin ────────────────────────────────────────
 let _adminSubsLoaded = false;
 let _adminSubsDb = null;
+let _adminSubsRows = [];   // cached subscriber rows
 
 async function _adminSubsEnsureDb() {
   if (_adminSubsDb) return _adminSubsDb;
@@ -2578,6 +2868,10 @@ async function adminSubscribersLoad() {
     }
     rows.sort((a, b) => toSortKey(b.subscribedAt).localeCompare(toSortKey(a.subscribedAt)));
 
+    // Cache rows for email composer
+    _adminSubsRows = rows;
+    emailUpdateRecipientSummary();
+
     const dashEl = document.getElementById('dash-subscriber-count');
     if (dashEl) dashEl.textContent = rows.length;
     if (countEl) countEl.textContent = rows.length + ' subscriber' + (rows.length !== 1 ? 's' : '');
@@ -2619,7 +2913,244 @@ async function adminSubscriberDelete(docId) {
   }
 }
 
-// Trigger load when Subscribers section is shown
+// ── Email Composer ────────────────────────────────────────────
+let _emailAudience = 'all';
+let _epActiveTab   = 'preview';
+
+function emailSetAudience(audience, btn) {
+  _emailAudience = audience;
+  document.querySelectorAll('.email-audience-pill').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  emailUpdateRecipientSummary();
+}
+
+function emailGetRecipients() {
+  if (!_adminSubsRows.length) return [];
+  if (_emailAudience === 'blog') {
+    return _adminSubsRows.filter(r => r.preferences && r.preferences.blog).map(r => r.email).filter(Boolean);
+  }
+  if (_emailAudience === 'photos') {
+    return _adminSubsRows.filter(r => r.preferences && r.preferences.photos).map(r => r.email).filter(Boolean);
+  }
+  return _adminSubsRows.map(r => r.email).filter(Boolean);
+}
+
+function emailUpdateRecipientSummary() {
+  const el = document.getElementById('email-recipient-summary');
+  if (!el) return;
+  const recipients = emailGetRecipients();
+  if (!_adminSubsRows.length) {
+    el.textContent = 'No subscriber data loaded yet — click Refresh above to load subscribers.';
+    return;
+  }
+  const total = _adminSubsRows.length;
+  const label = _emailAudience === 'blog' ? 'blog' : _emailAudience === 'photos' ? 'photo' : 'all';
+  el.textContent = recipients.length + ' recipient' + (recipients.length !== 1 ? 's' : '') +
+    ' (' + label + ' subscribers out of ' + total + ' total)';
+}
+
+function emailFmt(tag) {
+  var ta = document.getElementById('email-body');
+  ta.focus();
+  var start = ta.selectionStart;
+  var end   = ta.selectionEnd;
+  var sel   = ta.value.substring(start, end);
+  var before = ta.value.substring(0, start);
+  var after  = ta.value.substring(end);
+  var insert = '';
+  var cursorOffset = 0;
+
+  if (tag === 'hr') {
+    insert = '\n<hr style="border:none;border-top:1px solid #e5e1d8;margin:1.5rem 0">\n';
+    cursorOffset = insert.length;
+  } else if (tag === 'br') {
+    insert = '<br>\n';
+    cursorOffset = insert.length;
+  } else if (tag === 'a') {
+    var url = prompt('Enter URL:', 'https://');
+    if (!url) { ta.focus(); return; }
+    // Only allow http/https URLs to prevent javascript: XSS
+    if (!/^https?:\/\//i.test(url.trim())) { TomikaBikes.showToast('Only http:// and https:// URLs are allowed', 'error'); ta.focus(); return; }
+    var linkText = sel || 'Link text';
+    insert = '<a href="' + url.replace(/"/g, '&quot;') + '" style="color:#5B8C6B">' + linkText + '</a>';
+    cursorOffset = insert.length;
+  } else if (tag === 'ul') {
+    var ulItems = sel ? sel.split('\n') : ['Item 1', 'Item 2'];
+    insert = '<ul style="padding-left:1.25rem;margin:.5rem 0">\n' +
+      ulItems.map(function(l){ return '  <li style="margin-bottom:.35rem">' + (l.trim() || 'Item') + '</li>'; }).join('\n') +
+      '\n</ul>';
+    cursorOffset = insert.length;
+  } else if (tag === 'ol') {
+    var olItems = sel ? sel.split('\n') : ['Item 1', 'Item 2'];
+    insert = '<ol style="padding-left:1.25rem;margin:.5rem 0">\n' +
+      olItems.map(function(l){ return '  <li style="margin-bottom:.35rem">' + (l.trim() || 'Item') + '</li>'; }).join('\n') +
+      '\n</ol>';
+    cursorOffset = insert.length;
+  } else {
+    var styleMap = {
+      p:      ' style="margin:.75rem 0;line-height:1.7;color:#3D3A32"',
+      h2:     ' style="font-family:Georgia,serif;font-size:1.5rem;color:#2F4F3A;margin:1.5rem 0 .75rem"',
+      h3:     ' style="font-family:Georgia,serif;font-size:1.2rem;color:#2F4F3A;margin:1.25rem 0 .5rem"',
+      strong: '', em: '', u: ''
+    };
+    var defaults = { p: 'Paragraph text.', h2: 'Heading', h3: 'Sub-heading', strong: 'bold text', em: 'italic text', u: 'underlined text' };
+    var s    = styleMap[tag] || '';
+    var open  = '<' + tag + s + '>';
+    var close = '</' + tag + '>';
+    var inner = sel || defaults[tag] || 'text';
+    insert = open + inner + close;
+    cursorOffset = sel ? insert.length : open.length;
+  }
+
+  ta.value = before + insert + after;
+  ta.selectionStart = ta.selectionEnd = start + cursorOffset;
+  ta.focus();
+}
+
+function openEmailPhotoPicker() {
+  window._ppTargetTextarea = 'email-body';
+  window.openPhotoPicker();
+}
+
+function adminEmailClear() {
+  if (!confirm('Clear the email composer? This will erase the subject, preheader and body.')) return;
+  document.getElementById('email-subject').value   = '';
+  document.getElementById('email-preheader').value = '';
+  document.getElementById('email-body').value      = '';
+}
+
+function buildEmailHtml(subject, preheader, body) {
+  var siteUrl   = 'https://tomika.bike';
+  var unsubUrl  = siteUrl + '/unsubscribe.html';
+  var year      = new Date().getFullYear();
+  var esc       = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  var preheaderHtml = preheader
+    ? '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">' + esc(preheader) + '</div>'
+    : '';
+  return '<!DOCTYPE html>\n' +
+'<html lang="en">\n' +
+'<head>\n' +
+'<meta charset="UTF-8"/>\n' +
+'<meta name="viewport" content="width=device-width,initial-scale=1.0"/>\n' +
+'<title>' + esc(subject) + '</title>\n' +
+'</head>\n' +
+'<body style="margin:0;padding:0;background:#F0EDE6;font-family:\'Inter\',-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#3D3A32">\n' +
+preheaderHtml + '\n' +
+'<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F0EDE6">\n' +
+'<tr><td align="center" style="padding:32px 16px">\n' +
+'<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px">\n' +
+'<!-- Header -->\n' +
+'<tr><td style="background:#2F4F3A;border-radius:12px 12px 0 0;padding:28px 36px;text-align:center">\n' +
+'  <div style="font-size:1.6rem;font-weight:700;color:#FAFAF8">🚴 tomika<span style="color:#B87333">.bike</span></div>\n' +
+'  <div style="font-size:.75rem;color:rgba(255,255,255,.6);margin-top:4px;letter-spacing:.08em;text-transform:uppercase">Travel Newsletter</div>\n' +
+'</td></tr>\n' +
+'<!-- Subject banner -->\n' +
+'<tr><td style="background:#5B8C6B;padding:18px 36px;text-align:center">\n' +
+'  <h1 style="margin:0;font-family:Georgia,serif;font-size:1.35rem;font-weight:700;color:#FAFAF8;line-height:1.3">' + esc(subject) + '</h1>\n' +
+'</td></tr>\n' +
+'<!-- Body -->\n' +
+'<tr><td style="background:#FAFAF8;padding:36px;border-left:1px solid #E5E1D8;border-right:1px solid #E5E1D8">\n' +
+'  <div style="font-size:.95rem;line-height:1.7;color:#3D3A32">\n' +
+    body + '\n' +
+'  </div>\n' +
+'</td></tr>\n' +
+'<!-- Visit button -->\n' +
+'<tr><td style="background:#FAFAF8;padding:0 36px 32px;border-left:1px solid #E5E1D8;border-right:1px solid #E5E1D8;text-align:center">\n' +
+'  <a href="' + siteUrl + '" style="display:inline-block;background:#2F4F3A;color:#FAFAF8;text-decoration:none;padding:12px 28px;border-radius:4px;font-size:.875rem;font-weight:600">Visit tomika.bike →</a>\n' +
+'</td></tr>\n' +
+'<!-- Footer -->\n' +
+'<tr><td style="background:#E5E1D8;border-radius:0 0 12px 12px;padding:20px 36px;text-align:center">\n' +
+'  <p style="margin:0 0 6px;font-size:.75rem;color:#7A776E">You\'re receiving this because you subscribed to updates from <a href="' + siteUrl + '" style="color:#5B8C6B">tomika.bike</a>.</p>\n' +
+'  <p style="margin:0;font-size:.75rem;color:#7A776E"><a href="' + unsubUrl + '" style="color:#7A776E">Unsubscribe</a> &nbsp;·&nbsp; © ' + year + ' Tomika Bike</p>\n' +
+'</td></tr>\n' +
+'</table>\n' +
+'</td></tr>\n' +
+'</table>\n' +
+'</body>\n' +
+'</html>';
+}
+
+function adminEmailPreview() {
+  var subject   = (document.getElementById('email-subject').value   || '').trim();
+  var preheader = (document.getElementById('email-preheader').value || '').trim();
+  var body      = (document.getElementById('email-body').value      || '').trim();
+
+  if (!subject) { TomikaBikes.showToast('Please enter a subject line', 'error'); return; }
+  if (!body)    { TomikaBikes.showToast('Please write some content in the body', 'error'); return; }
+
+  var html       = buildEmailHtml(subject, preheader, body);
+  var recipients = emailGetRecipients();
+
+  document.getElementById('email-html-output').value       = html;
+  document.getElementById('email-recipients-output').value = recipients.join(', ');
+  document.getElementById('email-recipients-count').textContent =
+    recipients.length + ' recipient' + (recipients.length !== 1 ? 's' : '');
+
+  // Render preview iframe using srcdoc (no same-origin needed)
+  var iframe = document.getElementById('email-preview-iframe');
+  iframe.srcdoc = html;
+
+  // Gmail link: subject pre-filled, user pastes HTML body manually
+  document.getElementById('ep-gmail-link').href =
+    'https://mail.google.com/mail/?view=cm&fs=1&su=' + encodeURIComponent(subject);
+
+  document.getElementById('email-preview-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  emailPreviewSwitchTab('preview');
+}
+
+function closeEmailPreview() {
+  document.getElementById('email-preview-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function emailPreviewSwitchTab(tab) {
+  _epActiveTab = tab;
+  document.querySelectorAll('.email-preview-tab').forEach(function(t) {
+    t.classList.toggle('active', t.id === 'epTab-' + tab);
+  });
+  document.querySelectorAll('.email-preview-panel').forEach(function(p) {
+    p.classList.toggle('active', p.id === 'epPanel-' + tab);
+  });
+  var btn = document.getElementById('ep-copy-btn');
+  btn.textContent = (tab === 'recipients') ? '📋 Copy Recipients' : '📋 Copy HTML';
+}
+
+function emailCopyActive() {
+  var text = (_epActiveTab === 'recipients')
+    ? document.getElementById('email-recipients-output').value
+    : document.getElementById('email-html-output').value;
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = document.getElementById('ep-copy-btn');
+      var orig = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(function(){ btn.textContent = orig; }, 2000);
+    }).catch(function(){ _emailCopyFallback(text); });
+  } else {
+    _emailCopyFallback(text);
+  }
+}
+
+function _emailCopyFallback(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); TomikaBikes.showToast('Copied to clipboard!', 'success'); }
+  catch(e) { TomikaBikes.showToast('Copy failed — please select the text manually', 'error'); }
+  document.body.removeChild(ta);
+}
+
+document.getElementById('email-preview-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeEmailPreview();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('email-preview-overlay').classList.contains('open')) closeEmailPreview();
+});
+
 const _origShowSectionForSubs = window.showSection;
 window.showSection = function (name, linkEl) {
   _origShowSectionForSubs(name, linkEl);
