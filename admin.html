@@ -889,8 +889,15 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Cover Emoji</label>
-              <input type="text" id="blog-emoji" class="form-control" placeholder="🇯🇵" maxlength="4" style="font-size:1.4rem" />
+              <label>Cover Image</label>
+              <div class="cover-img-preview" id="cover-img-preview">
+                <span class="cover-img-placeholder">📷<br>No cover selected</span>
+              </div>
+              <input type="hidden" id="blog-cover-image" />
+              <div style="display:flex;gap:.5rem;margin-top:.4rem">
+                <button type="button" class="btn" style="font-size:.8rem;padding:.3rem .75rem;background:var(--color-gray-200)" onclick="openPhotoPicker('cover')">📷 Choose Cover</button>
+                <button type="button" class="btn" id="cover-img-clear" style="font-size:.8rem;padding:.3rem .75rem;background:#fee;color:#c0392b;display:none" onclick="clearCoverImage()">✕ Remove</button>
+              </div>
             </div>
             <div class="form-group">
               <label>Tags (comma-separated)</label>
@@ -1929,7 +1936,9 @@ function adminBlogRenderList() {
     const badgeCls = d.status === 'published' ? 'status-published' : 'status-draft';
     const badgeTxt = d.status === 'published' ? 'Published' : 'Draft';
     return '<div class="blog-post-list-item" onclick="adminBlogEditPost(\'' + p.id + '\')">' +
-      '<div class="blog-post-list-emoji">' + (d.emoji || '✍️') + '</div>' +
+      (d.coverImage
+        ? '<div class="blog-post-list-emoji" style="background-size:cover;background-position:center;background-image:url(' + d.coverImage.replace(/"/g,'&quot;') + ');border-radius:6px"></div>'
+        : '<div class="blog-post-list-emoji">✍️</div>') +
       '<div class="blog-post-list-body">' +
         '<div class="blog-post-list-title">' + escHtml(d.title || 'Untitled') + '</div>' +
         '<div class="blog-post-list-meta">' + escHtml(d.author || '') + ' · ' + (d.date || '') + ' · ' + escHtml(d.category || '') + '</div>' +
@@ -1962,7 +1971,11 @@ function adminBlogNewPost() {
   document.getElementById('blog-date').value = new Date().toISOString().slice(0, 10);
   document.getElementById('blog-category').value = 'japan';
   document.getElementById('blog-status').value = 'draft';
-  document.getElementById('blog-emoji').value = '';
+  document.getElementById('blog-cover-image').value = '';
+  const prevEl = document.getElementById('cover-img-preview');
+  if (prevEl) prevEl.innerHTML = '<span class="cover-img-placeholder">📷<br>No cover selected</span>';
+  const clearBtn = document.getElementById('cover-img-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
   document.getElementById('blog-tags').value = '';
   document.getElementById('blog-excerpt').value = '';
   document.getElementById('blog-content').value = '';
@@ -1983,7 +1996,18 @@ function adminBlogEditPost(id) {
   document.getElementById('blog-date').value = d.date || '';
   document.getElementById('blog-category').value = d.category || 'japan';
   document.getElementById('blog-status').value = d.status || 'draft';
-  document.getElementById('blog-emoji').value = d.emoji || '';
+  const coverUrl = d.coverImage || '';
+  document.getElementById('blog-cover-image').value = coverUrl;
+  const prevEl2 = document.getElementById('cover-img-preview');
+  if (prevEl2) {
+    if (coverUrl) {
+      prevEl2.innerHTML = '<img src="' + coverUrl.replace(/"/g, '&quot;') + '" alt="cover" />';
+      document.getElementById('cover-img-clear').style.display = '';
+    } else {
+      prevEl2.innerHTML = '<span class="cover-img-placeholder">📷<br>No cover selected</span>';
+      document.getElementById('cover-img-clear').style.display = 'none';
+    }
+  }
   document.getElementById('blog-tags').value = d.tags || '';
   document.getElementById('blog-excerpt').value = d.excerpt || '';
   document.getElementById('blog-content').value = d.content || '';
@@ -2001,7 +2025,7 @@ async function adminBlogSave(asDraft) {
     date: document.getElementById('blog-date').value,
     category: document.getElementById('blog-category').value,
     status: document.getElementById('blog-status').value,
-    emoji: document.getElementById('blog-emoji').value.trim(),
+    coverImage: document.getElementById('blog-cover-image').value.trim(),
     tags: document.getElementById('blog-tags').value.trim(),
     excerpt: document.getElementById('blog-excerpt').value.trim(),
     content: document.getElementById('blog-content').value.trim(),
@@ -2178,7 +2202,10 @@ function blogFmt(tag) {
     renderGrid(filtered);
   };
 
-  window.openPhotoPicker = async function () {
+  let _coverMode = false;
+
+  window.openPhotoPicker = async function (mode) {
+    _coverMode = (mode === 'cover');
     const overlay = document.getElementById('photo-picker-overlay');
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -2188,6 +2215,11 @@ function blogFmt(tag) {
     document.getElementById('pp-grid').innerHTML = '';
     document.getElementById('pp-loading').style.display = '';
     document.getElementById('pp-empty').style.display   = 'none';
+    // Update modal UI for cover vs content mode
+    document.querySelector('#photo-picker-overlay .photo-picker-header h3').textContent =
+      _coverMode ? '🖼 Choose Cover Image' : '📷 Insert Photo';
+    document.getElementById('pp-insert-btn').textContent = _coverMode ? 'Set as Cover' : 'Insert';
+    document.getElementById('pp-style').closest('.pp-insert-style').style.display = _coverMode ? 'none' : '';
     await loadPhotos();
     renderGrid(_allPhotos);
   };
@@ -2197,11 +2229,30 @@ function blogFmt(tag) {
     document.body.style.overflow = '';
   };
 
+  window.clearCoverImage = function () {
+    document.getElementById('blog-cover-image').value = '';
+    const preview = document.getElementById('cover-img-preview');
+    preview.innerHTML = '<span class="cover-img-placeholder">📷<br>No cover selected</span>';
+    document.getElementById('cover-img-clear').style.display = 'none';
+  };
+
   window.ppInsert = function () {
-    const style   = document.getElementById('pp-style').value;
     const photos  = _allPhotos.filter(p => _selected.has(p.id));
     if (!photos.length) return;
 
+    if (_coverMode) {
+      // Set the first selected photo as the cover image
+      const photo = photos[0];
+      document.getElementById('blog-cover-image').value = photo.url;
+      const preview = document.getElementById('cover-img-preview');
+      preview.innerHTML = '<img src="' + photo.url.replace(/"/g, '&quot;') + '" alt="cover" />';
+      document.getElementById('cover-img-clear').style.display = '';
+      closePhotoPicker();
+      TomikaBikes.showToast('Cover image set ✅', 'success');
+      return;
+    }
+
+    const style = document.getElementById('pp-style').value;
     let html;
     if (style === 'grid') {
       const imgs = photos.map(p =>

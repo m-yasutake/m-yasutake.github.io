@@ -321,6 +321,13 @@
     // Hero
     var catLabel = CAT_LABELS[data.category] || esc(data.category || '');
     var avatarLetter = esc((data.author || 'M').charAt(0).toUpperCase());
+    // Apply cover image to hero background if set
+    var heroEl = document.getElementById('post-hero');
+    if (data.coverImage) {
+      heroEl.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.55)), url(' + data.coverImage.replace(/[()"']/g, encodeURIComponent) + ')';
+      heroEl.style.backgroundSize = 'cover';
+      heroEl.style.backgroundPosition = 'center';
+    }
     document.getElementById('post-hero-inner').innerHTML =
       '<div class="hero-badge">' + catLabel + '</div>' +
       '<h1>' + esc(data.title || '') + '</h1>' +
