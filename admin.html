@@ -557,6 +557,7 @@
           <div style="display:flex;gap:1rem;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="adminBlogSave(false)">💾 Save Post</button>
             <button class="btn" style="background:var(--color-gray-200)" onclick="adminBlogSave(true)">Save as Draft</button>
+            <button class="btn" style="background:var(--color-gray-200)" onclick="adminBlogPreview()">👁 Preview</button>
             <button class="btn" id="blog-delete-btn" style="background:#fee;color:#c0392b;display:none" onclick="adminBlogDelete()">🗑 Delete</button>
           </div>
         </div>
@@ -1411,6 +1412,7 @@ const BLOG_STATIC_POST = {
 
 async function adminBlogEnsureDb() {
   if (adminBlogDb) return;
+  await window.TomikaBikes.ensureFirebaseAuth();
   adminBlogDb = _getAdminDb();
 }
 
@@ -1569,6 +1571,18 @@ async function adminBlogDelete() {
   } catch (e) {
     TomikaBikes.showToast('Delete failed: ' + e.message, 'error');
   }
+}
+
+async function adminBlogPreview() {
+  const title = document.getElementById('blog-title').value.trim();
+  if (!title) { TomikaBikes.showToast('Please enter a post title before previewing', 'error'); return; }
+  await adminBlogSave(false);
+  const id = document.getElementById('blog-post-id').value;
+  if (!id || id === BLOG_STATIC_POST.id) {
+    TomikaBikes.showToast('Preview is not available for static posts', 'info');
+    return;
+  }
+  window.open('post.html?id=' + encodeURIComponent(id), '_blank');
 }
 
 // Set default date on new post on page load

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="" />
+  <title>Loading… – Tomika Bike</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    /* ── Draft preview bar ──────────────────────────────── */
+    .preview-bar {
+      position: sticky;
+      top: var(--nav-height);
+      z-index: 200;
+      background: #fffbeb;
+      border-bottom: 2px solid #f59e0b;
+      color: #78350f;
+      padding: .7rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .875rem;
+    }
+    .preview-bar strong { font-weight: 600; }
+    .preview-bar .preview-actions { display: flex; gap: .6rem; margin-left: auto; flex-wrap: wrap; align-items: center; }
+    .preview-bar .btn-publish {
+      background: var(--color-secondary);
+      color: #fff;
+      border: none;
+      padding: .4rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: opacity .15s;
+    }
+    .preview-bar .btn-publish:hover { opacity: .85; }
+    .preview-bar .btn-publish:disabled { opacity: .5; cursor: not-allowed; }
+    .preview-bar .btn-admin-back {
+      color: #92400e;
+      font-size: .82rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .preview-bar .btn-admin-back:hover { text-decoration: underline; }
+
+    /* ── Post hero ──────────────────────────────────────── */
+    .post-hero {
+      background: linear-gradient(160deg, var(--color-primary), var(--color-secondary));
+      padding: 5rem 0 4rem;
+      text-align: center;
+      color: var(--color-white);
+    }
+    .post-hero .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 100px;
+      padding: .35rem 1rem;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .post-hero h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 400;
+      max-width: 780px;
+      margin: 0 auto 1rem;
+      line-height: 1.25;
+      color: var(--color-white);
+    }
+    .post-hero .post-meta-row {
+      justify-content: center;
+      color: rgba(255,255,255,.8);
+      margin-bottom: 0;
+    }
+    .post-hero .post-date,
+    .post-hero .read-time { color: rgba(255,255,255,.8); }
+    .post-hero .author-chip { color: rgba(255,255,255,.8); }
+
+    /* ── Post body ──────────────────────────────────────── */
+    .post-body {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+    .post-body p {
+      color: var(--color-gray-700);
+      line-height: 1.85;
+      margin-bottom: 1.5rem;
+      font-size: 1.05rem;
+    }
+    .post-body h3 {
+      font-size: 1.25rem;
+      margin-top: 2.5rem;
+      margin-bottom: .75rem;
+    }
+    .post-body .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .post-body .photo-grid img {
+      width: 100%;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      aspect-ratio: 3/4;
+    }
+    .post-back {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      color: var(--color-secondary);
+      font-weight: 600;
+      font-size: .9rem;
+      text-decoration: none;
+      margin-bottom: 2.5rem;
+    }
+    .post-back:hover { text-decoration: underline; }
+    .post-footer-nav {
+      border-top: 1px solid var(--color-gray-200);
+      padding-top: 2rem;
+      margin-top: 3rem;
+      text-align: center;
+    }
+    .post-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: .75rem;
+    }
+    .author-chip {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .8rem;
+      color: var(--color-gray-600);
+    }
+    .author-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--color-white);
+    }
+    .post-date { font-size: .78rem; color: var(--color-gray-600); }
+    .read-time  { font-size: .78rem; color: var(--color-gray-600); }
+
+    /* ── Loading / error placeholder ───────────────────── */
+    .post-placeholder {
+      text-align: center;
+      padding: 5rem 1.5rem;
+      color: var(--color-gray-500);
+    }
+    .post-placeholder .placeholder-icon { font-size: 3rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="japan.html">🇯🇵 Japan</a></li>
+      <li><a href="norway.html">🇳🇴 Norway</a></li>
+      <li><a href="gear.html">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-subscribe-btn" onclick="openSubscribeModal()">🔔 Subscribe</button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu">
+  <a href="index.html">🏠 Home</a>
+  <a href="japan.html">🇯🇵 Japan</a>
+  <a href="norway.html">🇳🇴 Norway</a>
+  <a href="gear.html">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
+</div>
+
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- ── Draft preview bar ──────────────────────────────────────
+     Shown only when the post status is not "published".
+     The Publish Now button appears only for the signed-in admin. -->
+<div id="preview-bar" style="display:none" class="preview-bar">
+  <span>📝 <strong>Draft Preview</strong> — this post is not yet published</span>
+  <div class="preview-actions">
+    <button id="publish-btn" style="display:none" class="btn-publish" onclick="publishPost()">✅ Publish Now</button>
+    <a href="admin.html" class="btn-admin-back">← Back to Admin</a>
+  </div>
+</div>
+
+<!-- Post Hero (populated by JS) -->
+<div class="post-hero" id="post-hero">
+  <div class="container" id="post-hero-inner">
+    <div class="post-placeholder">
+      <div class="placeholder-icon">⏳</div>
+      <p>Loading post…</p>
+    </div>
+  </div>
+</div>
+
+<!-- Post Body (populated by JS) -->
+<div id="post-body"></div>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
+        <p>A cycling adventure blog documenting our journey through Japan and Norway.</p>
+        <div class="social-links">
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
+      </div>
+      <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="japan.html">Japan</a><a href="norway.html">Norway</a><a href="gear.html">Gear</a></div>
+      <div class="footer-col"><h4>Info</h4><a href="about.html">About Us</a><a href="#">Contact</a></div>
+      <div class="footer-col"><h4>Admin</h4><a href="#" data-auth>Login</a><a href="admin.html" class="admin-only-link" style="display:none">Dashboard</a></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 tomika.bike</span>
+      <span>Made with ❤️ and 🚴</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Firebase (app + firestore loaded directly; auth loaded lazily by main.js) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+(function () {
+  var _postId = null;
+
+  var CAT_LABELS = {
+    japan: '🇯🇵 Japan', norway: '🇳🇴 Norway', gear: '🎒 Gear',
+    planning: '📋 Planning', stories: '✍️ Stories', food: '🍜 Food', tips: '💡 Tips'
+  };
+
+  function esc(str) {
+    var d = document.createElement('div');
+    d.textContent = String(str == null ? '' : str);
+    return d.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function estimateReadTime(content) {
+    var words = String(content || '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.round(words / 200)) + ' min read';
+  }
+
+  function getDb() {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    return firebase.firestore();
+  }
+
+  function showError(msg) {
+    document.getElementById('post-hero-inner').innerHTML =
+      '<h1 style="color:var(--color-white)">Oops</h1>';
+    document.getElementById('post-body').innerHTML =
+      '<div class="post-placeholder"><div class="placeholder-icon">🔍</div>' +
+      '<p>' + esc(msg) + '</p>' +
+      '<a href="blog.html" class="btn btn-primary" style="margin-top:1rem">← Back to Blog</a></div>';
+  }
+
+  function renderPost(id, data) {
+    _postId = id;
+
+    // Page title + meta description
+    document.title = (data.title || 'Post') + ' – Tomika Bike';
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc && data.excerpt) metaDesc.setAttribute('content', data.excerpt);
+
+    // Hero
+    var catLabel = CAT_LABELS[data.category] || esc(data.category || '');
+    var avatarLetter = esc((data.author || 'M').charAt(0).toUpperCase());
+    document.getElementById('post-hero-inner').innerHTML =
+      '<div class="hero-badge">' + catLabel + '</div>' +
+      '<h1>' + esc(data.title || '') + '</h1>' +
+      '<div class="post-meta-row" style="justify-content:center;color:rgba(255,255,255,.8)">' +
+        '<div class="author-chip" style="color:rgba(255,255,255,.8)">' +
+          '<div class="author-avatar" style="background:var(--color-secondary)">' + avatarLetter + '</div>' +
+          '<span>' + esc(data.author || '') + '</span>' +
+        '</div>' +
+        '<span class="post-date" style="color:rgba(255,255,255,.8)">' + esc(formatDate(data.date)) + '</span>' +
+        '<span class="read-time" style="color:rgba(255,255,255,.8)">' + esc(estimateReadTime(data.content)) + '</span>' +
+      '</div>';
+
+    // Back link
+    var backPage  = data.category === 'japan'  ? 'japan.html#blog-section'
+                  : data.category === 'norway' ? 'norway.html#blog-section'
+                  : 'blog.html';
+    var backLabel = data.category === 'japan'  ? '← Back to Japan'
+                  : data.category === 'norway' ? '← Back to Norway'
+                  : '← Back to Blog';
+
+    // Body — content is admin-authored HTML
+    var bodyEl = document.getElementById('post-body');
+    bodyEl.className = 'post-body';
+    bodyEl.innerHTML =
+      '<a href="' + esc(backPage) + '" class="post-back">' + esc(backLabel) + '</a>' +
+      '<div class="post-content">' + (data.content || '<p><em>No content yet.</em></p>') + '</div>' +
+      '<div class="post-footer-nav">' +
+        '<a href="' + esc(backPage) + '" class="btn btn-dark">' + esc(backLabel) + '</a>' +
+      '</div>';
+
+    // Show draft preview bar and (for the admin) a Publish button
+    if (data.status !== 'published') {
+      document.getElementById('preview-bar').style.display = 'flex';
+      window.TomikaBikes.ensureFirebaseAuth()
+        .then(function () {
+          return new Promise(function (resolve) {
+            var unsub = firebase.auth().onAuthStateChanged(function (user) {
+              unsub();
+              resolve(user);
+            });
+          });
+        })
+        .then(function (user) {
+          var adminEmail = typeof ADMIN_EMAIL !== 'undefined' ? ADMIN_EMAIL : null;
+          if (user && adminEmail && user.email === adminEmail) {
+            document.getElementById('publish-btn').style.display = '';
+          }
+        })
+        .catch(function () {});
+    }
+  }
+
+  // Called from the Publish Now button
+  window.publishPost = function () {
+    var btn = document.getElementById('publish-btn');
+    btn.disabled = true;
+    btn.textContent = 'Publishing…';
+    getDb().collection('blog_posts').doc(_postId)
+      .update({ status: 'published', updatedAt: new Date().toISOString() })
+      .then(function () {
+        TomikaBikes.showToast('Post published! ✅', 'success');
+        document.getElementById('preview-bar').style.display = 'none';
+      })
+      .catch(function (err) {
+        TomikaBikes.showToast('Failed to publish: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '✅ Publish Now';
+      });
+  };
+
+  // Load the post from Firestore using the ?id= query parameter
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get('id');
+  if (!id) {
+    showError('No post ID provided. Open a post via the admin panel or a published link.');
+  } else {
+    getDb().collection('blog_posts').doc(id).get()
+      .then(function (doc) {
+        if (!doc.exists) { showError('Post not found.'); return; }
+        renderPost(doc.id, doc.data());
+      })
+      .catch(function (err) { showError('Failed to load post: ' + err.message); });
+  }
+})();
+</script>
+</body>
+</html>

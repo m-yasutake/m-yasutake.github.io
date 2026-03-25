@@ -305,6 +305,9 @@
   </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
 <script src="js/main.js"></script>
 <script>
   // Search
@@ -334,6 +337,65 @@
     TomikaBikes.showToast(`Filtering by: ${tag}`, 'info');
     return false;
   }
+</script>
+
+<script>
+// ── Load all published posts from Firestore ─────────────────
+(function () {
+  var CAT_LABELS = {
+    japan: '🇯🇵 Japan', norway: '🇳🇴 Norway', gear: '🎒 Gear',
+    planning: '📋 Planning', stories: '✍️ Stories', food: '🍼 Food', tips: '💡 Tips'
+  };
+  function esc(str) {
+    var d = document.createElement('div');
+    d.textContent = String(str == null ? '' : str);
+    return d.innerHTML;
+  }
+  function fmtDate(s) {
+    if (!s) return '';
+    var d = new Date(s + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  firebase.firestore()
+    .collection('blog_posts')
+    .where('status', '==', 'published')
+    .get()
+    .then(function (snap) {
+      if (snap.empty) return;
+      var docs = [];
+      snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
+      // Sort newest-first
+      docs.sort(function (a, b) { return (b.data.date || '').localeCompare(a.data.date || ''); });
+      var list = document.getElementById('postList');
+      docs.forEach(function (p) {
+        var d = p.data;
+        var card = document.createElement('article');
+        card.className = 'blog-post-card';
+        card.setAttribute('data-cat', d.category || 'stories');
+        card.innerHTML =
+          '<div class="blog-post-img" style="height:200px;background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem">' +
+            esc(d.emoji || '\u270d\ufe0f') + '</div>' +
+          '<div class="blog-post-body" style="padding:1.5rem">' +
+            '<div class="post-meta-row">' +
+              '<div class="author-chip">' +
+                '<div class="author-avatar" style="background:var(--color-secondary)">' +
+                  esc((d.author || 'M').charAt(0).toUpperCase()) +
+                '</div>' +
+                '<span>' + esc(d.author || '') + '</span>' +
+              '</div>' +
+              '<span class="post-date">' + esc(fmtDate(d.date)) + '</span>' +
+              (CAT_LABELS[d.category] ? '<span class="read-time">' + CAT_LABELS[d.category] + '</span>' : '') +
+            '</div>' +
+            '<h2>' + esc(d.title || '') + '</h2>' +
+            (d.excerpt ? '<p>' + esc(d.excerpt) + '</p>' : '') +
+            '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem">Read Full Post →</a>' +
+          '</div>';
+        list.appendChild(card);
+      });
+    })
+    .catch(function (err) { console.warn('Blog posts load error:', err.message); });
+})();
 </script>
 </body>
 </html>
