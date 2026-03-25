@@ -262,6 +262,117 @@
   .mapdata-upload-block .upload-drop.drag-over { border-color: var(--color-secondary); background: rgba(91,140,107,.04); }
   .mapdata-upload-status { font-size: .82rem; margin-top: .5rem; color: var(--color-secondary); min-height: 1.2em; }
 
+  /* ── Photo picker modal ──────────────────────────────── */
+  .photo-picker-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+    padding: 1rem;
+  }
+  .photo-picker-overlay.open { display: flex; }
+  .photo-picker-modal {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 820px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+  }
+  .photo-picker-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .photo-picker-header h3 { margin: 0; flex: 1; font-size: 1rem; }
+  .photo-picker-header input {
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    padding: .35rem .7rem;
+    font-size: .82rem;
+    font-family: var(--font-body);
+    outline: none;
+    width: 180px;
+  }
+  .photo-picker-header input:focus { border-color: var(--color-secondary); }
+  .photo-picker-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.25rem; color: var(--color-gray-500); line-height: 1;
+  }
+  .photo-picker-close:hover { color: var(--color-gray-900); }
+  .photo-picker-body {
+    overflow-y: auto;
+    padding: 1rem 1.5rem;
+    flex: 1;
+  }
+  .photo-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: .6rem;
+  }
+  .photo-picker-item {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color .15s, transform .15s;
+    background: var(--color-gray-100);
+  }
+  .photo-picker-item:hover { transform: scale(1.03); }
+  .photo-picker-item.selected { border-color: var(--color-secondary); }
+  .photo-picker-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .photo-picker-item .pp-check {
+    position: absolute; top: .35rem; right: .35rem;
+    width: 22px; height: 22px;
+    background: var(--color-secondary);
+    border-radius: 50%;
+    display: none;
+    align-items: center; justify-content: center;
+    color: #fff; font-size: .75rem; font-weight: 700;
+  }
+  .photo-picker-item.selected .pp-check { display: flex; }
+  .photo-picker-item .pp-caption {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    font-size: .65rem;
+    padding: .25rem .4rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .photo-picker-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--color-gray-200);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .photo-picker-footer .pp-sel-count { font-size: .85rem; color: var(--color-gray-600); flex: 1; }
+  .photo-picker-footer .pp-insert-style {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .82rem; color: var(--color-gray-700);
+  }
+  .photo-picker-footer .pp-insert-style select {
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    padding: .3rem .5rem;
+    font-size: .82rem;
+    font-family: var(--font-body);
+    outline: none;
+  }
+
   /* ── Gear admin in admin panel ──────────────────────── */
   .admin-gear-bar {
     display: flex;
@@ -551,7 +662,10 @@
             <textarea id="blog-excerpt" class="form-control" rows="2" placeholder="A short summary of the post…"></textarea>
           </div>
           <div class="form-group">
-            <label>Content <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
+              <label style="margin:0">Content <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
+              <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openPhotoPicker()">📷 Insert Photo</button>
+            </div>
             <textarea id="blog-content" class="form-control" rows="16" placeholder="Write your post here…&#10;&#10;You can use basic HTML: &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a href=&quot;…&quot;&gt;, &lt;img src=&quot;…&quot;&gt;"></textarea>
           </div>
           <div style="display:flex;gap:1rem;flex-wrap:wrap">
@@ -792,6 +906,33 @@
     </div>
 
   </main>
+</div>
+
+<!-- Photo picker modal -->
+<div class="photo-picker-overlay" id="photo-picker-overlay">
+  <div class="photo-picker-modal">
+    <div class="photo-picker-header">
+      <h3>📷 Insert Photo</h3>
+      <input type="text" id="pp-search" placeholder="Search captions, albums…" oninput="ppFilter()" />
+      <button class="photo-picker-close" onclick="closePhotoPicker()">✕</button>
+    </div>
+    <div class="photo-picker-body">
+      <div class="photo-picker-grid" id="pp-grid"></div>
+      <p id="pp-empty" style="display:none;color:var(--color-gray-500);padding:2rem 0;text-align:center">No photos found.</p>
+      <p id="pp-loading" style="color:var(--color-gray-500);padding:2rem 0;text-align:center">Loading photos…</p>
+    </div>
+    <div class="photo-picker-footer">
+      <span class="pp-sel-count" id="pp-sel-count">0 selected</span>
+      <div class="pp-insert-style">
+        <label for="pp-style">Insert as</label>
+        <select id="pp-style">
+          <option value="single">Single image</option>
+          <option value="grid">Photo grid</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="ppInsert()" id="pp-insert-btn" disabled>Insert</button>
+    </div>
+  </div>
 </div>
 
 <!-- Firebase SDK -->
@@ -1587,6 +1728,130 @@ async function adminBlogPreview() {
 
 // Set default date on new post on page load
 document.getElementById('blog-date').value = new Date().toISOString().slice(0, 10);
+</script>
+
+<script>
+// ── Photo Picker ──────────────────────────────────────────────
+(function () {
+  let _allPhotos = [];  // { id, url, thumbUrl, caption, album, location }
+  let _selected  = new Set();
+  let _loaded    = false;
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str == null ? '' : str);
+    return d.innerHTML;
+  }
+
+  async function loadPhotos() {
+    if (_loaded) return;
+    const db = _getAdminDb();
+    if (!db) return;
+    const snap = await db.collection('photos').orderBy('uploadedAt', 'desc').limit(300).get();
+    _allPhotos = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      _allPhotos.push({ id: doc.id, url: d.url, thumbUrl: d.thumbUrl || d.url, caption: d.caption || '', album: d.album || '', location: d.location || '' });
+    });
+    _loaded = true;
+  }
+
+  function renderGrid(photos) {
+    const grid    = document.getElementById('pp-grid');
+    const loading = document.getElementById('pp-loading');
+    const empty   = document.getElementById('pp-empty');
+    loading.style.display = 'none';
+    empty.style.display   = photos.length === 0 ? '' : 'none';
+    grid.innerHTML = '';
+    photos.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'photo-picker-item' + (_selected.has(p.id) ? ' selected' : '');
+      item.dataset.id = p.id;
+      item.innerHTML =
+        '<img src="' + p.thumbUrl.replace(/"/g, '&quot;') + '" alt="' + esc(p.caption) + '" loading="lazy" />' +
+        '<div class="pp-check">✓</div>' +
+        (p.caption ? '<div class="pp-caption">' + esc(p.caption) + '</div>' : '');
+      item.addEventListener('click', () => {
+        if (_selected.has(p.id)) { _selected.delete(p.id); item.classList.remove('selected'); }
+        else                     { _selected.add(p.id);    item.classList.add('selected'); }
+        updateCount();
+      });
+      grid.appendChild(item);
+    });
+  }
+
+  function updateCount() {
+    const n = _selected.size;
+    document.getElementById('pp-sel-count').textContent = n === 0 ? 'None selected' : n + ' selected';
+    document.getElementById('pp-insert-btn').disabled = n === 0;
+  }
+
+  window.ppFilter = function () {
+    const q = (document.getElementById('pp-search').value || '').toLowerCase();
+    const filtered = q
+      ? _allPhotos.filter(p => (p.caption + ' ' + p.album + ' ' + p.location).toLowerCase().includes(q))
+      : _allPhotos;
+    renderGrid(filtered);
+  };
+
+  window.openPhotoPicker = async function () {
+    const overlay = document.getElementById('photo-picker-overlay');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    _selected.clear();
+    updateCount();
+    document.getElementById('pp-search').value = '';
+    document.getElementById('pp-grid').innerHTML = '';
+    document.getElementById('pp-loading').style.display = '';
+    document.getElementById('pp-empty').style.display   = 'none';
+    await loadPhotos();
+    renderGrid(_allPhotos);
+  };
+
+  window.closePhotoPicker = function () {
+    document.getElementById('photo-picker-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  window.ppInsert = function () {
+    const style   = document.getElementById('pp-style').value;
+    const photos  = _allPhotos.filter(p => _selected.has(p.id));
+    if (!photos.length) return;
+
+    let html;
+    if (style === 'grid') {
+      const imgs = photos.map(p =>
+        '<img src="' + p.url.replace(/"/g, '&quot;') + '" alt="' + esc(p.caption) + '" />'
+      ).join('\n    ');
+      html = '\n<div class="photo-grid">\n    ' + imgs + '\n</div>\n';
+    } else {
+      html = photos.map(p =>
+        '\n<img src="' + p.url.replace(/"/g, '&quot;') + '" alt="' + esc(p.caption) + '" style="max-width:100%;border-radius:8px;margin:.5rem 0" />'  +
+        (p.caption ? '\n<p><em>' + esc(p.caption) + '</em></p>' : '')
+      ).join('\n');
+    }
+
+    // Insert at cursor position in the content textarea
+    const ta    = document.getElementById('blog-content');
+    const start = ta.selectionStart;
+    const end   = ta.selectionEnd;
+    ta.value    = ta.value.slice(0, start) + html + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + html.length;
+    ta.focus();
+    closePhotoPicker();
+    TomikaBikes.showToast('Photo' + (photos.length > 1 ? 's' : '') + ' inserted ✅', 'success');
+  };
+
+  // Close on backdrop click
+  document.getElementById('photo-picker-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('photo-picker-overlay')) closePhotoPicker();
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('photo-picker-overlay').classList.contains('open')) closePhotoPicker();
+  });
+})();
 </script>
 
 <script>
