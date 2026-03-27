@@ -49,6 +49,17 @@ if (hamburger && mobileMenu) {
       document.body.style.overflow = '';
     });
   });
+
+  // Language buttons in mobile menu
+  mobileMenu.querySelectorAll('.mobile-lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (typeof I18n !== 'undefined') {
+        I18n.setLang(btn.dataset.lang);
+        mobileMenu.querySelectorAll('.mobile-lang-btn').forEach(b =>
+          b.classList.toggle('active', b.dataset.lang === btn.dataset.lang));
+      }
+    });
+  });
 }
 
 // ── Active nav link ──────────────────────────
