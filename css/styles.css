@@ -314,6 +314,122 @@ p { line-height: 1.75; }
   border-color: var(--color-gray-300);
 }
 
+/* ── Language Dropdown ──────────────────────── */
+.lang-dropdown {
+  position: relative;
+}
+
+.lang-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255,255,255,.1);
+  color: var(--color-white);
+  border: 1px solid rgba(255,255,255,.3);
+  padding: 0.4rem 0.8rem;
+  border-radius: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.navbar.scrolled .lang-toggle-btn {
+  background: transparent;
+  color: var(--color-dark);
+  border-color: rgba(30,40,25,.2);
+}
+
+.lang-toggle-btn:hover {
+  background: rgba(255,255,255,.2);
+  border-color: rgba(255,255,255,.5);
+}
+
+.navbar.scrolled .lang-toggle-btn:hover {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+}
+
+.lang-toggle-btn .lang-arrow {
+  font-size: 0.6rem;
+  transition: transform var(--transition);
+  display: inline-block;
+}
+
+.lang-dropdown.open .lang-arrow { transform: rotate(180deg); }
+
+.lang-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 130px;
+  z-index: 1100;
+  overflow: hidden;
+}
+
+.lang-dropdown.open .lang-menu { display: block; }
+
+.lang-option {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-800);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition);
+  font-family: var(--font-body);
+}
+
+.lang-option:hover { background: var(--color-gray-100); }
+.lang-option.active {
+  background: var(--color-gray-100);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Mobile language switcher */
+.mobile-lang-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.mobile-lang-btn {
+  flex: 1;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  background: var(--color-gray-100);
+  color: var(--color-gray-800);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.mobile-lang-btn:hover,
+.mobile-lang-btn.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+/* ── Hamburger ────────────────────────────── */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -1731,7 +1847,8 @@ footer {
 @media (max-width: 768px) {
   .nav-links,
   .nav-actions .nav-login-btn,
-  .nav-actions .nav-subscribe-btn { display: none; }
+  .nav-actions .nav-subscribe-btn,
+  .nav-actions .lang-dropdown { display: none; }
   .hamburger { display: flex; }
 
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }

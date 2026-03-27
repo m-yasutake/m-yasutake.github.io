@@ -64,26 +64,39 @@
   <div class="nav-inner">
     <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
     <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="japan.html">Japan</a></li>
-      <li><a href="norway.html">Norway</a></li>
-      <li><a href="gear.html">Gear</a></li>
-      <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
+      <li><a href="index.html" data-i18n="nav.home">Home</a></li>
+      <li><a href="japan.html" data-i18n="nav.japan">Japan</a></li>
+      <li><a href="norway.html" data-i18n="nav.norway">Norway</a></li>
+      <li><a href="gear.html" data-i18n="nav.gear">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html" data-i18n="nav.admin">Admin</a></li>
     </ul>
     <div class="nav-actions">
-      <button class="nav-subscribe-btn" onclick="openSubscribeModal()">🔔 Subscribe</button>
+      <div class="lang-dropdown">
+        <button class="lang-toggle-btn"><span data-i18n="nav.lang">🌐 Language</span> <span class="lang-arrow">▼</span></button>
+        <div class="lang-menu">
+          <button class="lang-option" data-lang="en">English</button>
+          <button class="lang-option" data-lang="ja">日本語</button>
+          <button class="lang-option" data-lang="no">Norsk</button>
+        </div>
+      </div>
+      <button class="nav-subscribe-btn" onclick="openSubscribeModal()" data-i18n="nav.subscribe">🔔 Subscribe</button>
     </div>
     <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
 <div class="mobile-menu">
-  <a href="index.html">🏠 Home</a>
-  <a href="japan.html">Japan</a>
-  <a href="norway.html">Norway</a>
-  <a href="gear.html">🎒 Gear</a>
-  <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
-  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()">🔔 Subscribe to Updates</button>
+  <a href="index.html" data-i18n="mobile.home">🏠 Home</a>
+  <a href="japan.html" data-i18n="mobile.japan">Japan</a>
+  <a href="norway.html" data-i18n="mobile.norway">Norway</a>
+  <a href="gear.html" data-i18n="mobile.gear">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none" data-i18n="mobile.admin">⚙️ Admin</a>
+  <div class="mobile-lang-row">
+    <button class="mobile-lang-btn" data-lang="en">English</button>
+    <button class="mobile-lang-btn" data-lang="ja">日本語</button>
+    <button class="mobile-lang-btn" data-lang="no">Norsk</button>
+  </div>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()" data-i18n="mobile.subscribe">🔔 Subscribe to Updates</button>
 </div>
 
 <div class="auth-overlay">
@@ -194,6 +207,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="assets/js/firebase-config.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 <script>
 (function () {
