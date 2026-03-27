@@ -69,7 +69,7 @@ const TRANSLATIONS = {
 
     /* ── About page ── */
     'about.badge':       '🚴 About Us',
-    'about.title':       'Meet Mika &amp; Tom',
+    'about.title':       'Meet Mika & Tom',
     'about.subtitle':    'Two cyclists. One big dream. Japan to Norway.',
     'about.quote':       '"We quit our jobs, packed our bikes, and set off on the adventure of a lifetime — cycling from the southern tip of Japan to the Arctic coast of Norway."',
     'about.mika.role':   'Cyclist · Photographer · Navigator',
@@ -190,7 +190,7 @@ const TRANSLATIONS = {
 
     /* ── About page ── */
     'about.badge':       '🚴 私たちについて',
-    'about.title':       'ミカ &amp; トムに会おう',
+    'about.title':       'ミカ & トムに会おう',
     'about.subtitle':    '2人のサイクリスト。1つの大きな夢。日本からノルウェーへ。',
     'about.quote':       '「仕事を辞め、自転車を詰め込み、人生最大の冒険 — 日本の南端からノルウェーの北極海岸まで自転車で旅する — へと出発しました。」',
     'about.mika.role':   'サイクリスト・写真家・ナビゲーター',
@@ -311,7 +311,7 @@ const TRANSLATIONS = {
 
     /* ── About page ── */
     'about.badge':       '🚴 Om oss',
-    'about.title':       'Møt Mika &amp; Tom',
+    'about.title':       'Møt Mika & Tom',
     'about.subtitle':    'To syklister. En stor drøm. Japan til Norge.',
     'about.quote':       '"Vi sluttet i jobbene våre, pakket syklene og dro ut på eventyret i et liv — sykling fra den sørligste spissen av Japan til Norges arktiske kyst."',
     'about.mika.role':   'Syklist · Fotograf · Navigator',
@@ -394,15 +394,13 @@ const I18n = (function () {
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       const val = t(key);
-      // Use innerHTML so we can embed HTML entities (&amp; etc.)
-      el.innerHTML = val;
+      el.textContent = val;
     });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => {
       el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
     });
-    // Update <html lang=""> attribute
-    document.documentElement.lang =
-      currentLang === 'ja' ? 'ja' : currentLang === 'no' ? 'no' : 'en';
+    // Update <html lang=""> attribute (currentLang is already validated)
+    document.documentElement.lang = currentLang;
     // Update active state on dropdown items
     document.querySelectorAll('.lang-option').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.lang === currentLang);
