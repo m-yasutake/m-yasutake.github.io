@@ -184,12 +184,12 @@
     <div class="stats-grid">
       <div class="stat-item">
         <span class="stat-num" id="stat-sploops">—</span>
-        <div class="stat-label" aria-label="Sploops (Stanley Park loops)" data-i18n="index.stat.sploops">Sploops 🌲</div>
+        <div class="stat-label" aria-label="Distance Cycled" data-i18n="index.stat.sploops">Distance Cycled 🚴</div>
         <div id="stat-sploops-km" class="stat-sublabel"></div>
       </div>
       <div class="stat-item">
         <span class="stat-num" id="stat-grinds">—</span>
-        <div class="stat-label" aria-label="Grouse Grinds" data-i18n="index.stat.grinds">Grouse Grinds ⛰️</div>
+        <div class="stat-label" aria-label="Elevation Gained" data-i18n="index.stat.grinds">Elevation Gained ⛰️</div>
         <div id="stat-grinds-m" class="stat-sublabel"></div>
       </div>
       <div class="stat-item">
@@ -430,13 +430,13 @@
     } catch (e) {}
   })();
 
-  // ── Firebase: Sploops + Grouse Grinds from owner's Strava routes ──────────
+  // ── Firebase: Distance Cycled + Elevation Gained from owner's Strava routes ──
   (function loadStats() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       const db = firebase.firestore();
 
-      // Owner's Strava rides: Sploops (km ÷ 10) and Grouse Grinds (elevation ÷ 800)
+      // Owner's Strava rides: Distance Cycled (km) and Elevation Gained (m)
       db.collection('routes').where('isOwner', '==', true).get()
         .then(snap => {
           let totalKm = 0;
@@ -453,21 +453,19 @@
               totalElevation += data.totalElevationGain;
             }
           });
-          const sploops = Math.floor(totalKm / 10);
-          const grinds  = Math.floor(totalElevation / 800);
           const sploopsEl = document.getElementById('stat-sploops');
           const grindsEl  = document.getElementById('stat-grinds');
           const sploopsKmEl = document.getElementById('stat-sploops-km');
           const grindsMElevEl = document.getElementById('stat-grinds-m');
           if (totalKm > 0) {
-            animateCounter(sploopsEl, sploops);
-            if (sploopsKmEl) sploopsKmEl.textContent = Math.round(totalKm).toLocaleString() + ' km cycled';
+            animateCounter(sploopsEl, Math.round(totalKm));
+            if (sploopsKmEl) sploopsKmEl.textContent = 'km';
           } else {
             sploopsEl.textContent = '0';
           }
           if (totalElevation > 0) {
-            animateCounter(grindsEl, grinds);
-            if (grindsMElevEl) grindsMElevEl.textContent = Math.round(totalElevation).toLocaleString() + ' m elevation';
+            animateCounter(grindsEl, Math.round(totalElevation));
+            if (grindsMElevEl) grindsMElevEl.textContent = 'm';
           } else {
             grindsEl.textContent = '0';
           }
