@@ -36,8 +36,8 @@ const TRANSLATIONS = {
     'index.hero.btn2':   'Norway',
 
     /* ── Index: Stats ── */
-    'index.stat.sploops': 'Sploops 🌲',
-    'index.stat.grinds':  'Grouse Grinds ⛰️',
+    'index.stat.sploops': 'Distance Cycled 🚴',
+    'index.stat.grinds':  'Elevation Gained ⛰️',
     'index.stat.days':    'Days on the Road',
     'index.stat.onsens':  'Onsens ♨️',
 
@@ -157,8 +157,8 @@ const TRANSLATIONS = {
     'index.hero.btn2':   'ノルウェー',
 
     /* ── Index: Stats ── */
-    'index.stat.sploops': 'スプループス 🌲',
-    'index.stat.grinds':  'グラウスグラインド ⛰️',
+    'index.stat.sploops': 'サイクリング距離 🚴',
+    'index.stat.grinds':  '獲得標高 ⛰️',
     'index.stat.days':    '旅の日数',
     'index.stat.onsens':  '温泉 ♨️',
 
@@ -278,8 +278,8 @@ const TRANSLATIONS = {
     'index.hero.btn2':   'Norge',
 
     /* ── Index: Stats ── */
-    'index.stat.sploops': 'Sploops 🌲',
-    'index.stat.grinds':  'Grouse Grinds ⛰️',
+    'index.stat.sploops': 'Syklet distanse 🚴',
+    'index.stat.grinds':  'Høydemeter ⛰️',
     'index.stat.days':    'Dager på veien',
     'index.stat.onsens':  'Onsens ♨️',
 
