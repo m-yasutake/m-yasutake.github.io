@@ -369,8 +369,8 @@
     }, 16);
   }
 
-  // ── Days since March 5, 2026 ───────────────────────────────
-  const START_DATE = new Date('2026-03-05T00:00:00');
+  // ── Days since March 14, 2026 ───────────────────────────────
+  const START_DATE = new Date('2026-03-14T00:00:00');
   const daysEl = document.getElementById('stat-days');
   const daysSince = Math.max(0, Math.floor((Date.now() - START_DATE.getTime()) / 86400000));
   daysEl.textContent = daysSince.toLocaleString();
