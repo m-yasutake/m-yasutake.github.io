@@ -3085,34 +3085,36 @@ function buildEmailHtml(subject, preheader, body) {
 '<meta name="viewport" content="width=device-width,initial-scale=1.0"/>\n' +
 '<title>' + esc(subject) + '</title>\n' +
 '</head>\n' +
-'<body style="margin:0;padding:0;background:#F0EDE6;font-family:\'Inter\',-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#3D3A32">\n' +
+'<body style="margin:0;padding:0;background:#F0EDE6;font-family:Arial,Helvetica,sans-serif;color:#3D3A32">\n' +
 preheaderHtml + '\n' +
 '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F0EDE6">\n' +
 '<tr><td align="center" style="padding:32px 16px">\n' +
 '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px">\n' +
 '<!-- Header -->\n' +
 '<tr><td style="background:#2F4F3A;border-radius:12px 12px 0 0;padding:28px 36px;text-align:center">\n' +
-'  <div style="font-size:1.6rem;font-weight:700;color:#FAFAF8">🚴 tomika<span style="color:#B87333">.bike</span></div>\n' +
-'  <div style="font-size:.75rem;color:rgba(255,255,255,.6);margin-top:4px;letter-spacing:.08em;text-transform:uppercase">Travel Newsletter</div>\n' +
+'  <p style="margin:0;font-size:26px;font-weight:700;color:#FAFAF8;font-family:Arial,Helvetica,sans-serif">🚴 tomika<span style="color:#B87333">.bike</span></p>\n' +
+'  <p style="margin:4px 0 0;font-size:12px;color:#ACB9B0;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">Travel Newsletter</p>\n' +
 '</td></tr>\n' +
 '<!-- Subject banner -->\n' +
 '<tr><td style="background:#5B8C6B;padding:18px 36px;text-align:center">\n' +
-'  <h1 style="margin:0;font-family:Georgia,serif;font-size:1.35rem;font-weight:700;color:#FAFAF8;line-height:1.3">' + esc(subject) + '</h1>\n' +
+'  <h1 style="margin:0;font-family:Georgia,serif;font-size:22px;font-weight:700;color:#FAFAF8;line-height:1.3">' + esc(subject) + '</h1>\n' +
 '</td></tr>\n' +
 '<!-- Body -->\n' +
 '<tr><td style="background:#FAFAF8;padding:36px;border-left:1px solid #E5E1D8;border-right:1px solid #E5E1D8">\n' +
-'  <div style="font-size:.95rem;line-height:1.7;color:#3D3A32">\n' +
+'  <div style="font-size:15px;line-height:1.7;color:#3D3A32;font-family:Arial,Helvetica,sans-serif">\n' +
     body + '\n' +
 '  </div>\n' +
 '</td></tr>\n' +
 '<!-- Visit button -->\n' +
 '<tr><td style="background:#FAFAF8;padding:0 36px 32px;border-left:1px solid #E5E1D8;border-right:1px solid #E5E1D8;text-align:center">\n' +
-'  <a href="' + siteUrl + '" style="display:inline-block;background:#2F4F3A;color:#FAFAF8;text-decoration:none;padding:12px 28px;border-radius:4px;font-size:.875rem;font-weight:600">Visit tomika.bike →</a>\n' +
+'  <table border="0" cellpadding="0" cellspacing="0" style="margin:0 auto"><tr><td style="background:#2F4F3A;border-radius:4px">\n' +
+'    <a href="' + siteUrl + '" target="_blank" style="display:block;padding:12px 28px;color:#FAFAF8;text-decoration:none;font-size:14px;font-weight:600;font-family:Arial,Helvetica,sans-serif">Visit tomika.bike →</a>\n' +
+'  </td></tr></table>\n' +
 '</td></tr>\n' +
 '<!-- Footer -->\n' +
 '<tr><td style="background:#E5E1D8;border-radius:0 0 12px 12px;padding:20px 36px;text-align:center">\n' +
-'  <p style="margin:0 0 6px;font-size:.75rem;color:#7A776E">You\'re receiving this because you subscribed to updates from <a href="' + siteUrl + '" style="color:#5B8C6B">tomika.bike</a>.</p>\n' +
-'  <p style="margin:0;font-size:.75rem;color:#7A776E"><a href="' + unsubUrl + '" style="color:#7A776E">Unsubscribe</a> &nbsp;·&nbsp; © ' + year + ' Tomika Bike</p>\n' +
+'  <p style="margin:0 0 6px;font-size:12px;color:#7A776E;font-family:Arial,Helvetica,sans-serif">You\'re receiving this because you subscribed to updates from <a href="' + siteUrl + '" target="_blank" style="color:#5B8C6B">tomika.bike</a>.</p>\n' +
+'  <p style="margin:0;font-size:12px;color:#7A776E;font-family:Arial,Helvetica,sans-serif"><a href="' + unsubUrl + '" target="_blank" style="color:#7A776E">Unsubscribe</a> &nbsp;·&nbsp; &#169; ' + year + ' Tomika Bike</p>\n' +
 '</td></tr>\n' +
 '</table>\n' +
 '</td></tr>\n' +
