@@ -2010,10 +2010,16 @@
         if (_onPlanningRoutesLoaded) applyPlanningRoutes();
         markLoaded('routes');
       })
-      .catch(err => { console.error('Firestore read error:', err); _planningRoutesReady = true; if (_onPlanningRoutesLoaded) { var cb = _onPlanningRoutesLoaded; _onPlanningRoutesLoaded = null; cb(); } markLoaded('routes'); });
+      .catch(err => {
+        console.error('Firestore read error:', err);
+        _planningRoutesReady = true;
+        if (_onPlanningRoutesLoaded) applyPlanningRoutes();
+        markLoaded('routes');
+      });
   }
 
   // Process the pending planning routes and add them to the map.
+  // Fires _onPlanningRoutesLoaded callback (used to update the button text) when done.
   function applyPlanningRoutes() {
     if (_planningRoutesApplied) return;
     _planningRoutesApplied = true;
