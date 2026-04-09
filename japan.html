@@ -695,6 +695,7 @@
 
         <!-- Map action buttons and filters -->
         <div class="roots-controls">
+          <button class="roots-btn" id="load-points-btn" aria-label="Load map points">📍 Load Points</button>
           <div class="filter-wrapper">
             <button class="roots-btn" id="filter-btn" aria-label="Open point filters">🔍 Filters<span id="filter-active-badge" style="display:none"></span></button>
             <div class="filter-popup" id="filter-popup">
@@ -737,7 +738,7 @@
             </svg>
           </button>
           <div id="map-loading">
-            <div class="loading-text" id="loading-text">Loading routes &amp; points...</div>
+            <div class="loading-text" id="loading-text">Loading routes...</div>
             <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
           </div>
           <div id="map"></div>
@@ -1822,8 +1823,14 @@
   const loadedFirebasePointIds = new Set();
   let metaPointIdx = null;
 
-  const _loadTasks = { routes: false, points: false, bundled: false };
+  const _loadTasks = { routes: false, bundled: false };
+  let _onPointsLoaded = null;
   function markLoaded(task) {
+    if (task === 'points') {
+      // Points are loaded on demand — fire callback and return (not tracked in overlay).
+      if (_onPointsLoaded) { const cb = _onPointsLoaded; _onPointsLoaded = null; cb(); }
+      return;
+    }
     _loadTasks[task] = true;
     const done = Object.values(_loadTasks).filter(Boolean).length;
     const total = Object.keys(_loadTasks).length;
@@ -1862,7 +1869,6 @@
       currentUser = user;
       updateAuthUI();
       loadFirebaseRoutes();
-      loadFirebasePoints();
     });
   }
 
@@ -1891,7 +1897,7 @@
           try { db.settings(firestoreSettings); } catch(e) { /* already set — ignore */ }
         }
         firebaseReady = true;
-        loadFirebaseRoutes(); loadFirebasePoints();
+        loadFirebaseRoutes();
         loadAuthAndStorage()
           .then(() => {
             // Retry loading GPX for owner routes that failed because storage wasn't
@@ -2189,6 +2195,37 @@
     if (el) el.textContent = checked + ' of ' + items.length + ' items packed';
   }
   updatePackProgress();
+
+  // ── Load Points button ─────────────────────────────────────
+  (function () {
+    const btn = document.getElementById('load-points-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      btn.textContent = '⏳ Loading points…';
+      _onPointsLoaded = function () {
+        btn.textContent = '✓ Points loaded';
+      };
+      // Reset guard so loadFirebasePoints() will run even if called before.
+      _pointsLoadStarted = false;
+      if (firebaseReady) {
+        loadFirebasePoints();
+      } else {
+        // Firebase not yet ready — poll until it is (happens within milliseconds).
+        // Give up after 10 s to avoid indefinite polling if Firebase fails to init.
+        let pollAttempts = 0;
+        const poll = setInterval(function () {
+          pollAttempts++;
+          if (firebaseReady) { clearInterval(poll); loadFirebasePoints(); }
+          else if (pollAttempts >= 100) {
+            clearInterval(poll);
+            btn.textContent = '⚠️ Map not ready';
+            btn.disabled = false;
+          }
+        }, 100);
+      }
+    });
+  }());
 
   // ── Safety timeout: dismiss loading overlay after 20 s regardless of task state.
   // Prevents the map appearing stuck when a Firebase/network call hangs on iOS Safari.
