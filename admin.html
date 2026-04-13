@@ -1037,8 +1037,8 @@
 
       <!-- Bike Links -->
       <div class="new-post-form" style="margin-bottom:1.5rem">
-        <h3 style="margin-bottom:1rem">🚲 Bike Links</h3>
-        <p style="font-size:.85rem;color:var(--color-gray-500);margin-bottom:1rem">These links appear at the top of the Gear page. Paste the full URL to a product page, review, or spec sheet for each bike.</p>
+        <h3 style="margin-bottom:1rem">🚲 Bike Links &amp; Photos</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-500);margin-bottom:1rem">These links and photos appear at the top of the Gear page.</p>
         <div class="form-row">
           <div class="form-group">
             <label>Mika's Bike URL</label>
@@ -1049,7 +1049,31 @@
             <input type="url" id="bike-link-tom" class="form-control" placeholder="https://…" />
           </div>
         </div>
-        <button class="btn btn-primary" id="bike-links-save-btn" onclick="saveBikeLinks()">💾 Save Bike Links</button>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mika's Bike Photo</label>
+            <div style="display:flex;align-items:center;gap:.75rem;margin-top:.25rem">
+              <div id="bike-photo-preview-mika" style="width:80px;height:60px;border:1px solid var(--color-gray-200);border-radius:var(--radius-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--color-gray-100);flex-shrink:0"><span style="font-size:1.5rem">🚲</span></div>
+              <div style="display:flex;flex-direction:column;gap:.35rem">
+                <button type="button" class="btn" style="font-size:.82rem;padding:.3rem .75rem" onclick="openPhotoPicker('bikeMika')">📷 Select Photo</button>
+                <button type="button" class="btn" id="bike-photo-clear-mika" style="font-size:.82rem;padding:.3rem .75rem;background:var(--color-gray-200);display:none" onclick="clearBikePhoto('mika')">✕ Clear</button>
+              </div>
+              <input type="hidden" id="bike-photo-mika" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tom's Bike Photo</label>
+            <div style="display:flex;align-items:center;gap:.75rem;margin-top:.25rem">
+              <div id="bike-photo-preview-tom" style="width:80px;height:60px;border:1px solid var(--color-gray-200);border-radius:var(--radius-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--color-gray-100);flex-shrink:0"><span style="font-size:1.5rem">🚲</span></div>
+              <div style="display:flex;flex-direction:column;gap:.35rem">
+                <button type="button" class="btn" style="font-size:.82rem;padding:.3rem .75rem" onclick="openPhotoPicker('bikeTom')">📷 Select Photo</button>
+                <button type="button" class="btn" id="bike-photo-clear-tom" style="font-size:.82rem;padding:.3rem .75rem;background:var(--color-gray-200);display:none" onclick="clearBikePhoto('tom')">✕ Clear</button>
+              </div>
+              <input type="hidden" id="bike-photo-tom" />
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="bike-links-save-btn" onclick="saveBikeLinks()">💾 Save Bike Links &amp; Photos</button>
       </div>
 
       <div class="admin-gear-bar" id="gearAdminBar" style="display:none">
@@ -2203,9 +2227,11 @@ function blogFmt(tag) {
   };
 
   let _coverMode = false;
+  let _bikeTarget = null; // 'mika' | 'tom' | null
 
   window.openPhotoPicker = async function (mode) {
-    _coverMode = (mode === 'cover');
+    _coverMode  = (mode === 'cover');
+    _bikeTarget = (mode === 'bikeMika') ? 'mika' : (mode === 'bikeTom') ? 'tom' : null;
     const overlay = document.getElementById('photo-picker-overlay');
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -2215,11 +2241,13 @@ function blogFmt(tag) {
     document.getElementById('pp-grid').innerHTML = '';
     document.getElementById('pp-loading').style.display = '';
     document.getElementById('pp-empty').style.display   = 'none';
-    // Update modal UI for cover vs content mode
+    // Update modal UI for cover / bike / content mode
+    const isSingleSelect = _coverMode || _bikeTarget;
     document.querySelector('#photo-picker-overlay .photo-picker-header h3').textContent =
-      _coverMode ? '🖼 Choose Cover Image' : '📷 Insert Photo';
-    document.getElementById('pp-insert-btn').textContent = _coverMode ? 'Set as Cover' : 'Insert';
-    document.getElementById('pp-style').closest('.pp-insert-style').style.display = _coverMode ? 'none' : '';
+      _coverMode  ? '🖼 Choose Cover Image' :
+      _bikeTarget ? '🚲 Choose Bike Photo'  : '📷 Insert Photo';
+    document.getElementById('pp-insert-btn').textContent = isSingleSelect ? 'Set Photo' : 'Insert';
+    document.getElementById('pp-style').closest('.pp-insert-style').style.display = isSingleSelect ? 'none' : '';
     await loadPhotos();
     renderGrid(_allPhotos);
   };
@@ -2236,6 +2264,15 @@ function blogFmt(tag) {
     document.getElementById('cover-img-clear').style.display = 'none';
   };
 
+  window.clearBikePhoto = function (target) {
+    const inp  = document.getElementById('bike-photo-' + target);
+    if (inp) inp.value = '';
+    const prev = document.getElementById('bike-photo-preview-' + target);
+    if (prev) prev.innerHTML = '<span style="font-size:1.5rem">🚲</span>';
+    const clr  = document.getElementById('bike-photo-clear-' + target);
+    if (clr) clr.style.display = 'none';
+  };
+
   window.ppInsert = function () {
     const photos  = _allPhotos.filter(p => _selected.has(p.id));
     if (!photos.length) return;
@@ -2249,6 +2286,20 @@ function blogFmt(tag) {
       document.getElementById('cover-img-clear').style.display = '';
       closePhotoPicker();
       TomikaBikes.showToast('Cover image set ✅', 'success');
+      return;
+    }
+
+    if (_bikeTarget) {
+      // Set the first selected photo as the bike photo
+      const photo = photos[0];
+      const inp   = document.getElementById('bike-photo-' + _bikeTarget);
+      if (inp) inp.value = photo.url;
+      const prev  = document.getElementById('bike-photo-preview-' + _bikeTarget);
+      if (prev) prev.innerHTML = '<img src="' + photo.url.replace(/"/g, '&quot;') + '" alt="bike" style="width:100%;height:100%;object-fit:cover" />';
+      const clr   = document.getElementById('bike-photo-clear-' + _bikeTarget);
+      if (clr) clr.style.display = '';
+      closePhotoPicker();
+      TomikaBikes.showToast('Bike photo set ✅', 'success');
       return;
     }
 
@@ -2417,10 +2468,10 @@ const GearManagerAdmin = (function () {
       cat.items.forEach(item => {
         const iid = item.id;
         html += '<tr data-item-id="' + iid + '">';
-        html += '<td' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + item.name + '</td>';
-        html += '<td class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
-        html += '<td>' + whoTag(item.who || 'Both', editMode) + '</td>';
-        html += '<td class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
+        html += '<td data-label="Item"' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + item.name + '</td>';
+        html += '<td data-label="Weight" class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
+        html += '<td data-label="Who">' + whoTag(item.who || 'Both', editMode) + '</td>';
+        html += '<td data-label="Notes" class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
         if (editMode) html += '<td><button class="gear-row-delete" onclick="GearManagerAdmin.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
         html += '</tr>';
       });
@@ -2525,6 +2576,23 @@ const GearManagerAdmin = (function () {
           const tomEl  = document.getElementById('bike-link-tom');
           if (mikaEl) mikaEl.value = d.mikaBikeUrl || '';
           if (tomEl)  tomEl.value  = d.tomBikeUrl  || '';
+          // Load bike photos
+          if (d.mikaBikePhoto) {
+            const inp = document.getElementById('bike-photo-mika');
+            if (inp) inp.value = d.mikaBikePhoto;
+            const prev = document.getElementById('bike-photo-preview-mika');
+            if (prev) prev.innerHTML = '<img src="' + d.mikaBikePhoto.replace(/"/g, '&quot;') + '" alt="Mika bike" style="width:100%;height:100%;object-fit:cover" />';
+            const clr = document.getElementById('bike-photo-clear-mika');
+            if (clr) clr.style.display = '';
+          }
+          if (d.tomBikePhoto) {
+            const inp = document.getElementById('bike-photo-tom');
+            if (inp) inp.value = d.tomBikePhoto;
+            const prev = document.getElementById('bike-photo-preview-tom');
+            if (prev) prev.innerHTML = '<img src="' + d.tomBikePhoto.replace(/"/g, '&quot;') + '" alt="Tom bike" style="width:100%;height:100%;object-fit:cover" />';
+            const clr = document.getElementById('bike-photo-clear-tom');
+            if (clr) clr.style.display = '';
+          }
         }
       } catch (e) { /* non-critical */ }
     },
@@ -3282,20 +3350,23 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 // ── Bike Links Admin ──────────────────────────────────────────
 async function saveBikeLinks() {
-  const mikaUrl = (document.getElementById('bike-link-mika') || {}).value || '';
-  const tomUrl  = (document.getElementById('bike-link-tom')  || {}).value || '';
+  const mikaUrl   = (document.getElementById('bike-link-mika')  || {}).value || '';
+  const tomUrl    = (document.getElementById('bike-link-tom')   || {}).value || '';
+  const mikaPhoto = (document.getElementById('bike-photo-mika') || {}).value || '';
+  const tomPhoto  = (document.getElementById('bike-photo-tom')  || {}).value || '';
   const btn = document.getElementById('bike-links-save-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
   try {
     await _getAdminDb().collection('site_config').doc('gear').set(
-      { mikaBikeUrl: mikaUrl.trim(), tomBikeUrl: tomUrl.trim() },
+      { mikaBikeUrl: mikaUrl.trim(), tomBikeUrl: tomUrl.trim(),
+        mikaBikePhoto: mikaPhoto.trim(), tomBikePhoto: tomPhoto.trim() },
       { merge: true }
     );
-    TomikaBikes.showToast('Bike links saved!', 'success');
+    TomikaBikes.showToast('Bike links & photos saved!', 'success');
   } catch (e) {
     TomikaBikes.showToast('Save failed: ' + e.message, 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '💾 Save Bike Links'; }
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save Bike Links & Photos'; }
   }
 }
 
