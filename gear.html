@@ -117,7 +117,7 @@
         content: attr(data-label);
         font-weight: 600;
         color: var(--color-primary);
-        font-size: 0.72rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         flex-shrink: 0;
@@ -367,14 +367,14 @@
         <!-- Bike Setup Photos -->
         <div class="bike-setups">
           <div class="bike-setup-card">
-            <div class="bike-setup-img" id="bikeSetupImgMika">
+            <div class="bike-setup-img" id="bike-setup-img-mika">
               <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
               <span class="placeholder-text" data-i18n="gear.photo.soon">Photo coming soon</span>
             </div>
             <div class="bike-setup-label" data-i18n="gear.mika.bike">Mika's Bike</div>
           </div>
           <div class="bike-setup-card">
-            <div class="bike-setup-img" id="bikeSetupImgTom">
+            <div class="bike-setup-img" id="bike-setup-img-tom">
               <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
               <span class="placeholder-text" data-i18n="gear.photo.soon">Photo coming soon</span>
             </div>
@@ -782,8 +782,8 @@
       if (!doc.exists) return;
       const d = doc.data();
       const bikeConfig = {
-        "Mika's Bike": { url: d.mikaBikeUrl, photo: d.mikaBikePhoto, imgId: 'bikeSetupImgMika' },
-        "Tom's Bike":  { url: d.tomBikeUrl,  photo: d.tomBikePhoto,  imgId: 'bikeSetupImgTom' },
+        "Mika's Bike": { url: d.mikaBikeUrl, photo: d.mikaBikePhoto, imgId: 'bike-setup-img-mika' },
+        "Tom's Bike":  { url: d.tomBikeUrl,  photo: d.tomBikePhoto,  imgId: 'bike-setup-img-tom' },
       };
       document.querySelectorAll('.bike-setup-card').forEach(card => {
         const label = card.querySelector('.bike-setup-label');

@@ -2299,7 +2299,7 @@ function blogFmt(tag) {
         prev.innerHTML = '';
         const img = document.createElement('img');
         img.src = photo.url;
-        img.alt = 'bike';
+        img.alt = (_bikeTarget === 'mika' ? "Mika's bike" : "Tom's bike");
         img.style.cssText = 'width:100%;height:100%;object-fit:cover';
         prev.appendChild(img);
       }
@@ -2592,7 +2592,7 @@ const GearManagerAdmin = (function () {
               prev.innerHTML = '';
               const img = document.createElement('img');
               img.src = d.mikaBikePhoto;
-              img.alt = 'Mika bike';
+              img.alt = "Mika's bike";
               img.style.cssText = 'width:100%;height:100%;object-fit:cover';
               prev.appendChild(img);
             }
@@ -2607,7 +2607,7 @@ const GearManagerAdmin = (function () {
               prev.innerHTML = '';
               const img = document.createElement('img');
               img.src = d.tomBikePhoto;
-              img.alt = 'Tom bike';
+              img.alt = "Tom's bike";
               img.style.cssText = 'width:100%;height:100%;object-fit:cover';
               prev.appendChild(img);
             }
