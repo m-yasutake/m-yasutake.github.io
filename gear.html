@@ -113,7 +113,6 @@
         font-size: 0.875rem;
         gap: 0.5rem;
       }
-      .gear-table tbody td:empty { display: none; }
       .gear-table tbody td::before {
         content: attr(data-label);
         font-weight: 600;
@@ -637,7 +636,7 @@
         html += '<td data-label="Weight" class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
         html += '<td data-label="Who">' + whoTag(item.who || 'Both', editMode) + '</td>';
         html += '<td data-label="Notes" class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
-        if (editMode) html += '<td><button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
+        if (editMode) html += '<td data-label=""><button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
         html += '</tr>';
       });
       html += '</tbody>';

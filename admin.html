@@ -2295,7 +2295,14 @@ function blogFmt(tag) {
       const inp   = document.getElementById('bike-photo-' + _bikeTarget);
       if (inp) inp.value = photo.url;
       const prev  = document.getElementById('bike-photo-preview-' + _bikeTarget);
-      if (prev) prev.innerHTML = '<img src="' + photo.url.replace(/"/g, '&quot;') + '" alt="bike" style="width:100%;height:100%;object-fit:cover" />';
+      if (prev) {
+        prev.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = photo.url;
+        img.alt = 'bike';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+        prev.appendChild(img);
+      }
       const clr   = document.getElementById('bike-photo-clear-' + _bikeTarget);
       if (clr) clr.style.display = '';
       closePhotoPicker();
@@ -2472,7 +2479,7 @@ const GearManagerAdmin = (function () {
         html += '<td data-label="Weight" class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
         html += '<td data-label="Who">' + whoTag(item.who || 'Both', editMode) + '</td>';
         html += '<td data-label="Notes" class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
-        if (editMode) html += '<td><button class="gear-row-delete" onclick="GearManagerAdmin.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
+        if (editMode) html += '<td data-label=""><button class="gear-row-delete" onclick="GearManagerAdmin.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
         html += '</tr>';
       });
       html += '</tbody>';
@@ -2576,12 +2583,19 @@ const GearManagerAdmin = (function () {
           const tomEl  = document.getElementById('bike-link-tom');
           if (mikaEl) mikaEl.value = d.mikaBikeUrl || '';
           if (tomEl)  tomEl.value  = d.tomBikeUrl  || '';
-          // Load bike photos
+          // Load bike photos using DOM methods to avoid XSS
           if (d.mikaBikePhoto) {
             const inp = document.getElementById('bike-photo-mika');
             if (inp) inp.value = d.mikaBikePhoto;
             const prev = document.getElementById('bike-photo-preview-mika');
-            if (prev) prev.innerHTML = '<img src="' + d.mikaBikePhoto.replace(/"/g, '&quot;') + '" alt="Mika bike" style="width:100%;height:100%;object-fit:cover" />';
+            if (prev) {
+              prev.innerHTML = '';
+              const img = document.createElement('img');
+              img.src = d.mikaBikePhoto;
+              img.alt = 'Mika bike';
+              img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+              prev.appendChild(img);
+            }
             const clr = document.getElementById('bike-photo-clear-mika');
             if (clr) clr.style.display = '';
           }
@@ -2589,7 +2603,14 @@ const GearManagerAdmin = (function () {
             const inp = document.getElementById('bike-photo-tom');
             if (inp) inp.value = d.tomBikePhoto;
             const prev = document.getElementById('bike-photo-preview-tom');
-            if (prev) prev.innerHTML = '<img src="' + d.tomBikePhoto.replace(/"/g, '&quot;') + '" alt="Tom bike" style="width:100%;height:100%;object-fit:cover" />';
+            if (prev) {
+              prev.innerHTML = '';
+              const img = document.createElement('img');
+              img.src = d.tomBikePhoto;
+              img.alt = 'Tom bike';
+              img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+              prev.appendChild(img);
+            }
             const clr = document.getElementById('bike-photo-clear-tom');
             if (clr) clr.style.display = '';
           }
