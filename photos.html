@@ -115,9 +115,9 @@
 <!-- Page Hero -->
 <div class="page-hero">
   <div class="container">
-    <div class="hero-badge" style="margin-bottom:.75rem">📷 Gallery</div>
-    <h1>Photo Gallery</h1>
-    <p>Moments from the road – Japan, Norway, and everything in between</p>
+    <div class="hero-badge" style="margin-bottom:.75rem" data-i18n="photos.badge">📷 Gallery</div>
+    <h1 data-i18n="photos.title">Photo Gallery</h1>
+    <p data-i18n="photos.subtitle">Moments from the road – Japan, Norway, and everything in between</p>
   </div>
 </div>
 
@@ -128,26 +128,26 @@
   <div class="container">
 
     <div class="photos-stats">
-      <div class="photos-stat">📷 <strong id="photo-count">…</strong> photos</div>
-      <div class="photos-stat">🗺️ <strong id="album-count">…</strong> albums</div>
+      <div class="photos-stat">📷 <strong id="photo-count">…</strong> <span data-i18n="japan.photos.label">photos</span></div>
+      <div class="photos-stat">🗺️ <strong id="album-count">…</strong> <span data-i18n="japan.albums.label">albums</span></div>
     </div>
 
     <!-- Upload zone (admin only) -->
     <div class="upload-zone" id="uploadZone" style="display:none" onclick="TomikaBikes.showToast('Sign in to upload photos','info')">
       <div class="upload-icon">📤</div>
-      <h3>Add New Photos</h3>
-      <p>Drag &amp; drop photos here, or click to browse.</p>
+      <h3 data-i18n="japan.upload.title">Add New Photos</h3>
+      <p data-i18n="japan.upload.desc">Drag &amp; drop photos here, or click to browse.</p>
     </div>
 
     <!-- Gallery Filters (populated dynamically) -->
     <div class="gallery-filters" id="gallery-filters">
-      <button class="filter-btn active" data-gcat="all">🌍 All Photos</button>
+      <button class="filter-btn active" data-gcat="all" data-i18n="photos.filter.all">🌍 All Photos</button>
     </div>
 
     <!-- Loading state -->
     <div id="gallery-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
       <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
-      <p>Loading photos…</p>
+      <p data-i18n="japan.loading.photos">Loading photos…</p>
     </div>
 
     <!-- Photo grid (populated by JS) -->
@@ -155,14 +155,14 @@
 
     <!-- Show More photos button -->
     <div id="photos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
-      <button id="photos-show-more-btn" class="btn btn-outline" onclick="photosShowMore()">Show More ↓</button>
+      <button id="photos-show-more-btn" class="btn btn-outline" onclick="photosShowMore()" data-i18n="japan.photos.more">Show More ↓</button>
     </div>
 
     <!-- Empty state (shown when Firestore returns 0 photos) -->
     <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
       <div style="font-size:4rem;margin-bottom:1rem">📷</div>
-      <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Photos coming soon!</h2>
-      <p style="font-size:.95rem;max-width:420px;margin:0 auto">We leave tomorrow — check back once we're on the road. The first photos from Tokyo and Kagoshima will be up as soon as we can manage it.</p>
+      <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)" data-i18n="japan.photos.empty.title">Photos coming soon!</h2>
+      <p style="font-size:.95rem;max-width:420px;margin:0 auto" data-i18n="photos.empty.desc">We leave tomorrow — check back once we're on the road. The first photos from Tokyo and Kagoshima will be up as soon as we can manage it.</p>
     </div>
   </div>
 </section>
@@ -178,9 +178,9 @@
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
-    <h2>Check back soon!</h2>
-    <p>We leave tomorrow — photos from Tokyo and Kagoshima coming shortly.</p>
-    <a href="planning.html" class="btn btn-outline">🗺️ See the Route</a>
+    <h2 data-i18n="photos.cta.title">Check back soon!</h2>
+    <p data-i18n="photos.cta.desc">We leave tomorrow — photos from Tokyo and Kagoshima coming shortly.</p>
+    <a href="planning.html" class="btn btn-outline" data-i18n="photos.cta.btn">🗺️ See the Route</a>
   </div>
 </section>
 
@@ -190,15 +190,15 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
-        <p>A cycling adventure blog.</p>
+        <p data-i18n="footer.brand">A cycling adventure blog documenting our journey through Japan and Norway.</p>
       </div>
-      <div class="footer-col"><h4>Explore</h4><a href="index.html">Home</a><a href="japan.html">Japan</a><a href="norway.html">Norway</a><a href="gear.html">Gear</a></div>
-      <div class="footer-col"><h4>Info</h4><a href="about.html">About Us</a><a href="#">Contact</a></div>
-      <div class="footer-col"><h4>Admin</h4><a href="#" data-auth>Login</a><a href="admin.html" class="admin-only-link" style="display:none">Dashboard</a></div>
+      <div class="footer-col"><h4 data-i18n="footer.explore">Explore</h4><a href="index.html" data-i18n="nav.home">Home</a><a href="japan.html" data-i18n="nav.japan">Japan</a><a href="norway.html" data-i18n="nav.norway">Norway</a><a href="gear.html" data-i18n="nav.gear">Gear</a></div>
+      <div class="footer-col"><h4 data-i18n="footer.info">Info</h4><a href="about.html" data-i18n="footer.about">About Us</a><a href="#" data-i18n="footer.contact">Contact</a></div>
+      <div class="footer-col"><h4 data-i18n="footer.admin">Admin</h4><a href="#" data-auth data-i18n="footer.login">Login</a><a href="admin.html" class="admin-only-link" style="display:none" data-i18n="footer.dashboard">Dashboard</a></div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 tomika.bike</span>
-      <span>Made with ❤️ and 🚴</span>
+      <span data-i18n="footer.copy">© 2026 tomika.bike</span>
+      <span data-i18n="footer.made">Made with ❤️ and 🚴</span>
     </div>
   </div>
 </footer>
