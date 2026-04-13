@@ -420,8 +420,8 @@
                 (d.excerpt ? '<p class="card-text">' + esc(d.excerpt) + '</p>' : '') +
               '</div>' +
               '<div class="card-footer">' +
-                '<span>' + esc(fmtMonthYear(d.date)) + '</span>' +
-                '<a href="post.html?id=' + encodeURIComponent(p.id) + '">' + I18n.t('post.read') + '</a>' +
+                '<span data-i18n-date="' + esc(d.date || '') + '" data-i18n-date-format="month-year">' + esc(fmtMonthYear(d.date)) + '</span>' +
+                '<a href="post.html?id=' + encodeURIComponent(p.id) + '" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
               '</div>';
             grid.appendChild(card);
           });

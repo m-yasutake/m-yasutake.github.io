@@ -351,7 +351,7 @@
           '<article class="featured-post" data-cat="' + esc(f.data.category || '') + '">' +
             '<div class="featured-post-img" style="' + (f.data.coverImage ? 'background-image:url(' + f.data.coverImage.replace(/"/g,'%22') + ');background-size:cover;background-position:center;font-size:0' : '') + '">' + (f.data.coverImage ? '' : '\u270d\ufe0f') + '</div>' +
             '<div class="featured-post-body">' +
-              '<div class="featured-badge">' + I18n.t('post.latest') + '</div>' +
+              '<div class="featured-badge" data-i18n="post.latest">' + I18n.t('post.latest') + '</div>' +
               '<div class="post-meta-row">' +
                 '<div class="author-chip">' +
                   '<div class="author-avatar" style="background:var(--color-secondary)">' +
@@ -359,11 +359,11 @@
                   '</div>' +
                   '<span>' + esc(f.data.author || '') + '</span>' +
                 '</div>' +
-                '<span class="post-date">' + esc(fmtDate(f.data.date)) + '</span>' +
+                '<span class="post-date" data-i18n-date="' + esc(f.data.date || '') + '">' + esc(fmtDate(f.data.date)) + '</span>' +
               '</div>' +
               '<h2>' + esc(f.data.title || '') + '</h2>' +
               (f.data.excerpt ? '<p>' + esc(f.data.excerpt) + '</p>' : '') +
-              '<a href="post.html?id=' + encodeURIComponent(f.id) + '" class="btn btn-primary">' + I18n.t('post.read') + '</a>' +
+              '<a href="post.html?id=' + encodeURIComponent(f.id) + '" class="btn btn-primary" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
             '</div>' +
           '</article>';
       }
@@ -386,12 +386,12 @@
                 '</div>' +
                 '<span>' + esc(d.author || '') + '</span>' +
               '</div>' +
-              '<span class="post-date">' + esc(fmtDate(d.date)) + '</span>' +
+              '<span class="post-date" data-i18n-date="' + esc(d.date || '') + '">' + esc(fmtDate(d.date)) + '</span>' +
               (CAT_LABELS[d.category] ? '<span class="read-time">' + CAT_LABELS[d.category] + '</span>' : '') +
             '</div>' +
             '<h2>' + esc(d.title || '') + '</h2>' +
             (d.excerpt ? '<p>' + esc(d.excerpt) + '</p>' : '') +
-            '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem">' + I18n.t('post.read') + '</a>' +
+            '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
           '</div>';
         list.appendChild(card);
       });
