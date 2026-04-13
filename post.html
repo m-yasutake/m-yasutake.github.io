@@ -350,7 +350,7 @@
           '<div class="author-avatar" style="background:var(--color-secondary)">' + avatarLetter + '</div>' +
           '<span>' + esc(data.author || '') + '</span>' +
         '</div>' +
-        '<span class="post-date" style="color:rgba(255,255,255,.8)">' + esc(formatDate(data.date)) + '</span>' +
+        '<span class="post-date" style="color:rgba(255,255,255,.8)" data-i18n-date="' + esc(data.date || '') + '">' + esc(formatDate(data.date)) + '</span>' +
         '<span class="read-time" style="color:rgba(255,255,255,.8)">' + esc(estimateReadTime(data.content)) + '</span>' +
       '</div>';
 
@@ -358,18 +358,19 @@
     var backPage  = data.category === 'japan'  ? 'japan.html#blog-section'
                   : data.category === 'norway' ? 'norway.html#blog-section'
                   : 'blog.html';
-    var backLabel = data.category === 'japan'  ? I18n.t('post.back.japan')
-                  : data.category === 'norway' ? I18n.t('post.back.norway')
-                  : I18n.t('post.back.blog');
+    var backKey   = data.category === 'japan'  ? 'post.back.japan'
+                  : data.category === 'norway' ? 'post.back.norway'
+                  : 'post.back.blog';
+    var backLabel = I18n.t(backKey);
 
     // Body — content is admin-authored HTML
     var bodyEl = document.getElementById('post-body');
     bodyEl.className = 'post-body';
     bodyEl.innerHTML =
-      '<a href="' + esc(backPage) + '" class="post-back">' + esc(backLabel) + '</a>' +
+      '<a href="' + esc(backPage) + '" class="post-back" data-i18n="' + backKey + '">' + esc(backLabel) + '</a>' +
       '<div class="post-content">' + (data.content || '<p><em>No content yet.</em></p>') + '</div>' +
       '<div class="post-footer-nav">' +
-        '<a href="' + esc(backPage) + '" class="btn btn-dark">' + esc(backLabel) + '</a>' +
+        '<a href="' + esc(backPage) + '" class="btn btn-dark" data-i18n="' + backKey + '">' + esc(backLabel) + '</a>' +
       '</div>';
 
     // Show draft preview bar and (for the admin) a Publish button

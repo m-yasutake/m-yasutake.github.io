@@ -2417,11 +2417,11 @@ function toggleCheck(el) {
                   '</div>' +
                   '<span>' + esc(d.author || '') + '</span>' +
                 '</div>' +
-                '<span class="post-date">' + esc(fmtDate(d.date)) + '</span>' +
+                '<span class="post-date" data-i18n-date="' + esc(d.date || '') + '">' + esc(fmtDate(d.date)) + '</span>' +
               '</div>' +
               '<h2>' + esc(d.title || '') + '</h2>' +
               (d.excerpt ? '<p>' + esc(d.excerpt) + '</p>' : '') +
-              '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem">' + I18n.t('post.read') + '</a>' +
+              '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
             '</div>';
           document.getElementById('postList').appendChild(card);
         });

@@ -639,6 +639,17 @@ const I18n = (function () {
     document.querySelectorAll('[data-i18n-aria]').forEach(el => {
       el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
     });
+    document.querySelectorAll('[data-i18n-date]').forEach(el => {
+      const raw = el.getAttribute('data-i18n-date');
+      if (!raw) return;
+      const d = new Date(raw + 'T00:00:00');
+      if (isNaN(d.getTime())) return;
+      const fmt = el.getAttribute('data-i18n-date-format');
+      const opts = fmt === 'month-year'
+        ? { month: 'long', year: 'numeric' }
+        : { day: 'numeric', month: 'long', year: 'numeric' };
+      el.textContent = d.toLocaleDateString(locale(), opts);
+    });
     // Update <html lang=""> attribute (currentLang is already validated)
     document.documentElement.lang = currentLang;
     // Update active state on dropdown items
