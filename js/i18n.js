@@ -13,6 +13,9 @@ const TRANSLATIONS = {
     'nav.admin':      'Admin',
     'nav.subscribe':  '🔔 Subscribe',
     'nav.lang':       '🌐 Language',
+    'nav.map':        'Map',
+    'nav.blog':       'Blog',
+    'nav.photos':     'Photos',
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 Home',
@@ -190,6 +193,12 @@ const TRANSLATIONS = {
     'photos.cta.desc':           "We leave tomorrow — photos from Tokyo and Kagoshima coming shortly.",
     'photos.cta.btn':            '🗺️ See the Route',
     'photos.empty.desc':         "We leave tomorrow — check back once we're on the road. The first photos from Tokyo and Kagoshima will be up as soon as we can manage it.",
+
+    /* ── Planning/Map page ── */
+    'planning.badge':            '🗺️ Interactive Map',
+    'planning.title':            'Map',
+    'planning.subtitle':         'Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning',
+    'planning.loading':          'Loading routes & points...',
   },
 
   /* ─────────────────────────────────────────────
@@ -204,6 +213,9 @@ const TRANSLATIONS = {
     'nav.admin':      '管理者',
     'nav.subscribe':  '🔔 登録する',
     'nav.lang':       '🌐 言語',
+    'nav.map':        'マップ',
+    'nav.blog':       'ブログ',
+    'nav.photos':     '写真',
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 ホーム',
@@ -381,6 +393,12 @@ const TRANSLATIONS = {
     'photos.cta.desc':           '明日出発します — 東京と鹿児島からの写真をお楽しみに。',
     'photos.cta.btn':            '🗺️ ルートを見る',
     'photos.empty.desc':         '明日出発します — 旅が始まったらチェックしてみてください。東京・鹿児島の最初の写真は、できるだけ早くアップする予定です。',
+
+    /* ── Planning/Map page ── */
+    'planning.badge':            '🗺️ インタラクティブマップ',
+    'planning.title':            'マップ',
+    'planning.subtitle':         'GPXバイクルート、温泉、キャンプ場、GPSウェイポイント、旅行計画のインタラクティブマップ',
+    'planning.loading':          'ルートとポイントを読み込み中...',
   },
 
   /* ─────────────────────────────────────────────
@@ -395,6 +413,9 @@ const TRANSLATIONS = {
     'nav.admin':      'Admin',
     'nav.subscribe':  '🔔 Abonner',
     'nav.lang':       '🌐 Språk',
+    'nav.map':        'Kart',
+    'nav.blog':       'Blogg',
+    'nav.photos':     'Bilder',
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 Hjem',
@@ -572,6 +593,12 @@ const TRANSLATIONS = {
     'photos.cta.desc':           'Vi drar i morgen — bilder fra Tokyo og Kagoshima kommer snart.',
     'photos.cta.btn':            '🗺️ Se ruten',
     'photos.empty.desc':         'Vi drar i morgen — sjekk tilbake når vi er på veien. De første bildene fra Tokyo og Kagoshima vil bli lagt ut så snart vi kan.',
+
+    /* ── Planning/Map page ── */
+    'planning.badge':            '🗺️ Interaktivt kart',
+    'planning.title':            'Kart',
+    'planning.subtitle':         'Interaktivt kart for GPX-sykkelruter, onsen, campingplasser, GPS-veipunkter og reiseplanlegging',
+    'planning.loading':          'Laster ruter og punkter...',
   }
 };
 

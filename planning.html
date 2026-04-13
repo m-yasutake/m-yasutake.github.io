@@ -474,9 +474,9 @@
 </div>
 <div class="page-hero">
   <div class="container">
-    <div class="hero-badge" style="margin-bottom:.75rem">🗺️ Interactive Map</div>
-    <h1>Map</h1>
-    <p>Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning</p>
+    <div class="hero-badge" style="margin-bottom:.75rem" data-i18n="planning.badge">🗺️ Interactive Map</div>
+    <h1 data-i18n="planning.title">Map</h1>
+    <p data-i18n="planning.subtitle">Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning</p>
   </div>
 </div>
 
@@ -493,16 +493,16 @@
         <!-- Map action buttons and filters -->
         <div class="roots-controls">
           <div class="filter-wrapper">
-            <button class="roots-btn" id="filter-btn" aria-label="Open point filters">🔍 Filters<span id="filter-active-badge" style="display:none"></span></button>
+            <button class="roots-btn" id="filter-btn" aria-label="Open point filters"><span data-i18n="japan.btn.filters">🔍 Filters</span><span id="filter-active-badge" style="display:none"></span></button>
             <div class="filter-popup" id="filter-popup">
               <div class="filter-popup-header">
-                <strong>Filter Points</strong>
+                <strong data-i18n="japan.filter.title">Filter Points</strong>
                 <button class="filter-close-btn" id="filter-close-btn" aria-label="Close filters">✕</button>
               </div>
               <div id="type-filters"></div>
               <div class="filter-popup-footer">
-                <button class="roots-btn" id="filter-select-all" style="font-size:0.8em;padding:0.25em 0.6em">All</button>
-                <button class="roots-btn" id="filter-clear-all" style="font-size:0.8em;padding:0.25em 0.6em">None</button>
+                <button class="roots-btn" id="filter-select-all" style="font-size:0.8em;padding:0.25em 0.6em" data-i18n="japan.filter.all">All</button>
+                <button class="roots-btn" id="filter-clear-all" style="font-size:0.8em;padding:0.25em 0.6em" data-i18n="japan.filter.none">None</button>
               </div>
             </div>
           </div>
@@ -511,11 +511,11 @@
         <!-- Metadata modal (for Firebase route info) -->
         <div class="meta-overlay" id="meta-overlay">
           <div class="meta-modal" id="meta-modal">
-            <h3 id="meta-title">Route Info</h3>
+            <h3 id="meta-title" data-i18n="japan.meta.title">Route Info</h3>
             <div id="meta-body"></div>
             <div class="meta-actions">
-              <button class="roots-btn" id="meta-save-btn" style="display:none;">Save</button>
-              <button class="roots-btn" id="meta-close-btn">Close</button>
+              <button class="roots-btn" id="meta-save-btn" style="display:none;" data-i18n="japan.meta.save">Save</button>
+              <button class="roots-btn" id="meta-close-btn" data-i18n="japan.meta.close">Close</button>
             </div>
           </div>
         </div>
@@ -534,7 +534,7 @@
             </svg>
           </button>
           <div id="map-loading">
-            <div class="loading-text" id="loading-text">Loading routes &amp; points...</div>
+            <div class="loading-text" id="loading-text" data-i18n="planning.loading">Loading routes &amp; points...</div>
             <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
           </div>
           <div id="map"></div>
@@ -558,32 +558,32 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
-        <p>A cycling adventure blog documenting our journey through Japan and Norway.</p>
+        <p data-i18n="footer.brand">A cycling adventure blog documenting our journey through Japan and Norway.</p>
         <div class="social-links">
           <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
         </div>
       </div>
       <div class="footer-col">
-        <h4>Explore</h4>
-        <a href="index.html">Home</a>
-        <a href="japan.html">Japan</a>
-        <a href="norway.html">Norway</a>
-        <a href="gear.html">Gear</a>
+        <h4 data-i18n="footer.explore">Explore</h4>
+        <a href="index.html" data-i18n="nav.home">Home</a>
+        <a href="japan.html" data-i18n="nav.japan">Japan</a>
+        <a href="norway.html" data-i18n="nav.norway">Norway</a>
+        <a href="gear.html" data-i18n="nav.gear">Gear</a>
       </div>
       <div class="footer-col">
-        <h4>Info</h4>
-        <a href="about.html">About Us</a>
-        <a href="#">Contact</a>
+        <h4 data-i18n="footer.info">Info</h4>
+        <a href="about.html" data-i18n="footer.about">About Us</a>
+        <a href="#" data-i18n="footer.contact">Contact</a>
       </div>
       <div class="footer-col">
-        <h4>Admin</h4>
-        <a href="#" data-auth>Login</a>
-        <a href="admin.html" class="admin-only-link" style="display:none">Dashboard</a>
+        <h4 data-i18n="footer.admin">Admin</h4>
+        <a href="#" data-auth data-i18n="footer.login">Login</a>
+        <a href="admin.html" class="admin-only-link" style="display:none" data-i18n="footer.dashboard">Dashboard</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 tomika.bike</span>
-      <span>Made with ❤️ and 🚴</span>
+      <span data-i18n="footer.copy">© 2026 tomika.bike</span>
+      <span data-i18n="footer.made">Made with ❤️ and 🚴</span>
     </div>
   </div>
 </footer>
