@@ -13,6 +13,9 @@ const TRANSLATIONS = {
     'nav.admin':      'Admin',
     'nav.subscribe':  '🔔 Subscribe',
     'nav.lang':       '🌐 Language',
+    'nav.map':        'Map',
+    'nav.blog':       'Blog',
+    'nav.photos':     'Photos',
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 Home',
@@ -120,6 +123,82 @@ const TRANSLATIONS = {
     'gear.col.status':  'Status',
     'gear.checklist':   'Pre-departure Checklist',
     'gear.weight.total':'Total Pack Weight',
+    'gear.weight.estimate': 'Estimated Pack Weight',
+    'gear.numbers':     'By the Numbers',
+    'gear.kg.bike':     'kg per bike',
+    'gear.items':       'items each',
+    'gear.panniers':    'panniers',
+    'gear.days':        'days on road',
+    'gear.photo.soon':  'Photo coming soon',
+    'gear.mika.bike':   "Mika's Bike",
+    'gear.tom.bike':    "Tom's Bike",
+    'gear.loading':     'Loading gear list…',
+
+    /* ── Japan page ── */
+    'japan.badge':               'Japan',
+    'japan.subtitle':            'Cycling from the southern tip of Kyushu to Hokkaido – the map, the blog, and photos from the road.',
+    'japan.map.title':           'Route Map',
+    'japan.blog.title':          'Blog',
+    'japan.photos.title':        'Photos',
+    'japan.btn.routes':          '📋 Load Routes',
+    'japan.btn.points':          '📍 Load Points',
+    'japan.btn.filters':         '🔍 Filters',
+    'japan.filter.title':        'Filter Points',
+    'japan.filter.all':          'All',
+    'japan.filter.none':         'None',
+    'japan.meta.title':          'Route Info',
+    'japan.meta.close':          'Close',
+    'japan.meta.save':           'Save',
+    'japan.loading.routes':      'Loading routes...',
+    'japan.blog.more':           'Show More ↓',
+    'japan.photos.label':        'photos',
+    'japan.albums.label':        'albums',
+    'japan.upload.title':        'Add New Photos',
+    'japan.upload.desc':         'Drag & drop photos here, or click to browse.',
+    'japan.loading.photos':      'Loading photos…',
+    'japan.photos.more':         'Show More ↓',
+    'japan.photos.empty.title':  'Photos coming soon!',
+    'japan.photos.empty.desc':   'No photos yet — check back soon for updates from the road.',
+
+    /* ── Blog page ── */
+    'blog.badge':                '✍️ Travel Stories',
+    'blog.title':                'The Blog',
+    'blog.subtitle':             'Japan. Norway. Bikes. Two people, one ridiculous plan.',
+    'blog.search.placeholder':   '🔍 Search posts...',
+    'blog.filter.all':           'All',
+    'blog.sidebar.about.title':  'About the Blog',
+    'blog.sidebar.about.desc':   'Two cyclists. Japan to Norway. Documenting every beautiful, difficult, and hilarious moment.',
+    'blog.sidebar.newsletter':   'Newsletter',
+    'blog.sidebar.updates':      'Get updates from the road.',
+    'blog.cta.title':            'Follow along!',
+    'blog.cta.desc':             "We're on the road — subscribe for updates from the journey.",
+
+    /* ── Post page ── */
+    'post.loading':              'Loading post…',
+    'post.read':                 'Read Full Post →',
+    'post.latest':               '⭐ Latest Post',
+    'post.back.blog':            '← Back to Blog',
+    'post.back.japan':           '← Back to Japan',
+    'post.back.norway':          '← Back to Norway',
+    'post.preview.text':         '📝 Draft Preview — this post is not yet published',
+    'post.preview.publish':      '✅ Publish Now',
+    'post.preview.back':         '← Back to Admin',
+
+    /* ── Photos page ── */
+    'photos.badge':              '📷 Gallery',
+    'photos.title':              'Photo Gallery',
+    'photos.subtitle':           'Moments from the road – Japan, Norway, and everything in between',
+    'photos.filter.all':         '🌍 All Photos',
+    'photos.cta.title':          'Check back soon!',
+    'photos.cta.desc':           "We leave tomorrow — photos from Tokyo and Kagoshima coming shortly.",
+    'photos.cta.btn':            '🗺️ See the Route',
+    'photos.empty.desc':         "We leave tomorrow — check back once we're on the road. The first photos from Tokyo and Kagoshima will be up as soon as we can manage it.",
+
+    /* ── Planning/Map page ── */
+    'planning.badge':            '🗺️ Interactive Map',
+    'planning.title':            'Map',
+    'planning.subtitle':         'Interactive map for GPX bike routes, onsen, campsites, GPS waypoints, and trip planning',
+    'planning.loading':          'Loading routes & points...',
   },
 
   /* ─────────────────────────────────────────────
@@ -134,6 +213,9 @@ const TRANSLATIONS = {
     'nav.admin':      '管理者',
     'nav.subscribe':  '🔔 登録する',
     'nav.lang':       '🌐 言語',
+    'nav.map':        'マップ',
+    'nav.blog':       'ブログ',
+    'nav.photos':     '写真',
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 ホーム',
@@ -241,6 +323,82 @@ const TRANSLATIONS = {
     'gear.col.status':  'ステータス',
     'gear.checklist':   '出発前チェックリスト',
     'gear.weight.total':'合計荷物重量',
+    'gear.weight.estimate': '推定パック重量',
+    'gear.numbers':     '数字で見る',
+    'gear.kg.bike':     'kg/バイク',
+    'gear.items':       '個/人',
+    'gear.panniers':    'パニア',
+    'gear.days':        '日間',
+    'gear.photo.soon':  '写真近日公開',
+    'gear.mika.bike':   'ミカのバイク',
+    'gear.tom.bike':    'トムのバイク',
+    'gear.loading':     'ギアリストを読み込み中…',
+
+    /* ── Japan page ── */
+    'japan.badge':               '日本',
+    'japan.subtitle':            '九州の南端から北海道まで – マップ、ブログ、そして道中の写真。',
+    'japan.map.title':           'ルートマップ',
+    'japan.blog.title':          'ブログ',
+    'japan.photos.title':        '写真',
+    'japan.btn.routes':          '📋 ルートを読み込む',
+    'japan.btn.points':          '📍 ポイントを読み込む',
+    'japan.btn.filters':         '🔍 フィルター',
+    'japan.filter.title':        'ポイントを絞り込む',
+    'japan.filter.all':          'すべて',
+    'japan.filter.none':         'なし',
+    'japan.meta.title':          'ルート情報',
+    'japan.meta.close':          '閉じる',
+    'japan.meta.save':           '保存',
+    'japan.loading.routes':      'ルートを読み込み中...',
+    'japan.blog.more':           'もっと見る ↓',
+    'japan.photos.label':        '枚',
+    'japan.albums.label':        'アルバム',
+    'japan.upload.title':        '写真を追加',
+    'japan.upload.desc':         'ここに写真をドラッグ&ドロップするか、クリックして参照してください。',
+    'japan.loading.photos':      '写真を読み込み中…',
+    'japan.photos.more':         'もっと見る ↓',
+    'japan.photos.empty.title':  '写真は近日公開予定！',
+    'japan.photos.empty.desc':   'まだ写真はありません — 旅の近況は近日中に更新予定です。',
+
+    /* ── Blog page ── */
+    'blog.badge':                '✍️ 旅の物語',
+    'blog.title':                'ブログ',
+    'blog.subtitle':             '日本、ノルウェー、自転車。二人のとんでもない計画。',
+    'blog.search.placeholder':   '🔍 記事を検索...',
+    'blog.filter.all':           'すべて',
+    'blog.sidebar.about.title':  'ブログについて',
+    'blog.sidebar.about.desc':   '二人のサイクリスト。日本からノルウェーへ。美しく、辛く、そして笑えるすべての瞬間を記録。',
+    'blog.sidebar.newsletter':   'ニュースレター',
+    'blog.sidebar.updates':      '旅の最新情報を受け取る。',
+    'blog.cta.title':            '旅についてきてください！',
+    'blog.cta.desc':             '旅の途中です — 最新情報を購読してください。',
+
+    /* ── Post page ── */
+    'post.loading':              '投稿を読み込み中…',
+    'post.read':                 '全文を読む →',
+    'post.latest':               '⭐ 最新記事',
+    'post.back.blog':            '← ブログに戻る',
+    'post.back.japan':           '← 日本に戻る',
+    'post.back.norway':          '← ノルウェーに戻る',
+    'post.preview.text':         '📝 下書きプレビュー — この記事はまだ公開されていません',
+    'post.preview.publish':      '✅ 今すぐ公開',
+    'post.preview.back':         '← 管理者に戻る',
+
+    /* ── Photos page ── */
+    'photos.badge':              '📷 ギャラリー',
+    'photos.title':              'フォトギャラリー',
+    'photos.subtitle':           '道中の瞬間 – 日本、ノルウェー、そしてその間のすべて',
+    'photos.filter.all':         '🌍 すべての写真',
+    'photos.cta.title':          'もうすぐ公開！',
+    'photos.cta.desc':           '明日出発します — 東京と鹿児島からの写真をお楽しみに。',
+    'photos.cta.btn':            '🗺️ ルートを見る',
+    'photos.empty.desc':         '明日出発します — 旅が始まったらチェックしてみてください。東京・鹿児島の最初の写真は、できるだけ早くアップする予定です。',
+
+    /* ── Planning/Map page ── */
+    'planning.badge':            '🗺️ インタラクティブマップ',
+    'planning.title':            'マップ',
+    'planning.subtitle':         'GPXバイクルート、温泉、キャンプ場、GPSウェイポイント、旅行計画のインタラクティブマップ',
+    'planning.loading':          'ルートとポイントを読み込み中...',
   },
 
   /* ─────────────────────────────────────────────
@@ -255,6 +413,9 @@ const TRANSLATIONS = {
     'nav.admin':      'Admin',
     'nav.subscribe':  '🔔 Abonner',
     'nav.lang':       '🌐 Språk',
+    'nav.map':        'Kart',
+    'nav.blog':       'Blogg',
+    'nav.photos':     'Bilder',
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 Hjem',
@@ -362,6 +523,82 @@ const TRANSLATIONS = {
     'gear.col.status':  'Status',
     'gear.checklist':   'Sjekkliste før avreise',
     'gear.weight.total':'Total pakkevekt',
+    'gear.weight.estimate': 'Estimert pakkevekt',
+    'gear.numbers':     'Med tall',
+    'gear.kg.bike':     'kg per sykkel',
+    'gear.items':       'gjenstander hver',
+    'gear.panniers':    'sykkelposer',
+    'gear.days':        'dager på veien',
+    'gear.photo.soon':  'Bilde kommer snart',
+    'gear.mika.bike':   'Mikas sykkel',
+    'gear.tom.bike':    'Toms sykkel',
+    'gear.loading':     'Laster utstyrsliste…',
+
+    /* ── Japan page ── */
+    'japan.badge':               'Japan',
+    'japan.subtitle':            'Sykler fra sørspissen av Kyushu til Hokkaido – kartet, bloggen og bilder fra veien.',
+    'japan.map.title':           'Rutekart',
+    'japan.blog.title':          'Blogg',
+    'japan.photos.title':        'Bilder',
+    'japan.btn.routes':          '📋 Last ruter',
+    'japan.btn.points':          '📍 Last punkter',
+    'japan.btn.filters':         '🔍 Filtre',
+    'japan.filter.title':        'Filtrer punkter',
+    'japan.filter.all':          'Alle',
+    'japan.filter.none':         'Ingen',
+    'japan.meta.title':          'Ruteinformasjon',
+    'japan.meta.close':          'Lukk',
+    'japan.meta.save':           'Lagre',
+    'japan.loading.routes':      'Laster ruter...',
+    'japan.blog.more':           'Vis mer ↓',
+    'japan.photos.label':        'bilder',
+    'japan.albums.label':        'album',
+    'japan.upload.title':        'Legg til nye bilder',
+    'japan.upload.desc':         'Dra og slipp bilder her, eller klikk for å bla.',
+    'japan.loading.photos':      'Laster bilder…',
+    'japan.photos.more':         'Vis mer ↓',
+    'japan.photos.empty.title':  'Bilder kommer snart!',
+    'japan.photos.empty.desc':   'Ingen bilder ennå — sjekk tilbake snart for oppdateringer fra veien.',
+
+    /* ── Blog page ── */
+    'blog.badge':                '✍️ Reisehistorier',
+    'blog.title':                'Bloggen',
+    'blog.subtitle':             'Japan. Norge. Sykler. To mennesker, én latterlig plan.',
+    'blog.search.placeholder':   '🔍 Søk etter innlegg...',
+    'blog.filter.all':           'Alle',
+    'blog.sidebar.about.title':  'Om bloggen',
+    'blog.sidebar.about.desc':   'To syklister. Japan til Norge. Dokumenterer hvert vakkert, vanskelig og morsomt øyeblikk.',
+    'blog.sidebar.newsletter':   'Nyhetsbrev',
+    'blog.sidebar.updates':      'Få oppdateringer fra veien.',
+    'blog.cta.title':            'Følg med!',
+    'blog.cta.desc':             'Vi er på veien — abonner for oppdateringer fra reisen.',
+
+    /* ── Post page ── */
+    'post.loading':              'Laster innlegg…',
+    'post.read':                 'Les hele innlegget →',
+    'post.latest':               '⭐ Siste innlegg',
+    'post.back.blog':            '← Tilbake til bloggen',
+    'post.back.japan':           '← Tilbake til Japan',
+    'post.back.norway':          '← Tilbake til Norge',
+    'post.preview.text':         '📝 Utkastforhåndsvisning — dette innlegget er ikke publisert ennå',
+    'post.preview.publish':      '✅ Publiser nå',
+    'post.preview.back':         '← Tilbake til admin',
+
+    /* ── Photos page ── */
+    'photos.badge':              '📷 Galleri',
+    'photos.title':              'Fotogalleri',
+    'photos.subtitle':           'Øyeblikk fra veien – Japan, Norge og alt imellom',
+    'photos.filter.all':         '🌍 Alle bilder',
+    'photos.cta.title':          'Sjekk tilbake snart!',
+    'photos.cta.desc':           'Vi drar i morgen — bilder fra Tokyo og Kagoshima kommer snart.',
+    'photos.cta.btn':            '🗺️ Se ruten',
+    'photos.empty.desc':         'Vi drar i morgen — sjekk tilbake når vi er på veien. De første bildene fra Tokyo og Kagoshima vil bli lagt ut så snart vi kan.',
+
+    /* ── Planning/Map page ── */
+    'planning.badge':            '🗺️ Interaktivt kart',
+    'planning.title':            'Kart',
+    'planning.subtitle':         'Interaktivt kart for GPX-sykkelruter, onsen, campingplasser, GPS-veipunkter og reiseplanlegging',
+    'planning.loading':          'Laster ruter og punkter...',
   }
 };
 
@@ -395,6 +632,9 @@ const I18n = (function () {
       const key = el.getAttribute('data-i18n');
       const val = t(key);
       el.textContent = val;
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
     });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => {
       el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
@@ -448,7 +688,13 @@ const I18n = (function () {
     });
   }
 
-  return { init, setLang, t, currentLang: () => currentLang };
+  const LOCALE_MAP = { en: 'en-GB', ja: 'ja-JP', no: 'nb-NO' };
+
+  function locale() {
+    return LOCALE_MAP[currentLang] || 'en-GB';
+  }
+
+  return { init, setLang, t, currentLang: () => currentLang, locale };
 })();
 
 // Auto-initialise once DOM is ready

@@ -391,7 +391,7 @@
       function fmtMonthYear(s) {
         if (!s) return '';
         var d = new Date(s + 'T00:00:00');
-        return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        return d.toLocaleDateString(I18n.locale(), { month: 'long', year: 'numeric' });
       }
       var GRADIENTS = [
         'linear-gradient(160deg,#2c3e50,#3498db)',
@@ -421,7 +421,7 @@
               '</div>' +
               '<div class="card-footer">' +
                 '<span>' + esc(fmtMonthYear(d.date)) + '</span>' +
-                '<a href="post.html?id=' + encodeURIComponent(p.id) + '">Read \u2192</a>' +
+                '<a href="post.html?id=' + encodeURIComponent(p.id) + '">' + I18n.t('post.read') + '</a>' +
               '</div>';
             grid.appendChild(card);
           });
