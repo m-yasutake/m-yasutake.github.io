@@ -1158,6 +1158,97 @@ p { line-height: 1.75; }
   padding: 0.5rem;
 }
 
+/* ── Video grid (japan.html videos section) ── */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.video-item {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.video-item-thumb {
+  position: relative;
+  overflow: hidden;
+}
+
+.video-item-thumb img,
+.video-item-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.video-item-placeholder {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: rgba(255,255,255,.6);
+}
+
+.video-item:hover .video-item-thumb img,
+.video-item:hover .video-item-placeholder { transform: scale(1.05); }
+
+.video-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.video-play-btn {
+  width: 48px;
+  height: 48px;
+  line-height: 48px;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.85);
+  font-size: 1rem;
+  color: var(--color-primary);
+  padding-left: 4px; /* optical center for ▶ */
+  transition: transform 0.2s ease, background 0.2s ease;
+  display: block;
+}
+
+.video-item:hover .video-play-btn {
+  transform: scale(1.12);
+  background: var(--color-white);
+}
+
+.video-item-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(30,40,25,.7) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity var(--transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.video-item:hover .video-item-overlay { opacity: 1; }
+
+.video-item-overlay p {
+  color: var(--color-white);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
 /* ============================================
    Journal
    ============================================ */

@@ -855,6 +855,58 @@
 
 </div>
 
+<!-- ══════════════════════════════════════════
+     VIDEOS SECTION
+════════════════════════════════════════════ -->
+<div id="videos-section">
+  <div class="japan-section-header">
+    <div class="container">
+      <span class="section-icon">🎬</span>
+      <h2>Videos</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+
+      <div class="photos-stats">
+        <div class="photos-stat">🎬 <strong id="video-count">…</strong> videos</div>
+        <div class="photos-stat">🗺️ <strong id="video-album-count">…</strong> albums</div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="videos-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
+        <p>Loading videos…</p>
+      </div>
+
+      <!-- Video grid (populated by JS) -->
+      <div class="video-grid" id="video-grid" style="display:none"></div>
+
+      <!-- Show More videos button -->
+      <div id="videos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
+        <button id="videos-show-more-btn" class="btn btn-primary" onclick="videosShowMore()">Show More ↓</button>
+      </div>
+
+      <!-- Empty state -->
+      <div id="videos-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
+        <div style="font-size:4rem;margin-bottom:1rem">🎬</div>
+        <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Videos coming soon!</h2>
+        <p style="font-size:.95rem;max-width:420px;margin:0 auto">No videos yet — check back soon for updates from the road.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Video Lightbox (separate from photo lightbox so video playback stops on close) -->
+  <div class="lightbox" id="video-lightbox">
+    <div class="lightbox-content" style="max-width:95vw">
+      <button class="lightbox-close" id="videoLightboxClose">✕</button>
+      <div id="videoLightboxBody"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Footer -->
 <footer>
   <div class="container">
@@ -2596,6 +2648,141 @@ function toggleCheck(el) {
   }
 
   loadPhotos();
+})();
+</script>
+
+<script>
+// ── Videos section ───────────────────────────────────────────
+(function () {
+  // ── Video lightbox
+  const vlb     = document.getElementById('video-lightbox');
+  const vlbBody = document.getElementById('videoLightboxBody');
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openVideoLightbox(url, title, location) {
+    vlbBody.innerHTML =
+      '<video controls autoplay playsinline src="' + url.replace(/"/g, '&quot;') + '" ' +
+        'style="max-width:100%;max-height:75vh;border-radius:var(--radius-md);display:block"></video>' +
+      (title    ? '<p style="color:#fff;text-align:center;margin-top:.75rem;font-size:.9rem">'                    + escHtml(title)    + '</p>' : '') +
+      (location ? '<p style="color:rgba(255,255,255,.7);text-align:center;margin-top:.25rem;font-size:.8rem">📍 ' + escHtml(location) + '</p>' : '');
+    vlb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeVideoLightbox() {
+    vlb.classList.remove('open');
+    vlbBody.innerHTML = ''; // clears <video> → stops playback
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('videoLightboxClose').addEventListener('click', closeVideoLightbox);
+  vlb.addEventListener('click', e => { if (e.target === vlb) closeVideoLightbox(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && vlb.classList.contains('open')) closeVideoLightbox();
+  });
+
+  // ── Pagination
+  const VIDEOS_PAGE = 12;
+  let allVideoDocs = [];
+  let shownVideos  = 0;
+
+  function docTs(doc) {
+    const t = doc.uploadedAt;
+    if (!t) return 0;
+    if (typeof t.toMillis === 'function') return t.toMillis();
+    if (t instanceof Date) return t.getTime();
+    return 0;
+  }
+
+  function renderVideoGrid(docs) {
+    const grid     = document.getElementById('video-grid');
+    const loading  = document.getElementById('videos-loading');
+    const empty    = document.getElementById('videos-empty');
+    const countEl  = document.getElementById('video-count');
+    const albumsEl = document.getElementById('video-album-count');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      empty.style.display  = '';
+      countEl.textContent  = '0';
+      albumsEl.textContent = '0';
+      return;
+    }
+
+    allVideoDocs = docs.slice().sort((a, b) => docTs(b) - docTs(a));
+    const albums = [...new Set(allVideoDocs.map(d => d.album).filter(Boolean))];
+    countEl.textContent  = allVideoDocs.length;
+    albumsEl.textContent = albums.length;
+
+    // Click delegation (registered once)
+    grid.addEventListener('click', e => {
+      const item = e.target.closest('.video-item');
+      if (item) openVideoLightbox(item.dataset.url, item.dataset.title, item.dataset.location);
+    });
+
+    shownVideos = 0;
+    appendVideos(VIDEOS_PAGE);
+    grid.style.display = '';
+  }
+
+  function appendVideos(count) {
+    const grid  = document.getElementById('video-grid');
+    const batch = allVideoDocs.slice(shownVideos, shownVideos + count);
+    batch.forEach(doc => {
+      const title    = doc.title    || doc.fileName || '';
+      const location = doc.location || '';
+      const thumbUrl = doc.thumbUrl || '';
+      const el = document.createElement('div');
+      el.className        = 'video-item';
+      el.dataset.url      = doc.url   || '';
+      el.dataset.title    = title;
+      el.dataset.location = location;
+      el.innerHTML =
+        '<div class="video-item-thumb">' +
+          (thumbUrl
+            ? '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + title.replace(/"/g, '&quot;') + '" loading="lazy">'
+            : '<div class="video-item-placeholder">🎬</div>') +
+          '<div class="video-play-overlay"><span class="video-play-btn">▶</span></div>' +
+        '</div>' +
+        '<div class="video-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(title) + '</p>' +
+        '</div>';
+      grid.appendChild(el);
+    });
+    shownVideos += batch.length;
+    const wrap = document.getElementById('videos-show-more-wrap');
+    if (wrap) wrap.style.display = shownVideos < allVideoDocs.length ? '' : 'none';
+  }
+
+  window.videosShowMore = function () { appendVideos(VIDEOS_PAGE); };
+
+  // ── Load from Firestore
+  function loadVideos() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      const db = firebase.firestore();
+      db.collection('videos').get()
+        .then(snapshot => {
+          const docs = [];
+          snapshot.forEach(doc => docs.push(doc.data()));
+          renderVideoGrid(docs);
+        })
+        .catch(err => {
+          console.error('Videos load error:', err);
+          document.getElementById('videos-loading').innerHTML =
+            '<p style="color:#e74c3c">Could not load videos. Please try again later.</p>';
+        });
+    } catch (err) {
+      console.error('Videos load error:', err);
+    }
+  }
+
+  loadVideos();
 })();
 </script>
 
