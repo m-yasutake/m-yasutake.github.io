@@ -17,5 +17,18 @@ const FIREBASE_CONFIG = {
   appId: "1:6298459601:web:cf83b471ae8de492b814f0"
 };
 
-// Set this to the Google account email authorised for admin operations
-const ADMIN_EMAIL = "tcharlton91@gmail.com";
+// Admin emails are stored in Firestore at:
+//   Collection: config  →  Document: admins  →  Field: emails (array of strings)
+// To add or remove admins, update that document in the Firebase Console — no code changes needed.
+//
+// Usage: window.getAdminEmails(db) returns a Promise<string[]> (cached per page load).
+let _adminEmailsPromise = null;
+window.getAdminEmails = function (db) {
+  if (!_adminEmailsPromise) {
+    _adminEmailsPromise = db.collection('config').doc('admins')
+      .get()
+      .then(function (doc) { return doc.exists ? (doc.data().emails || []) : []; })
+      .catch(function () { return []; });
+  }
+  return _adminEmailsPromise;
+};

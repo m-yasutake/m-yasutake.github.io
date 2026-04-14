@@ -800,9 +800,13 @@ updatePackProgress();
       setTimeout(watchAdminState, 400);
       return;
     }
-    firebase.auth().onAuthStateChanged(user => {
-      const adminEmail = (typeof ADMIN_EMAIL !== 'undefined') ? ADMIN_EMAIL : null;
-      _isAdmin = !!(user && adminEmail && user.email === adminEmail);
+    firebase.auth().onAuthStateChanged(async user => {
+      if (user) {
+        const emails = await window.getAdminEmails(firebase.firestore());
+        _isAdmin = emails.includes(user.email);
+      } else {
+        _isAdmin = false;
+      }
       document.getElementById('gearAdminBar').style.display = _isAdmin ? 'flex' : 'none';
       if (!_isAdmin && _editMode) setEditMode(false);
     });

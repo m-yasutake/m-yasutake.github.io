@@ -385,10 +385,12 @@
           });
         })
         .then(function (user) {
-          var adminEmail = typeof ADMIN_EMAIL !== 'undefined' ? ADMIN_EMAIL : null;
-          if (user && adminEmail && user.email === adminEmail) {
-            document.getElementById('publish-btn').style.display = '';
-          }
+          if (!user) return;
+          return window.getAdminEmails(getDb()).then(function (emails) {
+            if (emails.includes(user.email)) {
+              document.getElementById('publish-btn').style.display = '';
+            }
+          });
         })
         .catch(function () {});
     }
