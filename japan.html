@@ -666,9 +666,9 @@
 <!-- Page Hero -->
 <div class="page-hero">
   <div class="container">
-    <div class="hero-badge" style="margin-bottom:.75rem">Japan</div>
-    <h1>Japan</h1>
-    <p>Cycling from the southern tip of Kyushu to Hokkaido – the map, the blog, and photos from the road.</p>
+    <div class="hero-badge" style="margin-bottom:.75rem" data-i18n="japan.badge">Japan</div>
+    <h1 data-i18n="nav.japan">Japan</h1>
+    <p data-i18n="japan.subtitle">Cycling from the southern tip of Kyushu to Hokkaido – the map, the blog, and photos from the road.</p>
   </div>
 </div>
 
@@ -679,7 +679,7 @@
   <div class="japan-section-header">
     <div class="container">
       <span class="section-icon">🗺️</span>
-      <h2>Route Map</h2>
+      <h2 data-i18n="japan.map.title">Route Map</h2>
     </div>
   </div>
 
@@ -695,19 +695,19 @@
 
         <!-- Map action buttons and filters -->
         <div class="roots-controls">
-          <button class="roots-btn" id="load-routes-btn" aria-label="Load planned routes">📋 Load Routes</button>
-          <button class="roots-btn" id="load-points-btn" aria-label="Load map points">📍 Load Points</button>
+          <button class="roots-btn" id="load-routes-btn" aria-label="Load planned routes" data-i18n="japan.btn.routes">📋 Load Routes</button>
+          <button class="roots-btn" id="load-points-btn" aria-label="Load map points" data-i18n="japan.btn.points">📍 Load Points</button>
           <div class="filter-wrapper">
-            <button class="roots-btn" id="filter-btn" aria-label="Open point filters">🔍 Filters<span id="filter-active-badge" style="display:none"></span></button>
+            <button class="roots-btn" id="filter-btn" aria-label="Open point filters"><span data-i18n="japan.btn.filters">🔍 Filters</span><span id="filter-active-badge" style="display:none"></span></button>
             <div class="filter-popup" id="filter-popup">
               <div class="filter-popup-header">
-                <strong>Filter Points</strong>
+                <strong data-i18n="japan.filter.title">Filter Points</strong>
                 <button class="filter-close-btn" id="filter-close-btn" aria-label="Close filters">✕</button>
               </div>
               <div id="type-filters"></div>
               <div class="filter-popup-footer">
-                <button class="roots-btn" id="filter-select-all" style="font-size:0.8em;padding:0.25em 0.6em">All</button>
-                <button class="roots-btn" id="filter-clear-all" style="font-size:0.8em;padding:0.25em 0.6em">None</button>
+                <button class="roots-btn" id="filter-select-all" style="font-size:0.8em;padding:0.25em 0.6em" data-i18n="japan.filter.all">All</button>
+                <button class="roots-btn" id="filter-clear-all" style="font-size:0.8em;padding:0.25em 0.6em" data-i18n="japan.filter.none">None</button>
               </div>
             </div>
           </div>
@@ -716,11 +716,11 @@
         <!-- Metadata modal (for Firebase route info) -->
         <div class="meta-overlay" id="meta-overlay">
           <div class="meta-modal" id="meta-modal">
-            <h3 id="meta-title">Route Info</h3>
+            <h3 id="meta-title" data-i18n="japan.meta.title">Route Info</h3>
             <div id="meta-body"></div>
             <div class="meta-actions">
-              <button class="roots-btn" id="meta-save-btn" style="display:none;">Save</button>
-              <button class="roots-btn" id="meta-close-btn">Close</button>
+              <button class="roots-btn" id="meta-save-btn" style="display:none;" data-i18n="japan.meta.save">Save</button>
+              <button class="roots-btn" id="meta-close-btn" data-i18n="japan.meta.close">Close</button>
             </div>
           </div>
         </div>
@@ -739,7 +739,7 @@
             </svg>
           </button>
           <div id="map-loading">
-            <div class="loading-text" id="loading-text">Loading routes...</div>
+            <div class="loading-text" id="loading-text" data-i18n="japan.loading.routes">Loading routes...</div>
             <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
           </div>
           <div id="map"></div>
@@ -768,7 +768,7 @@
   <div class="japan-section-header">
     <div class="container">
       <span class="section-icon">✍️</span>
-      <h2>Blog</h2>
+      <h2 data-i18n="japan.blog.title">Blog</h2>
     </div>
   </div>
 
@@ -784,7 +784,7 @@
 
     <!-- Show More blogs button -->
     <div id="blog-show-more-wrap" style="text-align:center;margin-top:1.5rem;display:none">
-      <button id="blog-show-more-btn" class="btn btn-outline" onclick="blogShowMore()">Show More ↓</button>
+      <button id="blog-show-more-btn" class="btn btn-outline" onclick="blogShowMore()" data-i18n="japan.blog.more">Show More ↓</button>
     </div>
   </div>
 </section>
@@ -800,7 +800,7 @@
   <div class="japan-section-header">
     <div class="container">
       <span class="section-icon">📷</span>
-      <h2>Photos</h2>
+      <h2 data-i18n="japan.photos.title">Photos</h2>
     </div>
   </div>
 
@@ -811,21 +811,21 @@
   <div class="container">
 
     <div class="photos-stats">
-      <div class="photos-stat">📷 <strong id="photo-count">…</strong> photos</div>
-      <div class="photos-stat">🗺️ <strong id="album-count">…</strong> albums</div>
+      <div class="photos-stat">📷 <strong id="photo-count">…</strong> <span data-i18n="japan.photos.label">photos</span></div>
+      <div class="photos-stat">🗺️ <strong id="album-count">…</strong> <span data-i18n="japan.albums.label">albums</span></div>
     </div>
 
     <!-- Upload zone (admin only) -->
     <div class="upload-zone" id="uploadZone" style="display:none" onclick="TomikaBikes.showToast('Sign in to upload photos','info')">
       <div class="upload-icon">📤</div>
-      <h3>Add New Photos</h3>
-      <p>Drag &amp; drop photos here, or click to browse.</p>
+      <h3 data-i18n="japan.upload.title">Add New Photos</h3>
+      <p data-i18n="japan.upload.desc">Drag &amp; drop photos here, or click to browse.</p>
     </div>
 
     <!-- Loading state -->
     <div id="gallery-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
       <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
-      <p>Loading photos…</p>
+      <p data-i18n="japan.loading.photos">Loading photos…</p>
     </div>
 
     <!-- Photo grid (populated by JS) -->
@@ -833,14 +833,14 @@
 
     <!-- Show More photos button -->
     <div id="photos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
-      <button id="photos-show-more-btn" class="btn btn-primary" onclick="photosShowMore()">Show More ↓</button>
+      <button id="photos-show-more-btn" class="btn btn-primary" onclick="photosShowMore()" data-i18n="japan.photos.more">Show More ↓</button>
     </div>
 
     <!-- Empty state (shown when Firestore returns 0 photos) -->
     <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
       <div style="font-size:4rem;margin-bottom:1rem">📷</div>
-      <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Photos coming soon!</h2>
-      <p style="font-size:.95rem;max-width:420px;margin:0 auto">No photos yet — check back soon for updates from the road.</p>
+      <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)" data-i18n="japan.photos.empty.title">Photos coming soon!</h2>
+      <p style="font-size:.95rem;max-width:420px;margin:0 auto" data-i18n="japan.photos.empty.desc">No photos yet — check back soon for updates from the road.</p>
     </div>
   </div>
 </section>
@@ -2393,7 +2393,7 @@ function toggleCheck(el) {
   function fmtDate(s) {
     if (!s) return '';
     var d = new Date(s + 'T00:00:00');
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    return d.toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' });
   }
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   firebase.firestore()
@@ -2424,11 +2424,11 @@ function toggleCheck(el) {
                   '</div>' +
                   '<span>' + esc(d.author || '') + '</span>' +
                 '</div>' +
-                '<span class="post-date">' + esc(fmtDate(d.date)) + '</span>' +
+                '<span class="post-date" data-i18n-date="' + esc(d.date || '') + '">' + esc(fmtDate(d.date)) + '</span>' +
               '</div>' +
               '<h2>' + esc(d.title || '') + '</h2>' +
               (d.excerpt ? '<p>' + esc(d.excerpt) + '</p>' : '') +
-              '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem">Read Full Post →</a>' +
+              '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
             '</div>';
           document.getElementById('postList').appendChild(card);
         });

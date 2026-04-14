@@ -391,7 +391,7 @@
       function fmtMonthYear(s) {
         if (!s) return '';
         var d = new Date(s + 'T00:00:00');
-        return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        return d.toLocaleDateString(I18n.locale(), { month: 'long', year: 'numeric' });
       }
       var GRADIENTS = [
         'linear-gradient(160deg,#2c3e50,#3498db)',
@@ -420,8 +420,8 @@
                 (d.excerpt ? '<p class="card-text">' + esc(d.excerpt) + '</p>' : '') +
               '</div>' +
               '<div class="card-footer">' +
-                '<span>' + esc(fmtMonthYear(d.date)) + '</span>' +
-                '<a href="post.html?id=' + encodeURIComponent(p.id) + '">Read \u2192</a>' +
+                '<span data-i18n-date="' + esc(d.date || '') + '" data-i18n-date-format="month-year">' + esc(fmtMonthYear(d.date)) + '</span>' +
+                '<a href="post.html?id=' + encodeURIComponent(p.id) + '" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
               '</div>';
             grid.appendChild(card);
           });
