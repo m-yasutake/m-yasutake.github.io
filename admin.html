@@ -127,6 +127,27 @@
 
     @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
 
+    /* ── Blog translation tabs ──────────────────────────────── */
+    .blog-lang-tab {
+      padding: .45rem 1rem;
+      border: none;
+      background: transparent;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--color-gray-600);
+      margin-bottom: -2px;
+      transition: color .15s, border-color .15s;
+    }
+    .blog-lang-tab.active {
+      color: var(--color-secondary);
+      border-bottom-color: var(--color-secondary);
+      font-weight: 600;
+    }
+    .blog-lang-tab:hover:not(.active) { color: var(--color-gray-900); }
+
   /* ── Photos Admin ──────────────────────────────────── */
   #photos-drop-zone,
   #videos-drop-zone {
@@ -856,9 +877,29 @@
 
         <div class="new-post-form">
           <input type="hidden" id="blog-post-id" value="" />
-          <div class="form-group">
-            <label>Post Title</label>
-            <input type="text" id="blog-title" class="form-control" placeholder="An Unforgettable Day in the Alps…" />
+          <!-- Translation language tabs -->
+          <div style="display:flex;gap:0;border-bottom:2px solid var(--color-gray-200);margin-bottom:1.25rem">
+            <button type="button" class="blog-lang-tab active" id="blog-lang-tab-en" onclick="adminBlogSwitchLang('en')">🇬🇧 English</button>
+            <button type="button" class="blog-lang-tab" id="blog-lang-tab-ja" onclick="adminBlogSwitchLang('ja')">🇯🇵 日本語</button>
+            <button type="button" class="blog-lang-tab" id="blog-lang-tab-no" onclick="adminBlogSwitchLang('no')">🇳🇴 Norsk</button>
+          </div>
+          <div id="blog-title-pane-en">
+            <div class="form-group">
+              <label>Post Title</label>
+              <input type="text" id="blog-title" class="form-control" placeholder="An Unforgettable Day in the Alps…" />
+            </div>
+          </div>
+          <div id="blog-title-pane-ja" style="display:none">
+            <div class="form-group">
+              <label>Post Title <span style="font-weight:400;color:var(--color-gray-500)">(日本語)</span></label>
+              <input type="text" id="blog-title-ja" class="form-control" placeholder="日本語のタイトル…" />
+            </div>
+          </div>
+          <div id="blog-title-pane-no" style="display:none">
+            <div class="form-group">
+              <label>Post Title <span style="font-weight:400;color:var(--color-gray-500)">(Norsk)</span></label>
+              <input type="text" id="blog-title-no" class="form-control" placeholder="Norsk tittel…" />
+            </div>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -908,45 +949,70 @@
               <input type="text" id="blog-tags" class="form-control" placeholder="japan, cycling, touring" />
             </div>
           </div>
-          <div class="form-group">
-            <label>Excerpt <span style="font-weight:400;color:var(--color-gray-500)">(shown in blog list)</span></label>
-            <textarea id="blog-excerpt" class="form-control" rows="2" placeholder="A short summary of the post…"></textarea>
+          <!-- EN excerpt + content -->
+          <div id="blog-excerpt-content-pane-en">
+            <div class="form-group">
+              <label>Excerpt <span style="font-weight:400;color:var(--color-gray-500)">(shown in blog list)</span></label>
+              <textarea id="blog-excerpt" class="form-control" rows="2" placeholder="A short summary of the post…"></textarea>
+            </div>
+            <div class="form-group">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
+                <label style="margin:0">Content <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
+                <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openPhotoPicker()">📷 Insert Photo</button>
+              </div>
+              <div class="fmt-toolbar" id="blog-fmt-toolbar">
+                <!-- Block elements -->
+                <button onclick="blogFmt('p')" title="Paragraph">¶&nbsp;P</button>
+                <button onclick="blogFmt('h2')" title="Heading 2">H2</button>
+                <button onclick="blogFmt('h3')" title="Heading 3">H3</button>
+                <div class="fmt-sep"></div>
+                <!-- Inline -->
+                <button onclick="blogFmt('strong')" title="Bold"><strong>B</strong></button>
+                <button onclick="blogFmt('em')" title="Italic"><em>I</em></button>
+                <button onclick="blogFmt('u')" title="Underline"><u>U</u></button>
+                <button onclick="blogFmt('mark')" title="Highlight">&#x2FFF;&#xFE0F;</button>
+                <div class="fmt-sep"></div>
+                <!-- Link -->
+                <button onclick="blogFmt('a')" title="Link">🔗</button>
+                <div class="fmt-sep"></div>
+                <!-- Lists -->
+                <button onclick="blogFmt('ul')" title="Bullet list">• List</button>
+                <button onclick="blogFmt('ol')" title="Numbered list">1. List</button>
+                <button onclick="blogFmt('li')" title="List item">• Item</button>
+                <div class="fmt-sep"></div>
+                <!-- Other blocks -->
+                <button onclick="blogFmt('blockquote')" title="Blockquote">&ldquo;&rdquo;</button>
+                <button onclick="blogFmt('code')" title="Inline code">&lt;&gt;</button>
+                <button onclick="blogFmt('pre')" title="Code block">pre</button>
+                <div class="fmt-sep"></div>
+                <!-- Void elements -->
+                <button onclick="blogFmt('hr')" title="Horizontal rule">&mdash;</button>
+                <button onclick="blogFmt('br')" title="Line break">&#x21B5;</button>
+              </div>
+              <textarea id="blog-content" class="form-control" rows="16" placeholder="Write your post here…&#10;&#10;You can use basic HTML: &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a href=&quot;…&quot;&gt;, &lt;img src=&quot;…&quot;&gt;"></textarea>
+            </div>
           </div>
-          <div class="form-group">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
-              <label style="margin:0">Content <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
-              <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openPhotoPicker()">📷 Insert Photo</button>
+          <!-- JA excerpt + content -->
+          <div id="blog-excerpt-content-pane-ja" style="display:none">
+            <div class="form-group">
+              <label>Excerpt <span style="font-weight:400;color:var(--color-gray-500)">(日本語 — shown in blog list)</span></label>
+              <textarea id="blog-excerpt-ja" class="form-control" rows="2" placeholder="投稿の短い要約…"></textarea>
             </div>
-            <div class="fmt-toolbar" id="blog-fmt-toolbar">
-              <!-- Block elements -->
-              <button onclick="blogFmt('p')" title="Paragraph">¶&nbsp;P</button>
-              <button onclick="blogFmt('h2')" title="Heading 2">H2</button>
-              <button onclick="blogFmt('h3')" title="Heading 3">H3</button>
-              <div class="fmt-sep"></div>
-              <!-- Inline -->
-              <button onclick="blogFmt('strong')" title="Bold"><strong>B</strong></button>
-              <button onclick="blogFmt('em')" title="Italic"><em>I</em></button>
-              <button onclick="blogFmt('u')" title="Underline"><u>U</u></button>
-              <button onclick="blogFmt('mark')" title="Highlight">&#x2FFF;&#xFE0F;</button>
-              <div class="fmt-sep"></div>
-              <!-- Link -->
-              <button onclick="blogFmt('a')" title="Link">🔗</button>
-              <div class="fmt-sep"></div>
-              <!-- Lists -->
-              <button onclick="blogFmt('ul')" title="Bullet list">• List</button>
-              <button onclick="blogFmt('ol')" title="Numbered list">1. List</button>
-              <button onclick="blogFmt('li')" title="List item">• Item</button>
-              <div class="fmt-sep"></div>
-              <!-- Other blocks -->
-              <button onclick="blogFmt('blockquote')" title="Blockquote">&ldquo;&rdquo;</button>
-              <button onclick="blogFmt('code')" title="Inline code">&lt;&gt;</button>
-              <button onclick="blogFmt('pre')" title="Code block">pre</button>
-              <div class="fmt-sep"></div>
-              <!-- Void elements -->
-              <button onclick="blogFmt('hr')" title="Horizontal rule">&mdash;</button>
-              <button onclick="blogFmt('br')" title="Line break">&#x21B5;</button>
+            <div class="form-group">
+              <label>Content <span style="font-weight:400;color:var(--color-gray-500)">(日本語 — supports basic HTML)</span></label>
+              <textarea id="blog-content-ja" class="form-control" rows="16" placeholder="日本語のコンテンツをここに記入…"></textarea>
             </div>
-            <textarea id="blog-content" class="form-control" rows="16" placeholder="Write your post here…&#10;&#10;You can use basic HTML: &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a href=&quot;…&quot;&gt;, &lt;img src=&quot;…&quot;&gt;"></textarea>
+          </div>
+          <!-- NO excerpt + content -->
+          <div id="blog-excerpt-content-pane-no" style="display:none">
+            <div class="form-group">
+              <label>Excerpt <span style="font-weight:400;color:var(--color-gray-500)">(Norsk — shown in blog list)</span></label>
+              <textarea id="blog-excerpt-no" class="form-control" rows="2" placeholder="Kort sammendrag av innlegget…"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Content <span style="font-weight:400;color:var(--color-gray-500)">(Norsk — supports basic HTML)</span></label>
+              <textarea id="blog-content-no" class="form-control" rows="16" placeholder="Skriv innholdet her…"></textarea>
+            </div>
           </div>
           <div style="display:flex;gap:1rem;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="adminBlogSave(false)">💾 Save Post</button>
@@ -2474,12 +2540,23 @@ function adminBlogShowList() {
   document.getElementById('blog-editor-view').style.display = 'none';
 }
 
+function adminBlogSwitchLang(lang) {
+  ['en', 'ja', 'no'].forEach(function (l) {
+    document.getElementById('blog-lang-tab-' + l).classList.toggle('active', l === lang);
+    document.getElementById('blog-title-pane-' + l).style.display = l === lang ? '' : 'none';
+    document.getElementById('blog-excerpt-content-pane-' + l).style.display = l === lang ? '' : 'none';
+  });
+  window._activeBlogContent = lang === 'en' ? 'blog-content' : 'blog-content-' + lang;
+}
+
 function adminBlogNewPost() {
   document.getElementById('blog-list-view').style.display = 'none';
   document.getElementById('blog-editor-view').style.display = '';
   document.getElementById('blog-editor-heading').textContent = 'New Post';
   document.getElementById('blog-post-id').value = '';
   document.getElementById('blog-title').value = '';
+  document.getElementById('blog-title-ja').value = '';
+  document.getElementById('blog-title-no').value = '';
   document.getElementById('blog-author').value = 'Mika & Tom';
   document.getElementById('blog-date').value = new Date().toISOString().slice(0, 10);
   document.getElementById('blog-category').value = 'japan';
@@ -2491,9 +2568,14 @@ function adminBlogNewPost() {
   if (clearBtn) clearBtn.style.display = 'none';
   document.getElementById('blog-tags').value = '';
   document.getElementById('blog-excerpt').value = '';
+  document.getElementById('blog-excerpt-ja').value = '';
+  document.getElementById('blog-excerpt-no').value = '';
   document.getElementById('blog-content').value = '';
+  document.getElementById('blog-content-ja').value = '';
+  document.getElementById('blog-content-no').value = '';
   document.getElementById('blog-delete-btn').style.display = 'none';
   document.getElementById('blog-editor-save-status').textContent = '';
+  adminBlogSwitchLang('en');
 }
 
 function adminBlogEditPost(id) {
@@ -2522,10 +2604,17 @@ function adminBlogEditPost(id) {
     }
   }
   document.getElementById('blog-tags').value = d.tags || '';
+  document.getElementById('blog-title-ja').value = d.title_ja || '';
+  document.getElementById('blog-title-no').value = d.title_no || '';
   document.getElementById('blog-excerpt').value = d.excerpt || '';
+  document.getElementById('blog-excerpt-ja').value = d.excerpt_ja || '';
+  document.getElementById('blog-excerpt-no').value = d.excerpt_no || '';
   document.getElementById('blog-content').value = d.content || '';
+  document.getElementById('blog-content-ja').value = d.content_ja || '';
+  document.getElementById('blog-content-no').value = d.content_no || '';
   document.getElementById('blog-delete-btn').style.display = id ? '' : 'none';
   document.getElementById('blog-editor-save-status').textContent = '';
+  adminBlogSwitchLang('en');
 }
 
 async function adminBlogSave(asDraft) {
@@ -2534,6 +2623,8 @@ async function adminBlogSave(asDraft) {
   if (asDraft) document.getElementById('blog-status').value = 'draft';
   const data = {
     title: document.getElementById('blog-title').value.trim(),
+    title_ja: document.getElementById('blog-title-ja').value.trim(),
+    title_no: document.getElementById('blog-title-no').value.trim(),
     author: document.getElementById('blog-author').value.trim(),
     date: document.getElementById('blog-date').value,
     category: document.getElementById('blog-category').value,
@@ -2541,7 +2632,11 @@ async function adminBlogSave(asDraft) {
     coverImage: document.getElementById('blog-cover-image').value.trim(),
     tags: document.getElementById('blog-tags').value.trim(),
     excerpt: document.getElementById('blog-excerpt').value.trim(),
+    excerpt_ja: document.getElementById('blog-excerpt-ja').value.trim(),
+    excerpt_no: document.getElementById('blog-excerpt-no').value.trim(),
     content: document.getElementById('blog-content').value.trim(),
+    content_ja: document.getElementById('blog-content-ja').value.trim(),
+    content_no: document.getElementById('blog-content-no').value.trim(),
     updatedAt: new Date().toISOString()
   };
   if (!data.title) { TomikaBikes.showToast('Please enter a post title', 'error'); return; }
@@ -2602,7 +2697,7 @@ document.getElementById('blog-date').value = new Date().toISOString().slice(0, 1
 <script>
 // ── Blog content formatting toolbar ────────────────────────────────────────
 function blogFmt(tag) {
-  var ta = document.getElementById('blog-content');
+  var ta = document.getElementById(window._activeBlogContent || 'blog-content');
   ta.focus();
   var start = ta.selectionStart;
   var end   = ta.selectionEnd;
@@ -2814,7 +2909,7 @@ function blogFmt(tag) {
     }
 
     // Insert at cursor position in the target textarea (blog-content by default, or email-body)
-    const ta    = window._ppTargetTextarea ? document.getElementById(window._ppTargetTextarea) : document.getElementById('blog-content');
+    const ta    = window._ppTargetTextarea ? document.getElementById(window._ppTargetTextarea) : document.getElementById(window._activeBlogContent || 'blog-content');
     if (!ta) { closePhotoPicker(); window._ppTargetTextarea = null; return; }
     const start = ta.selectionStart;
     const end   = ta.selectionEnd;

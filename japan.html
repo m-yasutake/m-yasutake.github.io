@@ -2437,6 +2437,8 @@ function toggleCheck(el) {
 <script>
 // ── Load published Japan blog posts from Firestore ────────────
 (function () {
+  var _japanDocs = [];
+
   function esc(str) {
     var d = document.createElement('div');
     d.textContent = String(str == null ? '' : str);
@@ -2447,6 +2449,44 @@ function toggleCheck(el) {
     var d = new Date(s + 'T00:00:00');
     return d.toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' });
   }
+  function pick(data, field) {
+    var lang = I18n.currentLang();
+    return (lang !== 'en' && data[field + '_' + lang]) || data[field] || '';
+  }
+
+  function renderJapanDocs() {
+    if (!_japanDocs.length) return;
+    var list = document.getElementById('postList');
+    list.innerHTML = '';
+    _japanDocs.forEach(function (p) {
+      var d = p.data;
+      var title   = pick(d, 'title');
+      var excerpt = pick(d, 'excerpt');
+      var card = document.createElement('article');
+      card.className = 'blog-post-card';
+      card.setAttribute('data-cat', 'japan');
+      card.innerHTML =
+        '<div class="blog-post-img" style="height:200px;' + (d.coverImage ? 'background-image:url(' + d.coverImage.replace(/"/g,'%22') + ');background-size:cover;background-position:center;font-size:0' : 'background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem') + '">' +
+          (d.coverImage ? '' : '\u270d\ufe0f') + '</div>' +
+        '<div class="blog-post-body" style="padding:1.5rem">' +
+          '<div class="post-meta-row">' +
+            '<div class="author-chip">' +
+              '<div class="author-avatar" style="background:var(--color-secondary)">' +
+                esc((d.author || 'M').charAt(0).toUpperCase()) +
+              '</div>' +
+              '<span>' + esc(d.author || '') + '</span>' +
+            '</div>' +
+            '<span class="post-date" data-i18n-date="' + esc(d.date || '') + '">' + esc(fmtDate(d.date)) + '</span>' +
+          '</div>' +
+          '<h2>' + esc(title) + '</h2>' +
+          (excerpt ? '<p>' + esc(excerpt) + '</p>' : '') +
+          '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
+        '</div>';
+      list.appendChild(card);
+    });
+    if (typeof window.blogRefresh === 'function') window.blogRefresh();
+  }
+
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   firebase.firestore()
     .collection('blog_posts')
@@ -2456,37 +2496,14 @@ function toggleCheck(el) {
       if (snap.empty) return;
       var docs = [];
       snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
-      // Filter to Japan category and sort newest-first
-      docs
+      _japanDocs = docs
         .filter(function (p) { return p.data.category === 'japan'; })
-        .sort(function (a, b) { return (b.data.date || '').localeCompare(a.data.date || ''); })
-        .forEach(function (p) {
-          var d = p.data;
-          var card = document.createElement('article');
-          card.className = 'blog-post-card';
-          card.setAttribute('data-cat', 'japan');
-          card.innerHTML =
-            '<div class="blog-post-img" style="height:200px;' + (d.coverImage ? 'background-image:url(' + d.coverImage.replace(/"/g,'%22') + ');background-size:cover;background-position:center;font-size:0' : 'background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem') + '">' +
-              (d.coverImage ? '' : '\u270d\ufe0f') + '</div>' +
-            '<div class="blog-post-body" style="padding:1.5rem">' +
-              '<div class="post-meta-row">' +
-                '<div class="author-chip">' +
-                  '<div class="author-avatar" style="background:var(--color-secondary)">' +
-                    esc((d.author || 'M').charAt(0).toUpperCase()) +
-                  '</div>' +
-                  '<span>' + esc(d.author || '') + '</span>' +
-                '</div>' +
-                '<span class="post-date" data-i18n-date="' + esc(d.date || '') + '">' + esc(fmtDate(d.date)) + '</span>' +
-              '</div>' +
-              '<h2>' + esc(d.title || '') + '</h2>' +
-              (d.excerpt ? '<p>' + esc(d.excerpt) + '</p>' : '') +
-              '<a href="post.html?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
-            '</div>';
-          document.getElementById('postList').appendChild(card);
-        });
-      if (typeof window.blogRefresh === 'function') window.blogRefresh();
+        .sort(function (a, b) { return (b.data.date || '').localeCompare(a.data.date || ''); });
+      renderJapanDocs();
     })
     .catch(function (err) { console.warn('Blog posts load error:', err.message); });
+
+  document.addEventListener('langchange', renderJapanDocs);
 })();
 </script>
 

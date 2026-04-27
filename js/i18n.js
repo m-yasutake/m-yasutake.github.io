@@ -667,6 +667,7 @@ const I18n = (function () {
     currentLang = lang;
     localStorage.setItem(STORAGE_KEY, lang);
     applyTranslations();
+    document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: currentLang } }));
     // Close all open dropdowns
     document.querySelectorAll('.lang-dropdown.open').forEach(dd => {
       dd.classList.remove('open');

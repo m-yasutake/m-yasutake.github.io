@@ -286,7 +286,8 @@
 
 <script>
 (function () {
-  var _postId = null;
+  var _postId   = null;
+  var _postData = null;
 
   var CAT_LABELS = {
     japan: 'Japan', norway: 'Norway', gear: '🎒 Gear',
@@ -325,12 +326,17 @@
   }
 
   function renderPost(id, data) {
-    _postId = id;
+    _postId   = id;
+    _postData = data;
+    var lang    = I18n.currentLang();
+    var title   = (lang !== 'en' && data['title_'   + lang]) || data.title   || '';
+    var excerpt = (lang !== 'en' && data['excerpt_' + lang]) || data.excerpt || '';
+    var content = (lang !== 'en' && data['content_' + lang]) || data.content || '';
 
     // Page title + meta description
-    document.title = (data.title || 'Post') + ' – Tomika Bike';
+    document.title = (title || 'Post') + ' – Tomika Bike';
     var metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc && data.excerpt) metaDesc.setAttribute('content', data.excerpt);
+    if (metaDesc && excerpt) metaDesc.setAttribute('content', excerpt);
 
     // Hero
     var catLabel = CAT_LABELS[data.category] || esc(data.category || '');
@@ -344,14 +350,14 @@
     }
     document.getElementById('post-hero-inner').innerHTML =
       '<div class="hero-badge">' + catLabel + '</div>' +
-      '<h1>' + esc(data.title || '') + '</h1>' +
+      '<h1>' + esc(title) + '</h1>' +
       '<div class="post-meta-row" style="justify-content:center;color:rgba(255,255,255,.8)">' +
         '<div class="author-chip" style="color:rgba(255,255,255,.8)">' +
           '<div class="author-avatar" style="background:var(--color-secondary)">' + avatarLetter + '</div>' +
           '<span>' + esc(data.author || '') + '</span>' +
         '</div>' +
         '<span class="post-date" style="color:rgba(255,255,255,.8)" data-i18n-date="' + esc(data.date || '') + '">' + esc(formatDate(data.date)) + '</span>' +
-        '<span class="read-time" style="color:rgba(255,255,255,.8)">' + esc(estimateReadTime(data.content)) + '</span>' +
+        '<span class="read-time" style="color:rgba(255,255,255,.8)">' + esc(estimateReadTime(content)) + '</span>' +
       '</div>';
 
     // Back link
@@ -368,7 +374,7 @@
     bodyEl.className = 'post-body';
     bodyEl.innerHTML =
       '<a href="' + esc(backPage) + '" class="post-back" data-i18n="' + backKey + '">' + esc(backLabel) + '</a>' +
-      '<div class="post-content">' + (data.content || '<p><em>No content yet.</em></p>') + '</div>' +
+      '<div class="post-content">' + (content || '<p><em>No content yet.</em></p>') + '</div>' +
       '<div class="post-footer-nav">' +
         '<a href="' + esc(backPage) + '" class="btn btn-dark" data-i18n="' + backKey + '">' + esc(backLabel) + '</a>' +
       '</div>';
@@ -428,6 +434,11 @@
       })
       .catch(function (err) { showError('Failed to load post: ' + err.message); });
   }
+
+  // Re-render in the new language when the user switches
+  document.addEventListener('langchange', function () {
+    if (_postId && _postData) renderPost(_postId, _postData);
+  });
 })();
 </script>
 </body>
