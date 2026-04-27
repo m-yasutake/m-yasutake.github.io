@@ -1873,6 +1873,64 @@
 
   // ── Google Maps point upload removed — use Admin page Map Data section
 
+  // ── Visited Onsens (auto-loaded, always visible) ───────────
+  const ONSEN_TYPES = new Set(['Onsen', 'Foot Bath', 'Hotel Onsen', 'Super Sento']);
+  const visitedOnsenLayer = L.layerGroup().addTo(map);
+  layerControl.addOverlay(visitedOnsenLayer, '♨️ Visited Onsens');
+  const _visitedOnsenMarkers = new Map(); // docId → marker
+
+  const VISITED_ONSEN_ICON_SVG = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28">',
+    '<circle cx="14" cy="14" r="12" fill="#2a9d8f" stroke="#fff" stroke-width="1.5"/>',
+    '<path d="M10 15.5c0-2.2 1.8-4 4-4s4 1.8 4 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>',
+    '<path d="M11.5 10c0.3-1 0.7-1.5 0.5-2.5M14 9c0.3-1 0.7-1.5 0.5-2.5M16.5 10c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>',
+    '<circle cx="21" cy="21" r="6" fill="#e9c46a" stroke="#fff" stroke-width="1.2"/>',
+    '<path d="M18.5 21l1.5 1.5L23 18.5" fill="none" stroke="#264653" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>',
+    '</svg>'
+  ].join('');
+
+  const visitedOnsenIcon = L.divIcon({
+    html: VISITED_ONSEN_ICON_SVG,
+    className: 'point-type-icon',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -16]
+  });
+
+  let _visitedOnsensLoaded = false;
+  function loadVisitedOnsens() {
+    if (!db || _visitedOnsensLoaded) return;
+    _visitedOnsensLoaded = true;
+    db.collection('points').where('visited', '==', true).get()
+      .then(snapshot => {
+        snapshot.forEach(doc => {
+          if (_visitedOnsenMarkers.has(doc.id)) return;
+          const d = doc.data();
+          const rawType = d.metadata && (d.metadata.Type || d.metadata.type) || d.type || '';
+          const normType = normalizePointType(rawType);
+          // Only show onsen-category types
+          if (normType === '_default' || !ONSEN_TYPES.has(normType)) return;
+          _addVisitedOnsenMarker(doc.id, d);
+        });
+      })
+      .catch(err => console.warn('Visited onsens load error:', err));
+  }
+
+  function _addVisitedOnsenMarker(docId, d) {
+    const marker = L.marker([d.lat, d.lon], { icon: visitedOnsenIcon });
+    const name = escapeHtml(d.name || 'Onsen');
+    const rawType = (d.metadata && (d.metadata.Type || d.metadata.type)) || d.type || 'Onsen';
+    const url = d.url;
+    let popupHtml = '<div style="min-width:160px"><strong style="color:var(--color-primary)">' + name + '</strong>';
+    popupHtml += '<div style="font-size:.8em;color:#2a9d8f;margin:.2em 0">♨️ ' + escapeHtml(rawType) + ' · visited</div>';
+    if (url) popupHtml += '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener" style="font-size:.82em;color:#5B8C6B">🔗 View</a>';
+    popupHtml += '</div>';
+    marker.bindPopup(popupHtml, { maxWidth: 240 });
+    visitedOnsenLayer.addLayer(marker);
+    _visitedOnsenMarkers.set(docId, marker);
+    return marker;
+  }
+
   // ── Firebase Integration ───────────────────────────────────
   let currentUser = null;
   let _isAdmin = false;
@@ -1964,6 +2022,7 @@
         }
         firebaseReady = true;
         loadFirebaseRoutes();
+        loadVisitedOnsens();
         loadAuthAndStorage()
           .then(() => {
             // Retry loading GPX for owner routes that failed because storage wasn't

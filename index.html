@@ -197,7 +197,7 @@
         <div class="stat-label" data-i18n="index.stat.days">Days on the Road</div>
       </div>
       <div class="stat-item">
-        <span class="stat-num" id="stat-onsens">7</span>
+        <span class="stat-num" id="stat-onsens">—</span>
         <div class="stat-label" aria-label="Onsens" data-i18n="index.stat.onsens">Onsens ♨️</div>
       </div>
     </div>
@@ -478,6 +478,28 @@
       document.getElementById('stat-sploops').textContent = '0';
       document.getElementById('stat-grinds').textContent = '0';
     }
+  })();
+
+  // ── Firebase: Visited Onsens count ─────────────────────────
+  (function loadOnsensCount() {
+    const el = document.getElementById('stat-onsens');
+    if (!el) return;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      const db = firebase.firestore();
+      db.collection('points').where('visited', '==', true).get()
+        .then(snap => {
+          let count = 0;
+          const ONSEN_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
+          snap.forEach(doc => {
+            const d = doc.data();
+            const rawType = (d.metadata && (d.metadata.Type || d.metadata.type)) || d.type || '';
+            if (ONSEN_RE.test(rawType)) count++;
+          });
+          animateCounter(el, count);
+        })
+        .catch(() => { el.textContent = '0'; });
+    } catch (e) { el.textContent = '0'; }
   })();
 </script>
 </body>
