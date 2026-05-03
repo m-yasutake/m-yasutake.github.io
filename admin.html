@@ -15,6 +15,8 @@
   <!-- Leaflet (for Onsen Picker map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
   <style>
     body { background: var(--color-gray-100); }
@@ -1494,6 +1496,7 @@
 <!-- Leaflet JS (for Onsen Picker map) -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script src="js/main.js"></script>
 <script>
@@ -3624,6 +3627,7 @@ const GearManagerAdmin = (function () {
 
   const ONSEN_TYPE_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
   let _onsenMap = null;
+  let _onsenCluster = null; // L.markerClusterGroup
   let _onsenMarkers = []; // { docId, marker, visited }
   let _onsenDb = null;
 
@@ -3713,19 +3717,34 @@ const GearManagerAdmin = (function () {
           { attribution: '&copy; Esri', maxZoom: 19 }
         ).addTo(_onsenMap);
         L.control.scale({ position: 'bottomright', imperial: false }).addTo(_onsenMap);
+        _onsenCluster = L.markerClusterGroup({
+          maxClusterRadius: function (zoom) {
+            if (zoom >= 10) return 0;
+            return Math.max(0, 80 - (zoom * 4));
+          },
+          disableClusteringAtZoom: 10,
+          spiderfyOnMaxZoom: true,
+          showCoverageOnHover: false,
+          zoomToBoundsOnClick: true,
+          chunkedLoading: true,
+          chunkInterval: 100,
+          chunkDelay: 20
+        });
+        _onsenCluster.addTo(_onsenMap);
       }
 
       // Invalidate size after the container becomes visible
       setTimeout(() => _onsenMap.invalidateSize(), 120);
 
       // Clear existing markers
-      _onsenMarkers.forEach(m => _onsenMap.removeLayer(m.marker));
+      _onsenCluster.clearLayers();
       _onsenMarkers = [];
 
       // Fetch all onsen-type points from Firestore
       const snap = await db.collection('points').get();
       let count = 0;
       const bounds = [];
+      const newMarkers = [];
 
       snap.forEach(doc => {
         const d = doc.data();
@@ -3771,11 +3790,14 @@ const GearManagerAdmin = (function () {
           });
         });
 
-        marker.addTo(_onsenMap);
+        newMarkers.push(marker);
         _onsenMarkers.push({ docId: doc.id, marker, visited });
         bounds.push([d.lat, d.lon]);
         count++;
       });
+
+      // Add all markers to the cluster group in one batch for efficiency
+      _onsenCluster.addLayers(newMarkers);
 
       if (bounds.length > 0) {
         _onsenMap.fitBounds(bounds, { padding: [40, 40] });
