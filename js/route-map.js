@@ -67,6 +67,8 @@
    *   center   {number[]}  [lat, lng] map center    (default: central Japan)
    *   zoom     {number}    initial zoom             (default: 5)
    *   tilesUrl {string}    direct URL for my-routes.pmtiles
+   *   dateFrom {string}    ISO date string YYYY-MM-DD; only show rides on/after this date
+   *   dateTo   {string}    ISO date string YYYY-MM-DD; only show rides on/before this date
    * @returns {L.Map}
    */
   function init(elementId, options) {
@@ -75,6 +77,8 @@
     var zoom     = options.zoom     || 5;
     var tilesUrl = options.tilesUrl ||
       'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes.pmtiles?alt=media';
+    var dateFrom = options.dateFrom || null;
+    var dateTo   = options.dateTo   || null;
 
     // Unique PMTiles instance key per element avoids collisions when multiple
     // maps are on the same page.
@@ -102,23 +106,40 @@
       window.__pmtilesInstances[instanceKey] = pmInstance;
 
       pmInstance.getHeader().then(function (header) {
+        var gridOptions = {
+          vectorTileLayerStyles: {
+            routes: function (properties) {
+              return {
+                weight: getRouteWeight(map.getZoom()),
+                color: properties.color || '#E76F51',
+                opacity: 0.9,
+                fill: false
+              };
+            }
+          },
+          interactive: false,
+          maxNativeZoom: header.maxZoom || 14,
+          minNativeZoom: header.minZoom || 2
+        };
+
+        // Date-range filter: only render features whose filename encodes a date
+        // within the specified range. Filenames from fetch-strava-rides.js follow
+        // the pattern: strava_<id>_<YYYY-MM-DD>_<name>.gpx
+        if (dateFrom || dateTo) {
+          gridOptions.filter = function (properties) {
+            var filename = properties.filename || '';
+            var m = filename.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
+            if (!m) return false; // hide non-dated routes when a date filter is active
+            var d = m[1];
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo   && d > dateTo)   return false;
+            return true;
+          };
+        }
+
         var routeLayer = L.vectorGrid.protobuf(
           'pmtiles://' + instanceKey + '/{z}/{x}/{y}',
-          {
-            vectorTileLayerStyles: {
-              routes: function (properties) {
-                return {
-                  weight: getRouteWeight(map.getZoom()),
-                  color: properties.color || '#E76F51',
-                  opacity: 0.9,
-                  fill: false
-                };
-              }
-            },
-            interactive: false,
-            maxNativeZoom: header.maxZoom || 14,
-            minNativeZoom: header.minZoom || 2
-          }
+          gridOptions
         );
 
         routeLayer.addTo(map);

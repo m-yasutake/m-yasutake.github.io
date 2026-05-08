@@ -945,6 +945,16 @@
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label>Trip Date From <span style="font-weight:400;color:var(--color-gray-500)">(for route map)</span></label>
+              <input type="date" id="blog-trip-date-from" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Trip Date To <span style="font-weight:400;color:var(--color-gray-500)">(for route map)</span></label>
+              <input type="date" id="blog-trip-date-to" class="form-control" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>Category</label>
               <select id="blog-category" class="form-control">
                 <option value="japan">Japan</option>
@@ -2634,6 +2644,8 @@ function adminBlogNewPost() {
   document.getElementById('blog-title-no').value = '';
   document.getElementById('blog-author').value = 'Mika & Tom';
   document.getElementById('blog-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('blog-trip-date-from').value = '';
+  document.getElementById('blog-trip-date-to').value = '';
   document.getElementById('blog-category').value = 'japan';
   document.getElementById('blog-status').value = 'draft';
   document.getElementById('blog-cover-image').value = '';
@@ -2664,6 +2676,8 @@ function adminBlogEditPost(id) {
   document.getElementById('blog-title').value = d.title || '';
   document.getElementById('blog-author').value = d.author || 'Mika & Tom';
   document.getElementById('blog-date').value = d.date || '';
+  document.getElementById('blog-trip-date-from').value = d.tripDateFrom || '';
+  document.getElementById('blog-trip-date-to').value = d.tripDateTo || '';
   document.getElementById('blog-category').value = d.category || 'japan';
   document.getElementById('blog-status').value = d.status || 'draft';
   const coverUrl = d.coverImage || '';
@@ -2702,6 +2716,8 @@ async function adminBlogSave(asDraft) {
     title_no: document.getElementById('blog-title-no').value.trim(),
     author: document.getElementById('blog-author').value.trim(),
     date: document.getElementById('blog-date').value,
+    tripDateFrom: document.getElementById('blog-trip-date-from').value || null,
+    tripDateTo: document.getElementById('blog-trip-date-to').value || null,
     category: document.getElementById('blog-category').value,
     status: document.getElementById('blog-status').value,
     coverImage: document.getElementById('blog-cover-image').value.trim(),

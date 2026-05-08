@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
 
   <style>
@@ -167,6 +169,34 @@
       color: var(--color-gray-500);
     }
     .post-placeholder .placeholder-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* ── Route map section ──────────────────────────────── */
+    .post-route-map-section {
+      margin: 0 0 2rem;
+    }
+    .post-route-map-header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .6rem;
+    }
+    .post-route-map-label {
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--color-secondary);
+    }
+    .post-route-map-dates {
+      font-size: .78rem;
+      color: var(--color-gray-500);
+    }
+    #post-route-map {
+      height: 380px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-gray-200);
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -284,6 +314,13 @@
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 
+<!-- Leaflet + PMTiles + VectorGrid for in-post route maps -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+<script src="js/route-map.js"></script>
+
 <script>
 (function () {
   var _postId   = null;
@@ -369,15 +406,38 @@
                   : 'post.back.blog';
     var backLabel = I18n.t(backKey);
 
+    // Route map section (shown when post has trip date range)
+    var mapHtml = '';
+    if (data.tripDateFrom || data.tripDateTo) {
+      var fromLabel = data.tripDateFrom ? formatDate(data.tripDateFrom) : '';
+      var toLabel   = data.tripDateTo   ? formatDate(data.tripDateTo)   : '';
+      var dateCaption = (fromLabel && toLabel) ? fromLabel + ' – ' + toLabel
+                      : (fromLabel || toLabel);
+      mapHtml =
+        '<div class="post-route-map-section">' +
+          '<div class="post-route-map-header">' +
+            '<span class="post-route-map-label">🗺️ Route</span>' +
+            (dateCaption ? '<span class="post-route-map-dates">' + esc(dateCaption) + '</span>' : '') +
+          '</div>' +
+          '<div id="post-route-map"></div>' +
+        '</div>';
+    }
+
     // Body — content is admin-authored HTML
     var bodyEl = document.getElementById('post-body');
     bodyEl.className = 'post-body';
     bodyEl.innerHTML =
       '<a href="' + esc(backPage) + '" class="post-back" data-i18n="' + backKey + '">' + esc(backLabel) + '</a>' +
+      mapHtml +
       '<div class="post-content">' + (content || '<p><em>No content yet.</em></p>') + '</div>' +
       '<div class="post-footer-nav">' +
         '<a href="' + esc(backPage) + '" class="btn btn-dark" data-i18n="' + backKey + '">' + esc(backLabel) + '</a>' +
       '</div>';
+
+    // Initialise route map if dates are set
+    if (data.tripDateFrom || data.tripDateTo) {
+      initPostRouteMap(data);
+    }
 
     // Show draft preview bar and (for the admin) a Publish button
     if (data.status !== 'published') {
@@ -439,6 +499,65 @@
   document.addEventListener('langchange', function () {
     if (_postId && _postData) renderPost(_postId, _postData);
   });
+
+  // ── Route map initialisation ─────────────────────────────────────────────
+  function initPostRouteMap(data) {
+    var dateFrom = data.tripDateFrom || null;
+    var dateTo   = data.tripDateTo   || null;
+    var category = data.category || 'japan';
+
+    // Default center/zoom based on the post category
+    var defaultCenter = category === 'norway' ? [62.0, 10.0] : [36.5, 138.0];
+    var defaultZoom   = 6;
+
+    function doInit(center, zoom) {
+      if (typeof RouteMap === 'undefined' || typeof L === 'undefined') {
+        console.warn('RouteMap or Leaflet not available for post map');
+        return;
+      }
+      RouteMap.init('post-route-map', {
+        center:   center,
+        zoom:     zoom,
+        dateFrom: dateFrom,
+        dateTo:   dateTo
+      });
+    }
+
+    // Query Firestore for Strava routes in the date range so we can auto-centre
+    // the map on the relevant rides.
+    try {
+      getDb().collection('routes')
+        .where('source', '==', 'strava')
+        .get()
+        .then(function (snap) {
+          var latLngs = [];
+          snap.forEach(function (doc) {
+            var d = doc.data();
+            var fn = d.fileName || '';
+            var m = fn.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
+            if (!m) return;
+            var date = m[1];
+            if (dateFrom && date < dateFrom) return;
+            if (dateTo   && date > dateTo)   return;
+            if (d.startLatLng) latLngs.push(d.startLatLng);
+            if (d.endLatLng)   latLngs.push(d.endLatLng);
+          });
+
+          if (latLngs.length > 0) {
+            var lats = latLngs.map(function (ll) { return ll[0]; });
+            var lngs = latLngs.map(function (ll) { return ll[1]; });
+            var centerLat = (Math.min.apply(null, lats) + Math.max.apply(null, lats)) / 2;
+            var centerLng = (Math.min.apply(null, lngs) + Math.max.apply(null, lngs)) / 2;
+            doInit([centerLat, centerLng], 8);
+          } else {
+            doInit(defaultCenter, defaultZoom);
+          }
+        })
+        .catch(function () { doInit(defaultCenter, defaultZoom); });
+    } catch (e) {
+      doInit(defaultCenter, defaultZoom);
+    }
+  }
 })();
 </script>
 </body>
