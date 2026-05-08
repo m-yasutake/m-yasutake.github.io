@@ -317,9 +317,7 @@
 <!-- Leaflet + PMTiles + VectorGrid for in-post route maps -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
-<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
-<script src="js/route-map.js"></script>
+
 
 <script>
 (function () {
@@ -501,62 +499,96 @@
   });
 
   // ── Route map initialisation ─────────────────────────────────────────────
+  // Fetches only the Strava GPX files that fall within the post's date range
+  // and renders them as plain Leaflet polylines — no PMTiles layer is used so
+  // routes outside the date window are never visible.
   function initPostRouteMap(data) {
     var dateFrom = data.tripDateFrom || null;
     var dateTo   = data.tripDateTo   || null;
     var category = data.category || 'japan';
+    var BUCKET   = 'roots-eddf5.firebasestorage.app';
+    var ROUTE_COLOR = '#E76F51';
 
-    // Default center/zoom based on the post category
+    if (typeof L === 'undefined') {
+      console.warn('Leaflet not available for post map');
+      return;
+    }
+
     var defaultCenter = category === 'norway' ? [62.0, 10.0] : [36.5, 138.0];
     var defaultZoom   = 6;
 
-    function doInit(center, zoom) {
-      if (typeof RouteMap === 'undefined' || typeof L === 'undefined') {
-        console.warn('RouteMap or Leaflet not available for post map');
-        return;
-      }
-      RouteMap.init('post-route-map', {
-        center:   center,
-        zoom:     zoom,
-        dateFrom: dateFrom,
-        dateTo:   dateTo
-      });
-    }
+    // Create a plain Leaflet map with only the base tile layer.
+    var map = L.map('post-route-map', { zoomControl: true })
+                .setView(defaultCenter, defaultZoom);
 
-    // Query Firestore for Strava routes in the date range so we can auto-centre
-    // the map on the relevant rides.
-    try {
-      getDb().collection('routes')
-        .where('source', '==', 'strava')
-        .get()
-        .then(function (snap) {
-          var latLngs = [];
-          snap.forEach(function (doc) {
-            var d = doc.data();
-            var fn = d.fileName || '';
-            var m = fn.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
-            if (!m) return;
-            var date = m[1];
-            if (dateFrom && date < dateFrom) return;
-            if (dateTo   && date > dateTo)   return;
-            if (d.startLatLng) latLngs.push(d.startLatLng);
-            if (d.endLatLng)   latLngs.push(d.endLatLng);
-          });
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+      { attribution: '&copy; <a href="https://www.esri.com">Esri</a>', maxZoom: 19 }
+    ).addTo(map);
 
-          if (latLngs.length > 0) {
-            var lats = latLngs.map(function (ll) { return ll[0]; });
-            var lngs = latLngs.map(function (ll) { return ll[1]; });
-            var centerLat = (Math.min.apply(null, lats) + Math.max.apply(null, lats)) / 2;
-            var centerLng = (Math.min.apply(null, lngs) + Math.max.apply(null, lngs)) / 2;
-            doInit([centerLat, centerLng], 8);
-          } else {
-            doInit(defaultCenter, defaultZoom);
+    L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
+
+    // 1. Query Firestore for Strava routes matching the date range.
+    getDb().collection('routes')
+      .where('source', '==', 'strava')
+      .get()
+      .then(function (snap) {
+        var matching = [];
+        snap.forEach(function (doc) {
+          var d = doc.data();
+          var fn = d.fileName || '';
+          var m = fn.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
+          if (!m) return;
+          var date = m[1];
+          if (dateFrom && date < dateFrom) return;
+          if (dateTo   && date > dateTo)   return;
+          matching.push(d);
+        });
+
+        if (matching.length === 0) return; // map stays at default view
+
+        // 2. Fetch each GPX and render as a polyline.
+        var allPoints = [];
+        var pending = matching.length;
+
+        function onDone() {
+          if (--pending > 0) return;
+          if (allPoints.length > 0) {
+            try { map.fitBounds(L.latLngBounds(allPoints), { padding: [30, 30] }); } catch (e) {}
           }
-        })
-        .catch(function () { doInit(defaultCenter, defaultZoom); });
-    } catch (e) {
-      doInit(defaultCenter, defaultZoom);
-    }
+        }
+
+        matching.forEach(function (route) {
+          var sp = route.storagePath || '';
+          if (!sp) { onDone(); return; }
+
+          var url = 'https://firebasestorage.googleapis.com/v0/b/' + BUCKET +
+                    '/o/' + encodeURIComponent(sp) + '?alt=media';
+
+          fetch(url)
+            .then(function (res) {
+              if (!res.ok) throw new Error('HTTP ' + res.status);
+              return res.text();
+            })
+            .then(function (gpxText) {
+              // Parse <trkpt lat="..." lon="..."> entries (attribute order-independent)
+              var trkpts = gpxText.match(/<trkpt[^>]*>/g) || [];
+              var pts = [];
+              trkpts.forEach(function (tag) {
+                var latM = tag.match(/lat="([^"]+)"/);
+                var lonM = tag.match(/lon="([^"]+)"/);
+                if (latM && lonM) pts.push([parseFloat(latM[1]), parseFloat(lonM[1])]);
+              });
+              if (pts.length > 0) {
+                L.polyline(pts, { color: ROUTE_COLOR, weight: 3, opacity: 0.9 }).addTo(map);
+                pts.forEach(function (p) { allPoints.push(p); });
+              }
+              onDone();
+            })
+            .catch(function () { onDone(); });
+        });
+      })
+      .catch(function () {}); // map stays at default view on error
   }
 })();
 </script>
