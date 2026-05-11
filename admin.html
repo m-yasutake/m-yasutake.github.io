@@ -1332,11 +1332,13 @@
         <h3>♨️ Mark Visited Onsens</h3>
         <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Click on the map to toggle whether an onsen has been visited. Visited onsens are shown as <strong>teal ♨️ icons with a gold ✓</strong> on the Japan map.</p>
         <button class="btn btn-primary" id="onsen-picker-load-btn" onclick="loadOnsenPickerMap()">🗺️ Open Onsen Map</button>
+        <button class="btn" id="onsen-strava-toggle-btn" onclick="toggleStravaRoutes()" style="display:none;margin-left:.5rem">🚴 Show Strava Routes</button>
         <div class="mapdata-upload-status" id="onsen-picker-status"></div>
         <div id="onsen-picker-map" style="display:none"></div>
         <div class="onsen-picker-legend" id="onsen-picker-legend" style="display:none">
           <span><span class="onsen-legend-dot" style="background:#2a9d8f"></span> Visited</span>
           <span><span class="onsen-legend-dot" style="background:#e74c3c"></span> Not visited</span>
+          <span id="onsen-strava-legend" style="display:none"><span class="onsen-legend-dot" style="background:#E76F51;border-radius:2px"></span> Strava route</span>
           <span style="color:var(--color-gray-500);font-size:.75rem">Click a marker to toggle visited status</span>
         </div>
       </div>
@@ -3642,10 +3644,14 @@ const GearManagerAdmin = (function () {
   'use strict';
 
   const ONSEN_TYPE_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
+  const STRAVA_BUCKET = 'roots-eddf5.firebasestorage.app';
+  const STRAVA_ROUTE_COLOR = '#E76F51';
   let _onsenMap = null;
   let _onsenCluster = null; // L.markerClusterGroup
   let _onsenMarkers = []; // { docId, marker, visited }
   let _onsenDb = null;
+  let _stravaRouteLayer = null;
+  let _stravaRoutesLoading = false;
 
   const VISITED_SVG = [
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28">',
@@ -3723,6 +3729,10 @@ const GearManagerAdmin = (function () {
       // Show the map container
       mapDiv.style.display = 'block';
       if (legendEl) legendEl.style.display = 'flex';
+
+      // Show the Strava routes toggle button
+      const stravaBtn = document.getElementById('onsen-strava-toggle-btn');
+      if (stravaBtn) stravaBtn.style.display = '';
 
       // Initialise Leaflet map once
       if (!_onsenMap) {
@@ -3829,6 +3839,99 @@ const GearManagerAdmin = (function () {
       btn.textContent = '🗺️ Open Onsen Map';
       btn.disabled = false;
       console.error('Onsen picker error:', err);
+    }
+  };
+
+  window.toggleStravaRoutes = async function () {
+    const btn = document.getElementById('onsen-strava-toggle-btn');
+    const legendEntry = document.getElementById('onsen-strava-legend');
+    if (!btn || !_onsenMap) return;
+
+    // Toggle off if already shown
+    if (_stravaRouteLayer && _onsenMap.hasLayer(_stravaRouteLayer)) {
+      _onsenMap.removeLayer(_stravaRouteLayer);
+      btn.textContent = '🚴 Show Strava Routes';
+      if (legendEntry) legendEntry.style.display = 'none';
+      return;
+    }
+
+    // Toggle on if already loaded but hidden
+    if (_stravaRouteLayer) {
+      _stravaRouteLayer.addTo(_onsenMap);
+      btn.textContent = '🚴 Hide Strava Routes';
+      if (legendEntry) legendEntry.style.display = '';
+      return;
+    }
+
+    // First-time load
+    if (_stravaRoutesLoading) return;
+    _stravaRoutesLoading = true;
+    btn.disabled = true;
+    btn.textContent = '⏳ Loading routes…';
+
+    try {
+      const db = await ensureOnsenDb();
+      const snap = await db.collection('routes').where('source', '==', 'strava').get();
+      const routes = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.storagePath) routes.push(d);
+      });
+
+      _stravaRouteLayer = L.layerGroup();
+
+      if (routes.length === 0) {
+        _stravaRouteLayer.addTo(_onsenMap);
+        btn.disabled = false;
+        btn.textContent = '🚴 No routes found';
+        _stravaRoutesLoading = false;
+        return;
+      }
+
+      let pending = routes.length;
+      let loaded = 0;
+
+      routes.forEach(route => {
+        const url = `https://firebasestorage.googleapis.com/v0/b/${STRAVA_BUCKET}/o/${encodeURIComponent(route.storagePath)}?alt=media`;
+        fetch(url)
+          .then(res => res.ok ? res.text() : Promise.reject(new Error('HTTP ' + res.status)))
+          .then(gpxText => {
+            const pts = [];
+            try {
+              const gpxDoc = (new DOMParser()).parseFromString(gpxText, 'application/xml');
+              gpxDoc.querySelectorAll('trkpt').forEach(tp => {
+                const lat = parseFloat(tp.getAttribute('lat'));
+                const lon = parseFloat(tp.getAttribute('lon'));
+                if (!isNaN(lat) && !isNaN(lon)) pts.push([lat, lon]);
+              });
+            } catch (e) {
+              (gpxText.match(/<trkpt[^>]*>/g) || []).forEach(tag => {
+                const latM = tag.match(/lat="([^"]+)"/);
+                const lonM = tag.match(/lon="([^"]+)"/);
+                if (latM && lonM) pts.push([parseFloat(latM[1]), parseFloat(lonM[1])]);
+              });
+            }
+            if (pts.length > 0) {
+              L.polyline(pts, { color: STRAVA_ROUTE_COLOR, weight: 3, opacity: 0.85 }).addTo(_stravaRouteLayer);
+              loaded++;
+            }
+          })
+          .catch(err => console.warn('Strava GPX fetch failed:', err))
+          .finally(() => {
+            if (--pending === 0) {
+              _stravaRouteLayer.addTo(_onsenMap);
+              btn.disabled = false;
+              btn.textContent = '🚴 Hide Strava Routes (' + loaded + ')';
+              if (legendEntry) legendEntry.style.display = '';
+              _stravaRoutesLoading = false;
+            }
+          });
+      });
+    } catch (err) {
+      _stravaRoutesLoading = false;
+      btn.disabled = false;
+      btn.textContent = '🚴 Show Strava Routes';
+      console.error('Strava routes load error:', err);
     }
   };
 })();
