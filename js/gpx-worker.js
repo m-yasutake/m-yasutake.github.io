@@ -4,18 +4,52 @@
  */
 
 function parseGPX(xmlString) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlString, 'application/xml');
+  // DOMParser is available in workers on Chrome 77+, Firefox 105+, Safari 15.4+.
+  // For older environments (notably iOS < 15.4) we fall back to regex parsing.
+  if (typeof DOMParser !== 'undefined') {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlString, 'application/xml');
+    const pts = [];
+    doc.querySelectorAll('trkpt, rtept').forEach(function(pt) {
+      const lat = parseFloat(pt.getAttribute('lat'));
+      const lon = parseFloat(pt.getAttribute('lon'));
+      const eleEl = pt.querySelector('ele');
+      const ele = eleEl ? parseFloat(eleEl.textContent) : null;
+      if (!isNaN(lat) && !isNaN(lon)) pts.push({ lat: lat, lon: lon, ele: ele });
+    });
+    const nameEl = doc.querySelector('trk > name, rte > name, metadata > name');
+    return { points: pts, name: nameEl ? nameEl.textContent : null };
+  }
+
+  // Regex-based fallback (no DOM APIs required)
   const pts = [];
-  doc.querySelectorAll('trkpt, rtept').forEach(function(pt) {
-    const lat = parseFloat(pt.getAttribute('lat'));
-    const lon = parseFloat(pt.getAttribute('lon'));
-    const eleEl = pt.querySelector('ele');
-    const ele = eleEl ? parseFloat(eleEl.textContent) : null;
-    if (!isNaN(lat) && !isNaN(lon)) pts.push({ lat: lat, lon: lon, ele: ele });
-  });
-  const nameEl = doc.querySelector('trk > name, rte > name, metadata > name');
-  return { points: pts, name: nameEl ? nameEl.textContent : null };
+  const ptRegex = /<(?:trkpt|rtept)([^>]+)>([\s\S]*?)<\/(?:trkpt|rtept)>/g;
+  const eleRegex = /<ele>([\s\S]*?)<\/ele>/;
+  let m;
+  while ((m = ptRegex.exec(xmlString)) !== null) {
+    const attrs = m[1];
+    const inner = m[2];
+    const latM = /\blat="([^"]+)"/.exec(attrs);
+    const lonM = /\blon="([^"]+)"/.exec(attrs);
+    if (!latM || !lonM) continue;
+    const lat = parseFloat(latM[1]);
+    const lon = parseFloat(lonM[1]);
+    if (isNaN(lat) || isNaN(lon)) continue;
+    const eleM = eleRegex.exec(inner);
+    const ele = eleM ? parseFloat(eleM[1]) : null;
+    pts.push({ lat: lat, lon: lon, ele: ele });
+  }
+  const namePatterns = [
+    /<trk>\s*<name>([\s\S]*?)<\/name>/,
+    /<rte>\s*<name>([\s\S]*?)<\/name>/,
+    /<metadata>\s*<name>([\s\S]*?)<\/name>/
+  ];
+  let name = null;
+  for (let i = 0; i < namePatterns.length; i++) {
+    const nm = namePatterns[i].exec(xmlString);
+    if (nm) { name = nm[1].trim(); break; }
+  }
+  return { points: pts, name: name };
 }
 
 function computeStats(pts) {
