@@ -1635,13 +1635,15 @@
       }
 
       if (!isIOS) {
-        // Use the modular SDK to configure persistent local cache before the compat
-        // wrapper initialises Firestore, replacing the deprecated enablePersistence() API.
+        // Use memoryLocalCache instead of persistentLocalCache: all reads on this page
+        // are one-time .get() calls (not onSnapshot), so there is no need for IndexedDB
+        // persistence or cross-tab coordination. persistentLocalCache opens a persistent
+        // WebChannel (Listen stream) to keep the cache synced, causing spurious 404s.
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
           .then(function(mod) {
             try {
               mod.initializeFirestore(_app, {
-                localCache: mod.persistentLocalCache({ tabManager: mod.persistentMultipleTabManager() })
+                localCache: mod.memoryLocalCache()
               });
             } catch(e) { /* already initialised — ignore */ }
             _finishInit();
