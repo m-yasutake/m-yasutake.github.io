@@ -304,6 +304,21 @@
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 <script>
+  // ── Shared Firestore promise: owner routes ─────────────────
+  // Fetched once and reused by both addWeAreHereMarker and loadStats
+  // to avoid downloading the routes collection twice (~2.8 MB each time).
+  var _ownerRoutesPromise = (function () {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      return firebase.firestore()
+        .collection('routes')
+        .where('isOwner', '==', true)
+        .get();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  })();
+
   // ── Home-page route map ────────────────────────────────────
   (function initHomeMap() {
     if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
@@ -321,10 +336,7 @@
 
     // ── "We are here" pin from last Strava route ─────────────
     (function addWeAreHereMarker() {
-      try {
-        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-        var db = firebase.firestore();
-        db.collection('routes').where('isOwner', '==', true).get()
+      _ownerRoutesPromise
           .then(function (snap) {
             // Sort by uploadedAt descending to get the most recent route first
             var docs = [];
@@ -352,7 +364,6 @@
               .addTo(map);
           })
           .catch(function () {});
-      } catch (e) {}
     })();
   })();
 
@@ -398,12 +409,11 @@
         'linear-gradient(160deg,#1a2a1a,#27ae60)',
         'linear-gradient(160deg,#4a1a4a,#8e44ad)'
       ];
-      db.collection('blog_posts').where('status', '==', 'published').get()
+      db.collection('blog_posts').where('status', '==', 'published')
+        .orderBy('date', 'desc').limit(3).get()
         .then(function (snap) {
           var docs = [];
           snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
-          docs.sort(function (a, b) { return (b.data.date || '').localeCompare(a.data.date || ''); });
-          docs = docs.slice(0, 3);
           var grid = document.getElementById('index-post-list');
           if (!grid) return;
           grid.innerHTML = '';
@@ -431,54 +441,42 @@
   })();
 
   // ── Firebase: Distance Cycled + Elevation Gained from owner's Strava routes ──
-  (function loadStats() {
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      const db = firebase.firestore();
-
-      // Owner's Strava rides: Distance Cycled (km) and Elevation Gained (m)
-      db.collection('routes').where('isOwner', '==', true).get()
-        .then(snap => {
-          let totalKm = 0;
-          let totalElevation = 0;
-          snap.forEach(doc => {
-            const data = doc.data();
-            if (typeof data.distanceKm === 'number') {
-              totalKm += data.distanceKm;
-            } else if (data.metadata && data.metadata.description) {
-              const m = data.metadata.description.match(/Distance:\s*([\d.]+)\s*km/i);
-              if (m) totalKm += parseFloat(m[1]);
-            }
-            if (typeof data.totalElevationGain === 'number') {
-              totalElevation += data.totalElevationGain;
-            }
-          });
-          const sploopsEl = document.getElementById('stat-sploops');
-          const grindsEl  = document.getElementById('stat-grinds');
-          const sploopsKmEl = document.getElementById('stat-sploops-km');
-          const grindsMElevEl = document.getElementById('stat-grinds-m');
-          if (totalKm > 0) {
-            animateCounter(sploopsEl, Math.round(totalKm));
-            if (sploopsKmEl) sploopsKmEl.textContent = 'km';
-          } else {
-            sploopsEl.textContent = '0';
-          }
-          if (totalElevation > 0) {
-            animateCounter(grindsEl, Math.round(totalElevation));
-            if (grindsMElevEl) grindsMElevEl.textContent = 'm';
-          } else {
-            grindsEl.textContent = '0';
-          }
-        })
-        .catch(() => {
-          document.getElementById('stat-sploops').textContent = '0';
-          document.getElementById('stat-grinds').textContent = '0';
-        });
-    } catch (e) {
-      document.getElementById('stat-sploops').textContent = '0';
-      document.getElementById('stat-grinds').textContent = '0';
+  // Reuses the shared _ownerRoutesPromise (already fetched above)
+  _ownerRoutesPromise.then(snap => {
+    let totalKm = 0;
+    let totalElevation = 0;
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (typeof data.distanceKm === 'number') {
+        totalKm += data.distanceKm;
+      } else if (data.metadata && data.metadata.description) {
+        const m = data.metadata.description.match(/Distance:\s*([\d.]+)\s*km/i);
+        if (m) totalKm += parseFloat(m[1]);
+      }
+      if (typeof data.totalElevationGain === 'number') {
+        totalElevation += data.totalElevationGain;
+      }
+    });
+    const sploopsEl = document.getElementById('stat-sploops');
+    const grindsEl  = document.getElementById('stat-grinds');
+    const sploopsKmEl = document.getElementById('stat-sploops-km');
+    const grindsMElevEl = document.getElementById('stat-grinds-m');
+    if (totalKm > 0) {
+      animateCounter(sploopsEl, Math.round(totalKm));
+      if (sploopsKmEl) sploopsKmEl.textContent = 'km';
+    } else {
+      sploopsEl.textContent = '0';
     }
-  })();
+    if (totalElevation > 0) {
+      animateCounter(grindsEl, Math.round(totalElevation));
+      if (grindsMElevEl) grindsMElevEl.textContent = 'm';
+    } else {
+      grindsEl.textContent = '0';
+    }
+  }).catch(() => {
+    document.getElementById('stat-sploops').textContent = '0';
+    document.getElementById('stat-grinds').textContent = '0';
+  });
 
   // ── Firebase: Visited Onsens count ─────────────────────────
   (function loadOnsensCount() {

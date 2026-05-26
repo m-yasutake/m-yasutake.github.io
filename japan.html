@@ -1475,8 +1475,6 @@
       .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
       .then(gpxText => {
         r._gpxCached = gpxText;
-        // Cache inline for next load (backward-compat with existing data structure)
-        if (r.firebaseDocId) db.collection('routes').doc(r.firebaseDocId).update({ gpxContent: gpxText }).catch(err => console.warn('Failed to cache GPX content:', err));
         fetchAndParse(gpxText);
       })
       .catch(err => { console.error('Error loading route ' + r.routeName + ':', err); r._loading = false; });
@@ -2104,12 +2102,16 @@
           const meta = data.metadata || {};
           // isOwner (set by fetch-strava-rides.js) identifies our actual travel track.
           const isOwner = !!(data.isOwner || data.source === 'strava');
+          // Prefer fetching GPX from Firebase Storage (CDN-cached binary) rather than
+          // reading it from the Firestore document. Inline-cached gpxContent is only
+          // used as a fallback for legacy routes that have no storagePath.
+          const cachedGpx = data.storagePath ? null : (data.gpxContent || null);
           if (isOwner) {
             // Owner routes: add to map immediately (and auto-load the GPX track).
-            addRoute(null, data.fileName, doc.id, meta, data.storagePath, data.gpxContent || null, isOwner);
+            addRoute(null, data.fileName, doc.id, meta, data.storagePath, cachedGpx, isOwner);
           } else {
             // Planning routes: store for on-demand loading via the "Load Routes" button.
-            _pendingPlanningRoutes.push({ fileName: data.fileName, docId: doc.id, meta, storagePath: data.storagePath || null, gpxContent: data.gpxContent || null });
+            _pendingPlanningRoutes.push({ fileName: data.fileName, docId: doc.id, meta, storagePath: data.storagePath || null, gpxContent: cachedGpx });
           }
         });
         // Place "You are here" pin immediately from the most recent Strava route's endLatLng
@@ -2550,17 +2552,20 @@ function toggleCheck(el) {
   }
 
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  // Server-side filter + sort: avoids downloading all published posts just to filter client-side.
+  // Requires a Firestore composite index on (status, category, date DESC) — the console error
+  // will include a direct link to create it if it doesn't exist yet.
   firebase.firestore()
     .collection('blog_posts')
     .where('status', '==', 'published')
+    .where('category', '==', 'japan')
+    .orderBy('date', 'desc')
     .get()
     .then(function (snap) {
       if (snap.empty) return;
       var docs = [];
       snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
-      _japanDocs = docs
-        .filter(function (p) { return p.data.category === 'japan'; })
-        .sort(function (a, b) { return (b.data.date || '').localeCompare(a.data.date || ''); });
+      _japanDocs = docs; // already filtered and sorted server-side
       renderJapanDocs();
     })
     .catch(function (err) { console.warn('Blog posts load error:', err.message); });
@@ -2629,6 +2634,9 @@ function toggleCheck(el) {
   const PHOTOS_PAGE = 20;
   let allDocs = [];
   let shownPhotos = 0;
+  let _photosDb = null;
+  let _lastPhotoDoc = null;
+  let _allPhotosLoaded = false;
 
   // ── Render gallery from Firestore docs
   function renderGallery(docs) {
@@ -2699,22 +2707,51 @@ function toggleCheck(el) {
 
     const visibleTotal = visibleDocs.length;
     const wrap = document.getElementById('photos-show-more-wrap');
-    if (wrap) wrap.style.display = shownPhotos < visibleTotal ? '' : 'none';
+    // Show button if there are more items in the current filtered view OR more pages in Firestore
+    if (wrap) wrap.style.display = (shownPhotos < visibleTotal || !_allPhotosLoaded) ? '' : 'none';
   }
 
   window.photosShowMore = function () {
-    appendPhotos(PHOTOS_PAGE);
+    // If all Firestore docs are loaded, just render more from the in-memory allDocs (for filtered views)
+    if (_allPhotosLoaded || !_lastPhotoDoc || !_photosDb) { appendPhotos(PHOTOS_PAGE); return; }
+    const btn = document.getElementById('photos-show-more-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+    _photosDb.collection('photos')
+      .orderBy('uploadedAt', 'desc')
+      .startAfter(_lastPhotoDoc)
+      .limit(PHOTOS_PAGE)
+      .get()
+      .then(snapshot => {
+        const newDocs = [];
+        snapshot.forEach(doc => newDocs.push(doc.data()));
+        _lastPhotoDoc = snapshot.size > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+        _allPhotosLoaded = snapshot.size < PHOTOS_PAGE;
+        allDocs = allDocs.concat(newDocs);
+        const albums = [...new Set(allDocs.map(d => d.album).filter(Boolean))].sort();
+        const countEl = document.getElementById('photo-count');
+        const albumsEl = document.getElementById('album-count');
+        if (countEl) countEl.textContent = allDocs.length + (_allPhotosLoaded ? '' : '+');
+        if (albumsEl) albumsEl.textContent = albums.length + (_allPhotosLoaded ? '' : '+');
+        appendPhotos(newDocs.length);
+      })
+      .catch(err => console.error('Photos load more error:', err))
+      .finally(() => { if (btn) { btn.disabled = false; btn.textContent = '↓'; } });
   };
 
-  // ── Load from Firestore
+  // ── Load from Firestore (first page only; Show More fetches subsequent pages)
   function loadPhotos() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      const db = firebase.firestore();
-      db.collection('photos').get()
+      _photosDb = firebase.firestore();
+      _photosDb.collection('photos')
+        .orderBy('uploadedAt', 'desc')
+        .limit(PHOTOS_PAGE)
+        .get()
         .then(snapshot => {
           const docs = [];
           snapshot.forEach(doc => docs.push(doc.data()));
+          _lastPhotoDoc = snapshot.size > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+          _allPhotosLoaded = snapshot.size < PHOTOS_PAGE;
           renderGallery(docs);
         })
         .catch(err => {
@@ -2767,6 +2804,9 @@ function toggleCheck(el) {
   const VIDEOS_PAGE = 12;
   let allVideoDocs = [];
   let shownVideos  = 0;
+  let _videosDb = null;
+  let _lastVideoDoc = null;
+  let _allVideosLoaded = false;
 
   function docTs(doc) {
     const t = doc.uploadedAt;
@@ -2785,17 +2825,18 @@ function toggleCheck(el) {
 
     loading.style.display = 'none';
 
-    if (!docs.length) {
+    if (!docs.length && _allVideosLoaded) {
       empty.style.display  = '';
       countEl.textContent  = '0';
       albumsEl.textContent = '0';
       return;
     }
 
-    allVideoDocs = docs.slice().sort((a, b) => docTs(b) - docTs(a));
+    // Server already ordered by uploadedAt desc
+    allVideoDocs = docs.slice();
     const albums = [...new Set(allVideoDocs.map(d => d.album).filter(Boolean))];
-    countEl.textContent  = allVideoDocs.length;
-    albumsEl.textContent = albums.length;
+    countEl.textContent  = allVideoDocs.length + (_allVideosLoaded ? '' : '+');
+    albumsEl.textContent = albums.length + (_allVideosLoaded ? '' : '+');
 
     // Click delegation (registered once)
     grid.addEventListener('click', e => {
@@ -2835,20 +2876,52 @@ function toggleCheck(el) {
     });
     shownVideos += batch.length;
     const wrap = document.getElementById('videos-show-more-wrap');
-    if (wrap) wrap.style.display = shownVideos < allVideoDocs.length ? '' : 'none';
+    // Show button if there are more items in memory OR more pages in Firestore
+    if (wrap) wrap.style.display = (shownVideos < allVideoDocs.length || !_allVideosLoaded) ? '' : 'none';
   }
 
-  window.videosShowMore = function () { appendVideos(VIDEOS_PAGE); };
+  window.videosShowMore = function () {
+    if (_allVideosLoaded || !_lastVideoDoc || !_videosDb) { appendVideos(VIDEOS_PAGE); return; }
+    const btn = document.getElementById('videos-show-more-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+    _videosDb.collection('videos')
+      .orderBy('uploadedAt', 'desc')
+      .startAfter(_lastVideoDoc)
+      .limit(VIDEOS_PAGE)
+      .get()
+      .then(snapshot => {
+        const newDocs = [];
+        snapshot.forEach(doc => newDocs.push(doc.data()));
+        _lastVideoDoc = snapshot.size > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+        _allVideosLoaded = snapshot.size < VIDEOS_PAGE;
+        allVideoDocs = allVideoDocs.concat(newDocs);
+        const countEl = document.getElementById('video-count');
+        const albumsEl = document.getElementById('video-album-count');
+        if (countEl) countEl.textContent = allVideoDocs.length + (_allVideosLoaded ? '' : '+');
+        if (albumsEl) {
+          const albums = [...new Set(allVideoDocs.map(d => d.album).filter(Boolean))];
+          albumsEl.textContent = albums.length + (_allVideosLoaded ? '' : '+');
+        }
+        appendVideos(newDocs.length);
+      })
+      .catch(err => console.error('Videos load more error:', err))
+      .finally(() => { if (btn) { btn.disabled = false; btn.textContent = '↓'; } });
+  };
 
-  // ── Load from Firestore
+  // ── Load from Firestore (first page only; Show More fetches subsequent pages)
   function loadVideos() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      const db = firebase.firestore();
-      db.collection('videos').get()
+      _videosDb = firebase.firestore();
+      _videosDb.collection('videos')
+        .orderBy('uploadedAt', 'desc')
+        .limit(VIDEOS_PAGE)
+        .get()
         .then(snapshot => {
           const docs = [];
           snapshot.forEach(doc => docs.push(doc.data()));
+          _lastVideoDoc = snapshot.size > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+          _allVideosLoaded = snapshot.size < VIDEOS_PAGE;
           renderVideoGrid(docs);
         })
         .catch(err => {
