@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bike – Japan trip planning. Routes, logistics, and preparation for cycling across Japan." />
+  <title>Japan Planning – Tomika Bike</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+    .coming-soon-wrap {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1.5rem;
+    }
+
+    .coming-soon-icon {
+      font-size: 5rem;
+      margin-bottom: 1.5rem;
+      line-height: 1;
+    }
+
+    .coming-soon-wrap h2 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 400;
+      margin-bottom: 1rem;
+      color: var(--color-primary);
+    }
+
+    .coming-soon-wrap p {
+      font-size: 1.05rem;
+      color: var(--color-gray-600);
+      max-width: 560px;
+      line-height: 1.75;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Page Loader -->
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
+    <div class="loader-dots">
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
+    <ul class="nav-links">
+      <li><a href="index.html" data-i18n="nav.home">Home</a></li>
+      <li class="nav-dropdown-item">
+        <a href="#" class="nav-dropdown-toggle"><span data-i18n="nav.trips">Trips</span> <span class="nav-arrow">▼</span></a>
+        <ul class="nav-dropdown-menu">
+          <li><a href="japan.html" data-i18n="nav.japan">Japan</a></li>
+          <li><a href="norway.html" data-i18n="nav.norway">Norway</a></li>
+        </ul>
+      </li>
+      <li class="nav-dropdown-item">
+        <a href="#" class="nav-dropdown-toggle active"><span data-i18n="nav.planning">Planning</span> <span class="nav-arrow">▼</span></a>
+        <ul class="nav-dropdown-menu">
+          <li><a href="planning-japan.html" class="active" data-i18n="nav.japan">Japan</a></li>
+          <li><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></li>
+        </ul>
+      </li>
+      <li><a href="gear.html" data-i18n="nav.gear">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html" data-i18n="nav.admin">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <div class="lang-dropdown">
+        <button class="lang-toggle-btn"><span data-i18n="nav.lang">🌐 Language</span> <span class="lang-arrow">▼</span></button>
+        <div class="lang-menu">
+          <button class="lang-option" data-lang="en">English</button>
+          <button class="lang-option" data-lang="ja">日本語</button>
+          <button class="lang-option" data-lang="no">Norsk</button>
+        </div>
+      </div>
+      <button class="nav-subscribe-btn" onclick="openSubscribeModal()" data-i18n="nav.subscribe">🔔 Subscribe</button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu">
+  <a href="index.html" data-i18n="mobile.home">🏠 Home</a>
+  <div class="mobile-nav-group">
+    <span class="mobile-nav-group-label" data-i18n="nav.trips">Trips</span>
+    <a href="japan.html" data-i18n="mobile.japan">Japan</a>
+    <a href="norway.html" data-i18n="mobile.norway">Norway</a>
+  </div>
+  <div class="mobile-nav-group">
+    <span class="mobile-nav-group-label" data-i18n="nav.planning">Planning</span>
+    <a href="planning-japan.html" class="active" data-i18n="mobile.japan">Japan</a>
+    <a href="planning-norway.html" data-i18n="mobile.norway">Norway</a>
+  </div>
+  <a href="gear.html" data-i18n="mobile.gear">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none" data-i18n="mobile.admin">⚙️ Admin</a>
+  <div class="mobile-lang-row">
+    <button class="mobile-lang-btn" data-lang="en">English</button>
+    <button class="mobile-lang-btn" data-lang="ja">日本語</button>
+    <button class="mobile-lang-btn" data-lang="no">Norsk</button>
+  </div>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()" data-i18n="mobile.subscribe">🔔 Subscribe to Updates</button>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">🇯🇵 Japan Planning</div>
+    <h1>Planning – Japan</h1>
+    <p>Routes, logistics, and preparation for cycling across Japan.</p>
+  </div>
+</div>
+
+<!-- Coming Soon Content -->
+<section class="section">
+  <div class="container">
+    <div class="coming-soon-wrap">
+      <div class="coming-soon-icon">🗾</div>
+      <h2>Japan Planning – Coming Soon</h2>
+      <p>This page will cover our planning for the Japan leg of the trip — routes, gear prep, logistics, visas, and everything in between.</p>
+      <a href="japan.html" class="btn btn-primary">🇯🇵 See the Japan Trip</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index.html" class="nav-logo" style="margin-bottom:.75rem"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
+      <p data-i18n="footer.brand">A cycling adventure blog documenting our journey through Japan and Norway.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col"><h4 data-i18n="footer.explore">Explore</h4><a href="index.html" data-i18n="nav.home">Home</a><a href="japan.html" data-i18n="nav.japan">Japan</a><a href="norway.html" data-i18n="nav.norway">Norway</a><a href="gear.html" data-i18n="nav.gear">Gear</a></div>
+      <div class="footer-col"><h4 data-i18n="nav.planning">Planning</h4><a href="planning-japan.html" data-i18n="nav.japan">Japan</a><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></div>
+      <div class="footer-col"><h4 data-i18n="footer.info">Info</h4><a href="about.html" data-i18n="footer.about">About Us</a></div>
+    </div>
+    <div class="footer-bottom">
+      <p data-i18n="footer.copy">© 2026 tomika.bike</p>
+      <p data-i18n="footer.made">Made with ❤️ and 🚴</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

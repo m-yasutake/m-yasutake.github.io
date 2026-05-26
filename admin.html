@@ -719,8 +719,20 @@
     <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="japan.html">Japan</a></li>
-      <li><a href="norway.html">Norway</a></li>
+      <li class="nav-dropdown-item">
+        <a href="#" class="nav-dropdown-toggle">Trips <span class="nav-arrow">▼</span></a>
+        <ul class="nav-dropdown-menu">
+          <li><a href="japan.html">Japan</a></li>
+          <li><a href="norway.html">Norway</a></li>
+        </ul>
+      </li>
+      <li class="nav-dropdown-item">
+        <a href="#" class="nav-dropdown-toggle">Planning <span class="nav-arrow">▼</span></a>
+        <ul class="nav-dropdown-menu">
+          <li><a href="planning-japan.html">Japan</a></li>
+          <li><a href="planning-norway.html">Norway</a></li>
+        </ul>
+      </li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -732,8 +744,16 @@
 
 <div class="mobile-menu">
   <a href="index.html">🏠 Home</a>
-  <a href="japan.html">Japan</a>
-  <a href="norway.html">Norway</a>
+  <div class="mobile-nav-group">
+    <span class="mobile-nav-group-label">Trips</span>
+    <a href="japan.html">Japan</a>
+    <a href="norway.html">Norway</a>
+  </div>
+  <div class="mobile-nav-group">
+    <span class="mobile-nav-group-label">Planning</span>
+    <a href="planning-japan.html">Japan</a>
+    <a href="planning-norway.html">Norway</a>
+  </div>
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
 </div>

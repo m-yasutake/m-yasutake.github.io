@@ -7,6 +7,8 @@ const TRANSLATIONS = {
   en: {
     /* ── Navigation ── */
     'nav.home':       'Home',
+    'nav.trips':      'Trips',
+    'nav.planning':   'Planning',
     'nav.japan':      'Japan',
     'nav.norway':     'Norway',
     'nav.gear':       'Gear',
@@ -207,6 +209,8 @@ const TRANSLATIONS = {
   ja: {
     /* ── Navigation ── */
     'nav.home':       'ホーム',
+    'nav.trips':      '旅行',
+    'nav.planning':   '計画',
     'nav.japan':      '日本',
     'nav.norway':     'ノルウェー',
     'nav.gear':       'ギア',
@@ -407,6 +411,8 @@ const TRANSLATIONS = {
   no: {
     /* ── Navigation ── */
     'nav.home':       'Hjem',
+    'nav.trips':      'Turer',
+    'nav.planning':   'Planlegging',
     'nav.japan':      'Japan',
     'nav.norway':     'Norge',
     'nav.gear':       'Utstyr',
