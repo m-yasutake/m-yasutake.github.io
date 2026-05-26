@@ -258,7 +258,8 @@ async function main() {
   console.log(`Found ${rideOnly.length} ride(s) of ${all.length} total activities.`);
 
   if (rideOnly.length === 0) {
-    console.log('No rides found. Exiting.');
+    console.log('No rides found.');
+    await updateStatsDocument();
     writeGithubOutput(0);
     return;
   }
@@ -270,7 +271,8 @@ async function main() {
   console.log(`${newRides.length} new ride(s) to process.`);
 
   if (newRides.length === 0) {
-    console.log('No new rides to save. Exiting.');
+    console.log('No new rides to save.');
+    await updateStatsDocument();
     writeGithubOutput(0);
     return;
   }
@@ -370,7 +372,57 @@ async function main() {
   }
 
   console.log(`\nDone. Saved ${savedCount} new ride(s), skipped ${skippedCount}.`);
+  await updateStatsDocument();
   writeGithubOutput(savedCount);
+}
+
+// ── Stats document ────────────────────────────────────────────────────────────
+
+/**
+ * Read all owner routes, compute cumulative totals and the current position
+ * (end point of the most recently uploaded route), then write the results to
+ * config/stats. The home page reads this single document instead of
+ * downloading the entire routes collection.
+ *
+ * Uses { merge: true } so onsensCount (written by generate-points-snapshot.js)
+ * is preserved.
+ */
+async function updateStatsDocument() {
+  console.log('\nRecomputing config/stats from all owner routes...');
+  const snap = await db.collection('routes').where('isOwner', '==', true).get();
+
+  let totalDistanceKm    = 0;
+  let totalElevationGain = 0;
+  let latestTs           = -Infinity;
+  let latestRouteData    = null;
+
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (typeof d.distanceKm === 'number')         totalDistanceKm    += d.distanceKm;
+    if (typeof d.totalElevationGain === 'number') totalElevationGain += d.totalElevationGain;
+    if (d.endLatLng) {
+      const ts = (d.uploadedAt && d.uploadedAt.seconds) ? d.uploadedAt.seconds : 0;
+      if (ts > latestTs) { latestTs = ts; latestRouteData = d; }
+    }
+  });
+
+  const stats = {
+    totalDistanceKm:    Math.round(totalDistanceKm * 10) / 10,
+    totalElevationGain: Math.round(totalElevationGain),
+    statsUpdatedAt:     admin.firestore.FieldValue.serverTimestamp(),
+  };
+  if (latestRouteData) {
+    stats.currentPosition  = latestRouteData.endLatLng;
+    stats.currentRouteName = (latestRouteData.metadata && latestRouteData.metadata.name)
+      || latestRouteData.fileName || 'Latest ride';
+  }
+
+  await db.collection('config').doc('stats').set(stats, { merge: true });
+  console.log(`  ✓ totalDistanceKm    = ${stats.totalDistanceKm} km`);
+  console.log(`  ✓ totalElevationGain = ${stats.totalElevationGain} m`);
+  if (latestRouteData) {
+    console.log(`  ✓ currentPosition    = [${stats.currentPosition}] (${stats.currentRouteName})`);
+  }
 }
 
 /** Write job outputs for downstream GitHub Actions steps. */

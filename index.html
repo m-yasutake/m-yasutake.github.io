@@ -304,16 +304,16 @@
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 <script>
-  // ── Shared Firestore promise: owner routes ─────────────────
-  // Fetched once and reused by both addWeAreHereMarker and loadStats
-  // to avoid downloading the routes collection twice (~2.8 MB each time).
-  var _ownerRoutesPromise = (function () {
+  // ── Single config/stats document read ───────────────────────────────────
+  // Replaces the full routes-collection download and the full points-collection
+  // download with one pre-aggregated ~200-byte document.
+  // Written by: fetch-strava-rides.js  (totalDistanceKm, totalElevationGain,
+  //                                     currentPosition, currentRouteName)
+  //             generate-points-snapshot.js (onsensCount)
+  var _statsPromise = (function () {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      return firebase.firestore()
-        .collection('routes')
-        .where('isOwner', '==', true)
-        .get();
+      return firebase.firestore().collection('config').doc('stats').get();
     } catch (e) {
       return Promise.reject(e);
     }
@@ -334,22 +334,14 @@
       if (el) el.classList.add('hidden');
     }, 2000);
 
-    // ── "We are here" pin from last Strava route ─────────────
+    // ── "We are here" pin from config/stats ─────────────────
     (function addWeAreHereMarker() {
-      _ownerRoutesPromise
-          .then(function (snap) {
-            // Sort by uploadedAt descending to get the most recent route first
-            var docs = [];
-            snap.forEach(function (doc) { docs.push(doc.data()); });
-            docs.sort(function (a, b) {
-              var ta = (a.uploadedAt && a.uploadedAt.seconds) ? a.uploadedAt.seconds : 0;
-              var tb = (b.uploadedAt && b.uploadedAt.seconds) ? b.uploadedAt.seconds : 0;
-              return tb - ta;
-            });
-            // Find most recent route that has an end position
-            var latestRoute = docs.find(function (data) { return data.endLatLng; });
-            if (!latestRoute) return;
-            var routeName = (latestRoute.metadata && latestRoute.metadata.name) || latestRoute.fileName || 'Latest ride';
+      _statsPromise
+          .then(function (doc) {
+            if (!doc.exists) return;
+            var s = doc.data();
+            if (!s.currentPosition) return;
+            var routeName = s.currentRouteName || 'Latest ride';
             var iconHtml =
               '<div style="position:relative;width:36px;height:44px">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">' +
@@ -359,7 +351,7 @@
                 '</svg>' +
               '</div>';
             var icon = L.divIcon({ html: iconHtml, className: 'current-location-icon', iconSize: [36, 44], iconAnchor: [18, 44], popupAnchor: [0, -46] });
-            L.marker(latestRoute.endLatLng, { icon: icon, zIndexOffset: 1000 })
+            L.marker(s.currentPosition, { icon: icon, zIndexOffset: 1000 })
               .bindPopup('<strong style="color:#E76F51">📍 We are here!</strong><br><span style="font-size:0.9em;color:#555">' + routeName + '</span>')
               .addTo(map);
           })
@@ -440,65 +432,41 @@
     } catch (e) {}
   })();
 
-  // ── Firebase: Distance Cycled + Elevation Gained from owner's Strava routes ──
-  // Reuses the shared _ownerRoutesPromise (already fetched above)
-  _ownerRoutesPromise.then(snap => {
-    let totalKm = 0;
-    let totalElevation = 0;
-    snap.forEach(doc => {
-      const data = doc.data();
-      if (typeof data.distanceKm === 'number') {
-        totalKm += data.distanceKm;
-      } else if (data.metadata && data.metadata.description) {
-        const m = data.metadata.description.match(/Distance:\s*([\d.]+)\s*km/i);
-        if (m) totalKm += parseFloat(m[1]);
-      }
-      if (typeof data.totalElevationGain === 'number') {
-        totalElevation += data.totalElevationGain;
-      }
-    });
-    const sploopsEl = document.getElementById('stat-sploops');
-    const grindsEl  = document.getElementById('stat-grinds');
+  // ── Firebase: Distance Cycled + Elevation Gained + Onsens ─────────────────
+  // All three stats come from the single config/stats document.
+  _statsPromise.then(doc => {
+    const sploopsEl   = document.getElementById('stat-sploops');
+    const grindsEl    = document.getElementById('stat-grinds');
     const sploopsKmEl = document.getElementById('stat-sploops-km');
-    const grindsMElevEl = document.getElementById('stat-grinds-m');
-    if (totalKm > 0) {
-      animateCounter(sploopsEl, Math.round(totalKm));
-      if (sploopsKmEl) sploopsKmEl.textContent = 'km';
-    } else {
+    const grindsMEl   = document.getElementById('stat-grinds-m');
+    const onsensEl    = document.getElementById('stat-onsens');
+
+    if (!doc.exists) {
       sploopsEl.textContent = '0';
+      grindsEl.textContent  = '0';
+      if (onsensEl) onsensEl.textContent = '0';
+      return;
     }
-    if (totalElevation > 0) {
-      animateCounter(grindsEl, Math.round(totalElevation));
-      if (grindsMElevEl) grindsMElevEl.textContent = 'm';
-    } else {
-      grindsEl.textContent = '0';
-    }
+    const s = doc.data();
+
+    if (s.totalDistanceKm > 0) {
+      animateCounter(sploopsEl, Math.round(s.totalDistanceKm));
+      if (sploopsKmEl) sploopsKmEl.textContent = 'km';
+    } else { sploopsEl.textContent = '0'; }
+
+    if (s.totalElevationGain > 0) {
+      animateCounter(grindsEl, Math.round(s.totalElevationGain));
+      if (grindsMEl) grindsMEl.textContent = 'm';
+    } else { grindsEl.textContent = '0'; }
+
+    if (onsensEl && s.onsensCount != null) {
+      animateCounter(onsensEl, s.onsensCount);
+    } else if (onsensEl) { onsensEl.textContent = '0'; }
   }).catch(() => {
     document.getElementById('stat-sploops').textContent = '0';
-    document.getElementById('stat-grinds').textContent = '0';
+    document.getElementById('stat-grinds').textContent  = '0';
+    document.getElementById('stat-onsens').textContent  = '0';
   });
-
-  // ── Firebase: Visited Onsens count ─────────────────────────
-  (function loadOnsensCount() {
-    const el = document.getElementById('stat-onsens');
-    if (!el) return;
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      const db = firebase.firestore();
-      db.collection('points').where('visited', '==', true).get()
-        .then(snap => {
-          let count = 0;
-          const ONSEN_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
-          snap.forEach(doc => {
-            const d = doc.data();
-            const rawType = (d.metadata && (d.metadata.Type || d.metadata.type)) || d.type || '';
-            if (ONSEN_RE.test(rawType)) count++;
-          });
-          animateCounter(el, count);
-        })
-        .catch(() => { el.textContent = '0'; });
-    } catch (e) { el.textContent = '0'; }
-  })();
 </script>
 </body>
 </html>

@@ -76,7 +76,9 @@ async function main() {
         lon:      d.lon,
         url:      d.url      || null,
         metadata: d.metadata || {},
-        fileName: d.fileName || null
+        fileName: d.fileName || null,
+        visited:  d.visited  || false,
+        type:     d.type     || null,
       });
     });
 
@@ -87,6 +89,23 @@ async function main() {
   }
 
   console.log(`Total: ${points.length} point(s).`);
+
+  // Count visited onsens and write to config/stats so index.html can read
+  // a single document instead of downloading the entire points collection.
+  // Uses { merge: true } so route stats (written by fetch-strava-rides.js) are preserved.
+  const ONSEN_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
+  let onsensCount = 0;
+  for (const p of points) {
+    if (!p.visited) continue;
+    const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
+    if (ONSEN_RE.test(rawType)) onsensCount++;
+  }
+  console.log(`Onsen count: ${onsensCount}`);
+  await db.collection('config').doc('stats').set(
+    { onsensCount, statsUpdatedAt: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+  console.log('  ✓ config/stats onsensCount updated.');
 
   // Serialise to JSON — wrap in an envelope so the client can detect the
   // generation time and query Firestore for only the delta (new points added
