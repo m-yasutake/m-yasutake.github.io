@@ -2557,7 +2557,7 @@ function toggleCheck(el) {
   // Load trip date settings first, then fetch posts with optional date range filter.
   // Trip dates are stored in site_config/trips as { japan: { startDate, endDate }, … }.
   _db.collection('site_config').doc('trips').get()
-    .catch(function () { return null; })
+    .catch(function (err) { console.warn('Failed to load trip config:', err); return null; })
     .then(function (tripDoc) {
       var startDate = null;
       var endDate   = null;
@@ -2570,6 +2570,9 @@ function toggleCheck(el) {
       // Server-side filter + sort: avoids downloading all published posts just to filter client-side.
       // Requires a Firestore composite index on (status, category, date DESC) — the console error
       // will include a direct link to create it if it doesn't exist yet.
+      // When startDate/endDate are set, Firestore also needs a composite index that covers
+      // the date range inequality alongside the equality filters; the console error link
+      // will point to the correct index to create if it is missing.
       var query = _db.collection('blog_posts')
         .where('status', '==', 'published')
         .where('category', '==', 'japan')
