@@ -777,6 +777,7 @@
     <button class="amn-tab" onclick="showSection('gear',this)" data-section="gear">🎒 Gear</button>
     <button class="amn-tab" onclick="showSection('mapdata',this)" data-section="mapdata">🗺️ Map Data</button>
     <button class="amn-tab" onclick="showSection('subscribers',this)" data-section="subscribers">📬 Subscribers</button>
+    <button class="amn-tab" onclick="showSection('settings',this)" data-section="settings">⚙️ Settings</button>
   </div>
 
   <!-- Sidebar -->
@@ -793,6 +794,7 @@
       <a href="#" onclick="showSection('gear',this)"><span class="nav-icon">🎒</span> Gear</a>
       <a href="#" onclick="showSection('mapdata',this)"><span class="nav-icon">🗺️</span> Map Data</a>
       <a href="#" onclick="showSection('subscribers',this)"><span class="nav-icon">📬</span> Subscribers</a>
+      <a href="#" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
       <a href="index.html" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1rem"><span class="nav-icon">🏠</span> View Site</a>
     </nav>
   </div>
@@ -1432,6 +1434,45 @@
           <button class="btn btn-primary" onclick="adminEmailPreview()">👁 Preview &amp; Prepare</button>
           <button class="btn" style="background:var(--color-gray-200)" onclick="adminEmailClear()">🗑 Clear</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ── Trip Settings ── -->
+    <div id="section-settings" class="admin-section" style="display:none">
+      <div class="admin-header">
+        <h1>Trip Settings ⚙️</h1>
+        <p>Set start and end dates for each trip to control which blog posts appear in the timeline.</p>
+      </div>
+
+      <div class="admin-table-card" style="max-width:600px">
+        <h3 style="margin-bottom:1.25rem;font-size:1.1rem">🇯🇵 Japan Trip</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" id="trip-japan-start" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" id="trip-japan-end" class="form-control" />
+          </div>
+        </div>
+        <p style="font-size:.8rem;color:var(--color-gray-500);margin-bottom:1.25rem">Only blog posts with a date within this range will appear on the Japan page timeline. Leave blank to show all Japan posts.</p>
+
+        <h3 style="margin-bottom:1.25rem;font-size:1.1rem;margin-top:1.5rem">🇳🇴 Norway Trip</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" id="trip-norway-start" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" id="trip-norway-end" class="form-control" />
+          </div>
+        </div>
+        <p style="font-size:.8rem;color:var(--color-gray-500);margin-bottom:1.25rem">Only blog posts with a date within this range will appear on the Norway page timeline. Leave blank to show all Norway posts.</p>
+
+        <button class="btn btn-primary" id="trip-settings-save-btn" onclick="saveTripSettings()">💾 Save Trip Settings</button>
+        <span id="trip-settings-status" style="margin-left:.75rem;font-size:.85rem;color:var(--color-gray-500)"></span>
       </div>
     </div>
 
@@ -4374,7 +4415,54 @@ window.showSection = function (name, linkEl) {
   if (name === 'gear' && typeof GearManagerAdmin !== 'undefined') {
     GearManagerAdmin.loadBikeLinks();
   }
+  if (name === 'settings') {
+    loadTripSettings();
+  }
 };
+</script>
+
+<script>
+// ── Trip Settings Admin ──────────────────────────────────────
+async function loadTripSettings() {
+  try {
+    const doc = await _getAdminDb().collection('site_config').doc('trips').get();
+    if (doc.exists) {
+      const d = doc.data();
+      document.getElementById('trip-japan-start').value  = (d.japan  && d.japan.startDate)  || '';
+      document.getElementById('trip-japan-end').value    = (d.japan  && d.japan.endDate)    || '';
+      document.getElementById('trip-norway-start').value = (d.norway && d.norway.startDate) || '';
+      document.getElementById('trip-norway-end').value   = (d.norway && d.norway.endDate)   || '';
+    }
+  } catch (e) {
+    console.warn('Could not load trip settings:', e.message);
+  }
+}
+
+async function saveTripSettings() {
+  const btn    = document.getElementById('trip-settings-save-btn');
+  const status = document.getElementById('trip-settings-status');
+  btn.disabled = true; btn.textContent = '⏳ Saving…';
+  try {
+    await _getAdminDb().collection('site_config').doc('trips').set({
+      japan: {
+        startDate: document.getElementById('trip-japan-start').value || null,
+        endDate:   document.getElementById('trip-japan-end').value   || null
+      },
+      norway: {
+        startDate: document.getElementById('trip-norway-start').value || null,
+        endDate:   document.getElementById('trip-norway-end').value   || null
+      }
+    });
+    TomikaBikes.showToast('Trip settings saved!', 'success');
+    status.textContent = '✓ Saved';
+    setTimeout(() => { status.textContent = ''; }, 3000);
+  } catch (e) {
+    TomikaBikes.showToast('Save failed: ' + e.message, 'error');
+    status.textContent = '✗ Save failed';
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Save Trip Settings';
+  }
+}
 </script>
 </body>
 </html>

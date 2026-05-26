@@ -2552,17 +2552,37 @@ function toggleCheck(el) {
   }
 
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  // Server-side filter + sort: avoids downloading all published posts just to filter client-side.
-  // Requires a Firestore composite index on (status, category, date DESC) — the console error
-  // will include a direct link to create it if it doesn't exist yet.
-  firebase.firestore()
-    .collection('blog_posts')
-    .where('status', '==', 'published')
-    .where('category', '==', 'japan')
-    .orderBy('date', 'desc')
-    .get()
+  var _db = firebase.firestore();
+
+  // Load trip date settings first, then fetch posts with optional date range filter.
+  // Trip dates are stored in site_config/trips as { japan: { startDate, endDate }, … }.
+  _db.collection('site_config').doc('trips').get()
+    .catch(function (err) { console.warn('Failed to load trip config:', err); return null; })
+    .then(function (tripDoc) {
+      var startDate = null;
+      var endDate   = null;
+      if (tripDoc && tripDoc.exists) {
+        var cfg = tripDoc.data();
+        startDate = (cfg.japan && cfg.japan.startDate) || null;
+        endDate   = (cfg.japan && cfg.japan.endDate)   || null;
+      }
+
+      // Server-side filter + sort: avoids downloading all published posts just to filter client-side.
+      // Requires a Firestore composite index on (status, category, date DESC) — the console error
+      // will include a direct link to create it if it doesn't exist yet.
+      // When startDate/endDate are set, Firestore also needs a composite index that covers
+      // the date range inequality alongside the equality filters; the console error link
+      // will point to the correct index to create if it is missing.
+      var query = _db.collection('blog_posts')
+        .where('status', '==', 'published')
+        .where('category', '==', 'japan')
+        .orderBy('date', 'desc');
+      if (startDate) query = query.where('date', '>=', startDate);
+      if (endDate)   query = query.where('date', '<=', endDate);
+      return query.get();
+    })
     .then(function (snap) {
-      if (snap.empty) return;
+      if (!snap || snap.empty) return;
       var docs = [];
       snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
       _japanDocs = docs; // already filtered and sorted server-side
