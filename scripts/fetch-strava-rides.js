@@ -17,9 +17,12 @@
  *     with Firestore and Storage write permissions.
  *
  * Optional environment variables:
- *   STRAVA_AFTER_DATE - ISO 8601 date string; only activities after this date
- *                       are fetched (default: 365 days ago). Activities already
- *                       saved in Firestore are always skipped regardless.
+ *   STRAVA_AFTER_DATE  - ISO 8601 date string; only activities after this date
+ *                        are fetched (default: 365 days ago). Activities already
+ *                        saved in Firestore are always skipped regardless.
+ *   STRAVA_BEFORE_DATE - ISO 8601 date string; only activities before this date
+ *                        are fetched. Use to cap a finished trip (e.g. '2026-05-28').
+ *                        Also limits which routes are summed in stats/japan.
  *
  * Usage:
  *   FIREBASE_SERVICE_ACCOUNT='<json>' \
@@ -115,10 +118,10 @@ async function refreshStravaToken() {
 }
 
 /**
- * Fetch all athlete activities after `afterTimestamp` (Unix seconds).
- * Paginates automatically using Strava's maximum page size of 200.
+ * Fetch all athlete activities between `afterTimestamp` and `beforeTimestamp`
+ * (Unix seconds). Paginates automatically using Strava's maximum page size of 200.
  */
-async function fetchActivities(accessToken, afterTimestamp) {
+async function fetchActivities(accessToken, afterTimestamp, beforeTimestamp) {
   const activities = [];
   let page = 1;
   const PER_PAGE = 200;
@@ -126,6 +129,7 @@ async function fetchActivities(accessToken, afterTimestamp) {
   while (true) {
     const url = new URL('https://www.strava.com/api/v3/athlete/activities');
     url.searchParams.set('after',    afterTimestamp);
+    if (beforeTimestamp) url.searchParams.set('before', beforeTimestamp);
     url.searchParams.set('per_page', PER_PAGE);
     url.searchParams.set('page',     page);
 
@@ -241,19 +245,24 @@ async function getExistingStravaIds() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  // Determine lookback window (default: 365 days ago)
+  // Determine date window
   const afterDate = process.env.STRAVA_AFTER_DATE
     ? new Date(process.env.STRAVA_AFTER_DATE)
     : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-  const afterTimestamp = Math.floor(afterDate.getTime() / 1000);
-  console.log(`Fetching Strava activities after ${afterDate.toISOString()}`);
+  const beforeDate = process.env.STRAVA_BEFORE_DATE
+    ? new Date(process.env.STRAVA_BEFORE_DATE)
+    : null;
+  const afterTimestamp  = Math.floor(afterDate.getTime() / 1000);
+  const beforeTimestamp = beforeDate ? Math.floor(beforeDate.getTime() / 1000) : null;
+  console.log(`Fetching Strava activities after ${afterDate.toISOString()}${
+    beforeDate ? ' and before ' + beforeDate.toISOString() : ''}`);
 
   // Obtain a short-lived access token
   const accessToken = await refreshStravaToken();
 
   // Fetch the athlete's activity list
   console.log('Fetching Strava activities...');
-  const all        = await fetchActivities(accessToken, afterTimestamp);
+  const all        = await fetchActivities(accessToken, afterTimestamp, beforeTimestamp);
   const rideOnly   = all.filter(a => RIDE_SPORT_TYPES.has(a.sport_type));
   console.log(`Found ${rideOnly.length} ride(s) of ${all.length} total activities.`);
 
@@ -360,6 +369,7 @@ async function main() {
       distanceKm:           distanceKm ? parseFloat(distanceKm) : null,
       totalElevationGain:   elevationGain,
       uploadedAt:           admin.firestore.FieldValue.serverTimestamp(),
+      activityDate:         admin.firestore.Timestamp.fromDate(new Date(activity.start_date)),
       source:               'strava',
       isOwner:              true,
       stravaActivityId:     activityId,
@@ -381,15 +391,20 @@ async function main() {
 /**
  * Read all owner routes, compute cumulative totals and the current position
  * (end point of the most recently uploaded route), then write the results to
- * config/stats. The home page reads this single document instead of
+ * stats/japan. The home page reads this single document instead of
  * downloading the entire routes collection.
  *
  * Uses { merge: true } so onsensCount (written by generate-points-snapshot.js)
  * is preserved.
  */
 async function updateStatsDocument() {
-  console.log('\nRecomputing config/stats from all owner routes...');
+  console.log('\nRecomputing stats/japan from all owner routes...');
   const snap = await db.collection('routes').where('isOwner', '==', true).get();
+
+  // Optional date range — respects STRAVA_AFTER_DATE / STRAVA_BEFORE_DATE so that
+  // re-running this script for Japan never picks up future Norway routes.
+  const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
+  const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
 
   let totalDistanceKm    = 0;
   let totalElevationGain = 0;
@@ -398,10 +413,23 @@ async function updateStatsDocument() {
 
   snap.forEach(doc => {
     const d = doc.data();
+
+    // Filter by activityDate if env vars are set.
+    // Routes without activityDate (uploaded before this field was added) are
+    // included unconditionally — they are all pre-existing Japan routes.
+    if (afterMs || beforeMs) {
+      const actMs = d.activityDate ? d.activityDate.toMillis() : null;
+      if (actMs !== null) {
+        if (afterMs  && actMs < afterMs)  return;
+        if (beforeMs && actMs > beforeMs) return;
+      }
+    }
+
     if (typeof d.distanceKm === 'number')         totalDistanceKm    += d.distanceKm;
     if (typeof d.totalElevationGain === 'number') totalElevationGain += d.totalElevationGain;
     if (d.endLatLng) {
-      const ts = (d.uploadedAt && d.uploadedAt.seconds) ? d.uploadedAt.seconds : 0;
+      const ts = d.activityDate ? d.activityDate.toMillis()
+               : (d.uploadedAt && d.uploadedAt.seconds) ? d.uploadedAt.seconds * 1000 : 0;
       if (ts > latestTs) { latestTs = ts; latestRouteData = d; }
     }
   });
@@ -417,7 +445,7 @@ async function updateStatsDocument() {
       || latestRouteData.fileName || 'Latest ride';
   }
 
-  await db.collection('config').doc('stats').set(stats, { merge: true });
+  await db.collection('stats').doc('japan').set(stats, { merge: true });
   console.log(`  ✓ totalDistanceKm    = ${stats.totalDistanceKm} km`);
   console.log(`  ✓ totalElevationGain = ${stats.totalElevationGain} m`);
   if (latestRouteData) {

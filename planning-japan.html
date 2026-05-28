@@ -9,39 +9,431 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
 
   <style>
-    .coming-soon-wrap {
-      min-height: 60vh;
+  #map {
+    height: 70vh;
+    width: 100%;
+    border-radius: 6px;
+    margin-bottom: 1em;
+    z-index: 1;
+  }
+
+  .point-type-icon {
+    background: none !important;
+    border: none !important;
+  }
+
+  .roots-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+    align-items: center;
+  }
+
+  .roots-controls label {
+    padding: 0.4em 0.8em;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    color: var(--color-dark);
+  }
+
+  .roots-controls label:hover { border-color: var(--color-secondary); }
+  .roots-controls input[type="checkbox"] { accent-color: var(--color-secondary); }
+
+  .roots-btn {
+    padding: 0.4em 0.8em;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 4px;
+    color: var(--color-dark);
+    cursor: pointer;
+    font-size: 0.85em;
+    font-family: var(--font-body);
+    transition: all var(--transition);
+  }
+
+  .roots-btn:hover { border-color: var(--color-secondary); color: var(--color-secondary); }
+  .roots-btn.active { border-color: var(--color-secondary); background: var(--color-secondary); color: var(--color-white); }
+  .roots-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #route-stats {
+    background: var(--color-gray-100);
+    padding: 1em;
+    border-radius: 6px;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+    display: none;
+    border: 1px solid var(--color-gray-200);
+  }
+
+  #route-stats table { width: 100%; border-collapse: collapse; }
+  #route-stats th, #route-stats td { text-align: left; padding: 0.3em 0.6em; border-bottom: 1px solid var(--color-gray-200); }
+  #route-stats th { color: var(--color-primary); }
+
+  .route-color-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 0.3em;
+  }
+
+  .delete-btn { background: none; border: none; color: var(--color-coral); cursor: pointer; font-size: 0.8em; padding: 0.2em 0.4em; border-radius: 3px; margin-left: 0.5em; }
+  .delete-btn:hover { background: rgba(231, 111, 81, 0.12); }
+
+  .info-btn { background: none; border: none; color: var(--color-secondary); cursor: pointer; font-size: 0.8em; padding: 0.2em 0.4em; border-radius: 3px; margin-left: 0.3em; }
+  .info-btn:hover { background: rgba(42, 157, 143, 0.12); }
+
+  /* Route toggles panel */
+  #route-panel {
+    margin-top: 1em;
+  }
+  .route-section {
+    margin-bottom: 0.75em;
+  }
+  .route-section-header {
+    font-size: 0.78em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-gray-600);
+    margin-bottom: 0.4em;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+  .route-section-header.our-track-header {
+    color: #c0501a;
+  }
+  .route-section .roots-controls {
+    margin-bottom: 0;
+    flex-wrap: wrap;
+  }
+  /* Current-location marker */
+  .current-location-icon {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+
+  .meta-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .meta-overlay.open { display: flex; }
+
+  .meta-modal {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    padding: 1.5em;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: var(--color-dark);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .meta-modal h3 { margin: 0 0 1em 0; color: var(--color-primary); font-size: 1.1em; font-family: var(--font-heading); }
+
+  .meta-modal label {
+    display: block;
+    font-size: 0.85em;
+    color: var(--color-gray-600);
+    margin-bottom: 0.3em;
+    margin-top: 0.8em;
+  }
+
+  .meta-modal input[type="text"],
+  .meta-modal textarea {
+    width: 100%;
+    padding: 0.5em;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 4px;
+    color: var(--color-dark);
+    font-size: 0.9em;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .meta-modal input[type="text"]:focus,
+  .meta-modal textarea:focus { outline: none; border-color: var(--color-secondary); }
+  .meta-modal textarea { resize: vertical; min-height: 60px; }
+
+  .meta-modal .meta-actions { margin-top: 1.2em; display: flex; gap: 0.5em; justify-content: flex-end; }
+  .meta-modal .meta-link { color: var(--color-secondary); text-decoration: none; word-break: break-all; }
+  .meta-modal .meta-link:hover { text-decoration: underline; }
+  .meta-modal .meta-view-value { font-size: 0.95em; margin-bottom: 0.2em; color: var(--color-dark); }
+  .meta-modal .meta-view-value.empty { color: var(--color-gray-400); font-style: italic; }
+
+  .file-pick-label {
+    display: inline-block;
+    padding: 0.5em 1em;
+    background: var(--color-white);
+    border: 1px solid var(--color-secondary);
+    border-radius: 4px;
+    color: var(--color-secondary);
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 0.8em;
+    font-family: var(--font-body);
+    transition: all var(--transition);
+  }
+  .file-pick-label:hover { background: rgba(42, 157, 143, 0.08); }
+
+  #map-loading {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(38, 70, 83, 0.75);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: opacity 0.4s ease;
+  }
+
+  #map-loading.fade-out { opacity: 0; pointer-events: none; }
+  #map-loading .loading-text { color: rgba(255,255,255,0.85); font-size: 0.9em; margin-bottom: 0.8em; }
+  #map-loading .progress-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; }
+  #map-loading .progress-fill { height: 100%; width: 0%; background: var(--color-accent); border-radius: 2px; transition: width 0.3s ease; }
+  #map-wrapper { position: relative; }
+
+  .marker-cluster-small { background-color: rgba(42, 157, 143, 0.55); }
+  .marker-cluster-small div { background-color: rgba(42, 157, 143, 0.8); }
+  .marker-cluster-medium { background-color: rgba(233, 196, 106, 0.6); }
+  .marker-cluster-medium div { background-color: rgba(233, 196, 106, 0.85); }
+  .marker-cluster-large { background-color: rgba(231, 111, 81, 0.6); }
+  .marker-cluster-large div { background-color: rgba(231, 111, 81, 0.8); }
+
+  .planning-grid {
+    display: block;
+  }
+
+  /* Filter popup */
+  .filter-wrapper { position: relative; display: inline-block; }
+  .filter-popup {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    padding: 0.75rem;
+    z-index: 9001;
+    min-width: 230px;
+    max-height: 340px;
+    overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    color: var(--color-dark);
+  }
+  .filter-popup.open { display: block; }
+  .filter-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+  .filter-popup-header strong { font-size: 0.85em; color: var(--color-primary); }
+  .filter-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-gray-600);
+    font-size: 0.9em;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+  .filter-close-btn:hover { color: var(--color-dark); }
+  #filter-popup #type-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  #filter-popup #type-filters label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.35em 0.5em;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: var(--color-dark);
+    background: transparent;
+    border: none;
+  }
+  #filter-popup #type-filters .filter-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  .filter-popup-footer {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--color-gray-200);
+  }
+  #filter-active-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-secondary);
+    color: white;
+    border-radius: 999px;
+    font-size: 0.7em;
+    padding: 0.1em 0.45em;
+    margin-left: 0.3em;
+    min-width: 1.4em;
+    line-height: 1.4;
+  }
+
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: .5rem; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--color-secondary), var(--color-accent));
+    border-radius: 2px;
+  }
+
+  .timeline-item { position: relative; margin-bottom: 1.5rem; }
+  .timeline-dot {
+    position: absolute;
+    left: -1.625rem; top: .35rem;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--color-secondary);
+    border: 3px solid var(--color-white);
+    box-shadow: 0 0 0 2px var(--color-secondary);
+  }
+
+  .timeline-content {
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-gray-200);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .timeline-date { font-size: .75rem; font-weight: 700; color: var(--color-secondary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem; }
+  .timeline-content h4 { font-size: 1rem; margin-bottom: .25rem; }
+  .timeline-content p { font-size: .85rem; color: var(--color-gray-600); margin: 0; }
+
+  .pack-list { list-style: none; padding: 0; }
+  .pack-list li { display: flex; align-items: center; gap: .75rem; padding: .6rem 0; border-bottom: 1px solid var(--color-gray-100); font-size: .9rem; }
+  .pack-list li:last-child { border-bottom: none; }
+
+  .pack-check {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    border: 2px solid var(--color-gray-300);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition);
+  }
+
+  .pack-check.checked { background: var(--color-secondary); border-color: var(--color-secondary); color: var(--color-white); }
+
+  /* ── Fullscreen map toggle ──────────────────────────────── */
+  #fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  #fullscreen-btn:hover { background: #f4f4f4; }
+
+  #map-wrapper.map-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    z-index: 9998 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  @supports not (height: 100dvh) {
+    #map-wrapper.map-fullscreen { height: -webkit-fill-available !important; }
+  }
+  #map-wrapper.map-fullscreen #map {
+    height: 100% !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  </style>
+
+  <style>
+    /* ── Section dividers ──────────────────── */
+    .japan-section-divider {
+      border: none;
+      border-top: 2px solid var(--color-gray-200);
+      margin: 0;
+    }
+
+    .japan-section-header {
+      background: var(--color-gray-100);
+      border-bottom: 1px solid var(--color-gray-200);
+      padding: 1.25rem 0;
+    }
+
+    .japan-section-header .container {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 4rem 1.5rem;
+      gap: 0.75rem;
     }
 
-    .coming-soon-icon {
-      font-size: 5rem;
-      margin-bottom: 1.5rem;
-      line-height: 1;
-    }
-
-    .coming-soon-wrap h2 {
-      font-size: clamp(1.75rem, 4vw, 2.75rem);
-      font-weight: 400;
-      margin-bottom: 1rem;
+    .japan-section-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
       color: var(--color-primary);
     }
 
-    .coming-soon-wrap p {
-      font-size: 1.05rem;
-      color: var(--color-gray-600);
-      max-width: 560px;
-      line-height: 1.75;
-      margin-bottom: 2rem;
+    .japan-section-header .section-icon {
+      font-size: 1.5rem;
+      line-height: 1;
     }
   </style>
 </head>
@@ -129,17 +521,88 @@
   </div>
 </div>
 
-<!-- Coming Soon Content -->
-<section class="section">
+<!-- ══════════════════════════════════════════
+     MAP SECTION
+════════════════════════════════════════════ -->
+<div id="map-section">
+  <div class="japan-section-header">
+    <div class="container">
+      <span class="section-icon">🗺️</span>
+      <h2 data-i18n="japan.map.title">Route Map</h2>
+    </div>
+  </div>
+
+<section class="section" style="padding-top:2rem">
   <div class="container">
-    <div class="coming-soon-wrap">
-      <div class="coming-soon-icon">🗾</div>
-      <h2>Japan Planning – Coming Soon</h2>
-      <p>This page will cover our planning for the Japan leg of the trip — routes, gear prep, logistics, visas, and everything in between.</p>
-      <a href="japan.html" class="btn btn-primary">🇯🇵 See the Japan Trip</a>
+    <div class="planning-grid">
+
+      <!-- Map -->
+      <div>
+
+        <!-- Map action buttons and filters -->
+        <div class="roots-controls">
+          <button class="roots-btn" id="load-routes-btn" aria-label="Load planned routes" data-i18n="japan.btn.routes">📋 Load Routes</button>
+          <button class="roots-btn" id="load-points-btn" aria-label="Load map points" data-i18n="japan.btn.points">📍 Load Points</button>
+          <div class="filter-wrapper">
+            <button class="roots-btn" id="filter-btn" aria-label="Open point filters"><span data-i18n="japan.btn.filters">🔍 Filters</span><span id="filter-active-badge" style="display:none"></span></button>
+            <div class="filter-popup" id="filter-popup">
+              <div class="filter-popup-header">
+                <strong data-i18n="japan.filter.title">Filter Points</strong>
+                <button class="filter-close-btn" id="filter-close-btn" aria-label="Close filters">✕</button>
+              </div>
+              <div id="type-filters"></div>
+              <div class="filter-popup-footer">
+                <button class="roots-btn" id="filter-select-all" style="font-size:0.8em;padding:0.25em 0.6em" data-i18n="japan.filter.all">All</button>
+                <button class="roots-btn" id="filter-clear-all" style="font-size:0.8em;padding:0.25em 0.6em" data-i18n="japan.filter.none">None</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metadata modal (for Firebase route info) -->
+        <div class="meta-overlay" id="meta-overlay">
+          <div class="meta-modal" id="meta-modal">
+            <h3 id="meta-title" data-i18n="japan.meta.title">Route Info</h3>
+            <div id="meta-body"></div>
+            <div class="meta-actions">
+              <button class="roots-btn" id="meta-save-btn" style="display:none;" data-i18n="japan.meta.save">Save</button>
+              <button class="roots-btn" id="meta-close-btn" data-i18n="japan.meta.close">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="map-wrapper">
+          <button id="fullscreen-btn" title="Toggle fullscreen map" aria-label="Toggle fullscreen map">
+            <!-- expand icon -->
+            <svg id="fs-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+            <!-- collapse icon -->
+            <svg id="fs-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+              <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+              <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+            </svg>
+          </button>
+          <div id="map-loading">
+            <div class="loading-text" id="loading-text" data-i18n="japan.loading.routes">Loading routes...</div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          </div>
+          <div id="map"></div>
+        </div>
+
+        <!-- Route list panel (below map) — hidden; routes are toggled via the Layers button -->
+        <div id="route-panel" style="display:none">
+          <div id="route-toggles"></div>
+          <div id="route-stats"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
+
+</div>
 
 <!-- Footer -->
 <footer class="footer">
@@ -160,6 +623,19 @@
   </div>
 </footer>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
+<script src="js/japan-map.js"></script>
 </body>
 </html>

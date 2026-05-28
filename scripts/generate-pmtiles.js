@@ -198,6 +198,13 @@ async function generateAndUpload(features, tmpDir, baseName, bucket) {
     }
   });
   console.log(`Successfully uploaded ${destination}.`);
+
+  // Also copy to assets/tiles/ for local GitHub Pages serving
+  const assetsDir = path.join(__dirname, '..', 'assets', 'tiles');
+  if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
+  const localDest = path.join(assetsDir, `${baseName}.pmtiles`);
+  fs.copyFileSync(outputPath, localDest);
+  console.log(`Copied ${baseName}.pmtiles to ${localDest}`);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────

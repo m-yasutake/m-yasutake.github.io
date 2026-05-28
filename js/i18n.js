@@ -48,7 +48,7 @@ const TRANSLATIONS = {
 
     /* ── Index: Route section ── */
     'index.route.eyebrow': 'On the Road',
-    'index.route.title':   'Our Current Route',
+    'index.route.title':   'Our Route',
     'index.route.desc':    'Follow where we\'ve been – updated daily.',
 
     /* ── Index: Latest posts ── */

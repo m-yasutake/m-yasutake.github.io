@@ -10,14 +10,6 @@
             "preLaunchTask": "Start Local Server"
         },
         {
-            "name": "Open planning.html (Local Server)",
-            "type": "chrome",
-            "request": "launch",
-            "url": "http://localhost:8080/planning.html",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "Start Local Server"
-        },
-        {
             "name": "Open index.html in Edge (Local Server)",
             "type": "msedge",
             "request": "launch",

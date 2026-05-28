@@ -79,6 +79,7 @@ async function main() {
         fileName: d.fileName || null,
         visited:  d.visited  || false,
         type:     d.type     || null,
+        uploadedAt: d.uploadedAt ? d.uploadedAt.toMillis() : null,
       });
     });
 
@@ -90,22 +91,35 @@ async function main() {
 
   console.log(`Total: ${points.length} point(s).`);
 
-  // Count visited onsens and write to config/stats so index.html can read
+  // Count visited onsens and write to stats/japan so index.html can read
   // a single document instead of downloading the entire points collection.
   // Uses { merge: true } so route stats (written by fetch-strava-rides.js) are preserved.
+  // Respects TRIP_AFTER_DATE / TRIP_BEFORE_DATE to cap to a specific trip.
+  const afterMs  = process.env.TRIP_AFTER_DATE  ? new Date(process.env.TRIP_AFTER_DATE).getTime()  : null;
+  const beforeMs = process.env.TRIP_BEFORE_DATE ? new Date(process.env.TRIP_BEFORE_DATE).getTime() : null;
+  if (afterMs || beforeMs) {
+    console.log(`Counting onsens uploaded after ${process.env.TRIP_AFTER_DATE || '(any)'}` +
+                ` and before ${process.env.TRIP_BEFORE_DATE || '(any)'}`);
+  }
   const ONSEN_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
   let onsensCount = 0;
   for (const p of points) {
     if (!p.visited) continue;
+    if (afterMs || beforeMs) {
+      if (p.uploadedAt !== null) {
+        if (afterMs  && p.uploadedAt < afterMs)  continue;
+        if (beforeMs && p.uploadedAt > beforeMs) continue;
+      }
+    }
     const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
     if (ONSEN_RE.test(rawType)) onsensCount++;
   }
   console.log(`Onsen count: ${onsensCount}`);
-  await db.collection('config').doc('stats').set(
+  await db.collection('stats').doc('japan').set(
     { onsensCount, statsUpdatedAt: admin.firestore.FieldValue.serverTimestamp() },
     { merge: true }
   );
-  console.log('  ✓ config/stats onsensCount updated.');
+  console.log('  ✓ stats/japan onsensCount updated.');
 
   // Serialise to JSON — wrap in an envelope so the client can detect the
   // generation time and query Firestore for only the delta (new points added

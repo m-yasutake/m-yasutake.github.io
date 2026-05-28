@@ -34,17 +34,14 @@
         }
         return Promise.reject(new TypeError('pmtiles:// – no instance for: ' + u));
       }
-      // Safari < 16 rejects certain cache modes; strip them gracefully.
-      if (options && options.cache &&
-          (options.cache === 'reload' || options.cache === 'no-store' || options.cache === 'no-cache')) {
-        var safeOptions = Object.assign({}, options, { cache: 'default' });
-        return _origFetch.call(window, resource, safeOptions).catch(function () {
-          var bare = Object.assign({}, options);
-          delete bare.cache;
-          return _origFetch.call(window, resource, bare);
-        });
-      }
-      return _origFetch.call(window, resource, options);
+      // Force no-store so Chrome never tries to serve range requests from its
+      // HTTP cache (which causes ERR_CACHE_OPERATION_NOT_SUPPORTED when it has
+      // cached a full-file response and then tries to slice it for a range req).
+      // Fall back to the original options if the browser rejects no-store.
+      var noStoreOpts = Object.assign({}, options, { cache: 'no-store' });
+      return _origFetch.call(window, resource, noStoreOpts).catch(function () {
+        return _origFetch.call(window, resource, options);
+      });
     };
   }
 
@@ -76,7 +73,7 @@
     var center   = options.center   || [36.5, 138];
     var zoom     = options.zoom     || 5;
     var tilesUrl = options.tilesUrl ||
-      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes.pmtiles?alt=media';
+      'assets/tiles/my-routes.pmtiles';
     var dateFrom = options.dateFrom || null;
     var dateTo   = options.dateTo   || null;
 
@@ -118,6 +115,8 @@
             }
           },
           interactive: false,
+          updateWhenZooming: false,
+          keepBuffer: 4,
           maxNativeZoom: header.maxZoom || 14,
           minNativeZoom: header.minZoom || 2
         };

@@ -20,7 +20,8 @@
 
   <style>
   #home-map {
-    height: 50vh;
+    height: 45vh;
+    min-height: 260px;
     width: 100%;
     border-radius: var(--radius-lg, 8px);
     z-index: 1;
@@ -50,6 +51,38 @@
     font-size: 0.75em;
     color: var(--color-gray-500, #888);
     margin-top: 0.15em;
+  }
+  #map-stats-row {
+    display: flex;
+    gap: 2rem;
+    align-items: stretch;
+  }
+  #map-stats-row .map-col { flex: 3; min-width: 0; }
+  #map-stats-row .stats-col {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+  #map-stats-row .stats-col .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    text-align: center;
+  }
+  @media (max-width: 768px) {
+    #map-stats-row { flex-direction: column; }
+    #home-map { height: 38vh; }
+  }
+  /* Trip toggle buttons on light background */
+  [data-trip-btn].btn-outline {
+    background: transparent;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  [data-trip-btn].btn-outline:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
   }
   </style>
 </head>
@@ -185,10 +218,7 @@
       Follow our cycling journey through Japan and Norway – from the southern tip of Kyushu
       to the Arctic coast, this is our story.
     </p>
-    <div class="hero-actions">
-      <a href="japan.html" class="btn btn-primary" data-i18n="index.hero.btn1">Japan</a>
-      <a href="norway.html" class="btn btn-outline" data-i18n="index.hero.btn2">Norway</a>
-    </div>
+
   </div>
   <div class="hero-scroll">
     <span>Scroll</span>
@@ -197,49 +227,54 @@
 </section>
 
 <!-- ══════════════════════════════════════════
-     STATS
+     CURRENT ROUTE MAP + STATS
 ════════════════════════════════════════════ -->
-<section class="stats-bar">
+<section class="section" id="map-section" style="padding: 2.5rem 0">
   <div class="container">
-    <div class="stats-grid">
-      <div class="stat-item">
-        <span class="stat-num" id="stat-sploops">—</span>
-        <div class="stat-label" aria-label="Distance Cycled" data-i18n="index.stat.sploops">Distance Cycled 🚴</div>
-        <div id="stat-sploops-km" class="stat-sublabel"></div>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" id="stat-grinds">—</span>
-        <div class="stat-label" aria-label="Elevation Gained" data-i18n="index.stat.grinds">Elevation Gained ⛰️</div>
-        <div id="stat-grinds-m" class="stat-sublabel"></div>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" id="stat-days">—</span>
-        <div class="stat-label" data-i18n="index.stat.days">Days on the Road</div>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" id="stat-onsens">—</span>
-        <div class="stat-label" aria-label="Onsens" data-i18n="index.stat.onsens">Onsens ♨️</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════
-     CURRENT ROUTE MAP
-════════════════════════════════════════════ -->
-<section class="section">
-  <div class="container">
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom: 1.5rem">
       <span class="eyebrow" data-i18n="index.route.eyebrow">On the Road</span>
-      <h2 data-i18n="index.route.title">Our Current Route</h2>
+      <h2 data-i18n="index.route.title">Our Route</h2>
       <p data-i18n="index.route.desc">Follow where we've been – updated daily.</p>
       <div class="divider"></div>
-    </div>
-    <div id="home-map-wrapper">
-      <div id="home-map-loading">
-        <span style="color:var(--color-gray-500)">⏳ Loading route…</span>
+      <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1.25rem">
+        <button class="btn btn-primary" data-trip-btn="japan" onclick="switchTrip('japan')" data-i18n="index.hero.btn1">Japan</button>
+        <button class="btn btn-outline" data-trip-btn="norway" onclick="switchTrip('norway')" data-i18n="index.hero.btn2">Norway</button>
       </div>
-      <div id="home-map"></div>
+    </div>
+    <div id="map-stats-row">
+      <div class="map-col">
+        <div id="home-map-wrapper">
+          <div id="home-map-loading">
+            <span style="color:var(--color-gray-500)">⏳ Loading route…</span>
+          </div>
+          <div id="home-map"></div>
+        </div>
+      </div>
+      <div class="stats-col">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-num" id="stat-sploops">—</span>
+            <div class="stat-label" aria-label="Distance Cycled" data-i18n="index.stat.sploops">Distance Cycled 🚴</div>
+            <div id="stat-sploops-km" class="stat-sublabel"></div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" id="stat-grinds">—</span>
+            <div class="stat-label" aria-label="Elevation Gained" data-i18n="index.stat.grinds">Elevation Gained ⛰️</div>
+            <div id="stat-grinds-m" class="stat-sublabel"></div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" id="stat-days">—</span>
+            <div class="stat-label" data-i18n="index.stat.days">Days on the Road</div>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" id="stat-onsens">—</span>
+            <div class="stat-label" id="stat-onsens-label" aria-label="Onsens">Onsens ♨️</div>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <a id="trip-see-more" href="japan.html" class="btn btn-primary">See More &rarr;</a>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -324,82 +359,167 @@
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 <script>
-  // ── Single config/stats document read ───────────────────────────────────
-  // Replaces the full routes-collection download and the full points-collection
-  // download with one pre-aggregated ~200-byte document.
-  // Written by: fetch-strava-rides.js  (totalDistanceKm, totalElevationGain,
-  //                                     currentPosition, currentRouteName)
-  //             generate-points-snapshot.js (onsensCount)
-  var _statsPromise = (function () {
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      return firebase.firestore().collection('config').doc('stats').get();
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  })();
+  // ── Global state ──────────────────────────────────────────
+  var _tripStats       = {};      // { japan: Firestore doc, norway: Firestore doc }
+  var _activeTrip      = 'japan';
+  var _homeMap         = null;
+  var _weAreHereMarker = null;
 
-  // ── Home-page route map ────────────────────────────────────
-  (function initHomeMap() {
-    if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
-    var map = RouteMap.init('home-map', { center: [36, 136], zoom: 4 });
-    // Hide the loading overlay once the base tiles start rendering
-    map.once('load', function () {
-      var el = document.getElementById('home-map-loading');
-      if (el) el.classList.add('hidden');
-    });
-    // Fallback: hide loading after a short delay regardless
-    setTimeout(function () {
-      var el = document.getElementById('home-map-loading');
-      if (el) el.classList.add('hidden');
-    }, 2000);
+  // ── Trip date config ──────────────────────────────────────
+  // end: null means ongoing (days count up from start to today).
+  // start: null means trip hasn't begun yet (shows —).
+  var TRIP_DATES = {
+    japan:  { start: '2026-03-14', end: '2026-05-24' },
+    norway: { start: null,         end: null          }
+  };
 
-    // ── "We are here" pin from config/stats ─────────────────
-    (function addWeAreHereMarker() {
-      _statsPromise
-          .then(function (doc) {
-            if (!doc.exists) return;
-            var s = doc.data();
-            if (!s.currentPosition) return;
-            var routeName = s.currentRouteName || 'Latest ride';
-            var iconHtml =
-              '<div style="position:relative;width:36px;height:44px">' +
-                '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">' +
-                  '<path d="M18 2C10.3 2 4 8.3 4 16c0 10.5 14 26 14 26S32 26.5 32 16C32 8.3 25.7 2 18 2z" fill="#E76F51" stroke="#fff" stroke-width="2"/>' +
-                  '<circle cx="18" cy="16" r="7" fill="#fff"/>' +
-                  '<text x="18" y="20" text-anchor="middle" font-size="10" font-family="sans-serif">🚴</text>' +
-                '</svg>' +
-              '</div>';
-            var icon = L.divIcon({ html: iconHtml, className: 'current-location-icon', iconSize: [36, 44], iconAnchor: [18, 44], popupAnchor: [0, -46] });
-            L.marker(s.currentPosition, { icon: icon, zIndexOffset: 1000 })
-              .bindPopup('<strong style="color:#E76F51">📍 We are here!</strong><br><span style="font-size:0.9em;color:#555">' + routeName + '</span>')
-              .addTo(map);
-          })
-          .catch(function () {});
-    })();
-  })();
+  function updateDaysDisplay(trip) {
+    var daysEl = document.getElementById('stat-days');
+    if (!daysEl) return;
+    var dates = TRIP_DATES[trip];
+    if (!dates || !dates.start) { daysEl.textContent = '—'; return; }
+    var start = new Date(dates.start + 'T00:00:00');
+    var end   = dates.end ? new Date(dates.end + 'T00:00:00') : new Date();
+    var days  = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
+    daysEl.textContent = days.toLocaleString();
+  }
 
   // ── Animated counter helper ────────────────────────────────
   function animateCounter(el, target) {
-    const start = 0;
-    const duration = 1200;
-    const step = target / (duration / 16);
-    let current = start;
-    const interval = setInterval(() => {
+    var duration = 1200;
+    var step = target / (duration / 16);
+    var current = 0;
+    var interval = setInterval(function () {
       current = Math.min(current + step, target);
       el.textContent = Math.round(current).toLocaleString();
       if (current >= target) clearInterval(interval);
     }, 16);
   }
 
-  // ── Days since March 14, 2026 ───────────────────────────────
-  const START_DATE = new Date('2026-03-14T00:00:00');
-  const daysEl = document.getElementById('stat-days');
-  const daysSince = Math.max(0, Math.floor((Date.now() - START_DATE.getTime()) / 86400000));
-  daysEl.textContent = daysSince.toLocaleString();
+  // ── Update stat bar from a Firestore doc ───────────────────
+  function updateStatsDisplay(doc) {
+    var sploopsEl   = document.getElementById('stat-sploops');
+    var grindsEl    = document.getElementById('stat-grinds');
+    var sploopsKmEl = document.getElementById('stat-sploops-km');
+    var grindsMEl   = document.getElementById('stat-grinds-m');
+    var onsensEl    = document.getElementById('stat-onsens');
 
-  // ── Countries (fixed at 1 for now) ────────────────────────
-  // Already set in HTML as "1"
+    if (!doc || !doc.exists) {
+      sploopsEl.textContent = '—';
+      grindsEl.textContent  = '—';
+      if (sploopsKmEl) sploopsKmEl.textContent = '';
+      if (grindsMEl)   grindsMEl.textContent   = '';
+      if (onsensEl)    onsensEl.textContent     = '—';
+      return;
+    }
+    var s = doc.data();
+
+    if (s.totalDistanceKm > 0) {
+      animateCounter(sploopsEl, Math.round(s.totalDistanceKm));
+      if (sploopsKmEl) sploopsKmEl.textContent = 'km';
+    } else { sploopsEl.textContent = '0'; if (sploopsKmEl) sploopsKmEl.textContent = ''; }
+
+    if (s.totalElevationGain > 0) {
+      animateCounter(grindsEl, Math.round(s.totalElevationGain));
+      if (grindsMEl) grindsMEl.textContent = 'm';
+    } else { grindsEl.textContent = '0'; if (grindsMEl) grindsMEl.textContent = ''; }
+
+    if (onsensEl && s.onsensCount != null) {
+      animateCounter(onsensEl, s.onsensCount);
+    } else if (onsensEl) { onsensEl.textContent = '0'; }
+  }
+
+  // ── Update "We are here" marker on the map ────────────────
+  function updateWeAreHereMarker(doc) {
+    if (!_homeMap) return;
+    if (_weAreHereMarker) { _homeMap.removeLayer(_weAreHereMarker); _weAreHereMarker = null; }
+    if (!doc || !doc.exists) return;
+    var s = doc.data();
+    if (!s.currentPosition) return;
+    var routeName = s.currentRouteName || 'Latest ride';
+    var iconHtml =
+      '<div style="position:relative;width:36px;height:44px">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">' +
+          '<path d="M18 2C10.3 2 4 8.3 4 16c0 10.5 14 26 14 26S32 26.5 32 16C32 8.3 25.7 2 18 2z" fill="#E76F51" stroke="#fff" stroke-width="2"/>' +
+          '<circle cx="18" cy="16" r="7" fill="#fff"/>' +
+          '<text x="18" y="20" text-anchor="middle" font-size="10" font-family="sans-serif">🚴</text>' +
+        '</svg>' +
+      '</div>';
+    var icon = L.divIcon({ html: iconHtml, className: 'current-location-icon', iconSize: [36, 44], iconAnchor: [18, 44], popupAnchor: [0, -46] });
+    _weAreHereMarker = L.marker(s.currentPosition, { icon: icon, zIndexOffset: 1000 })
+      .bindPopup('<strong style="color:#E76F51">📍 We are here!</strong><br><span style="font-size:0.9em;color:#555">' + routeName + '</span>')
+      .addTo(_homeMap);
+  }
+
+  // ── Switch active trip ─────────────────────────────────────
+  function switchTrip(trip) {
+    _activeTrip = trip;
+
+    // Update button styles
+    document.querySelectorAll('[data-trip-btn]').forEach(function (btn) {
+      var isActive = btn.getAttribute('data-trip-btn') === trip;
+      btn.classList.toggle('btn-primary', isActive);
+      btn.classList.toggle('btn-outline', !isActive);
+    });
+
+    // Update "See More" link
+    var seeMore = document.getElementById('trip-see-more');
+    if (seeMore) seeMore.href = trip + '.html';
+
+    // Update onsens/hytte label
+    var onsensLabel = document.getElementById('stat-onsens-label');
+    if (onsensLabel) onsensLabel.textContent = trip === 'norway' ? 'Hytte 🏠' : 'Onsens ♨️';
+
+    // Update stats, days, and marker
+    updateStatsDisplay(_tripStats[trip] || null);
+    updateDaysDisplay(trip);
+    updateWeAreHereMarker(_tripStats[trip] || null);
+
+    // Fly map to trip region
+    var views = {
+      japan:  { center: [38, 136], zoom: 4 },
+      norway: { center: [65, 16],  zoom: 4 }
+    };
+    if (_homeMap && views[trip]) {
+      _homeMap.flyTo(views[trip].center, views[trip].zoom, { duration: 1.5 });
+    }
+  }
+
+  // ── Eagerly fetch stats for all trips ─────────────────────
+  (function loadTripStats() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      var db = firebase.firestore();
+      ['japan', 'norway'].forEach(function (trip) {
+        db.collection('stats').doc(trip).get()
+          .then(function (doc) {
+            _tripStats[trip] = doc;
+            if (trip === _activeTrip) {
+              updateStatsDisplay(doc);
+              updateWeAreHereMarker(doc);
+            }
+          })
+          .catch(function () {});
+      });
+    } catch (e) {}
+  })();
+
+  // ── Home-page route map ────────────────────────────────────
+  (function initHomeMap() {
+    if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
+    _homeMap = RouteMap.init('home-map', { center: [38, 136], zoom: 4 });
+    _homeMap.once('load', function () {
+      var el = document.getElementById('home-map-loading');
+      if (el) el.classList.add('hidden');
+    });
+    setTimeout(function () {
+      var el = document.getElementById('home-map-loading');
+      if (el) el.classList.add('hidden');
+    }, 2000);
+  })();
+
+  // ── Days on the road (computed from TRIP_DATES) ───────────
+  updateDaysDisplay(_activeTrip);
 
   // ── Firebase: Latest blog posts ────────────────────────────────────────────
   (function loadLatestPosts() {
@@ -451,42 +571,6 @@
         .catch(function () {});
     } catch (e) {}
   })();
-
-  // ── Firebase: Distance Cycled + Elevation Gained + Onsens ─────────────────
-  // All three stats come from the single config/stats document.
-  _statsPromise.then(doc => {
-    const sploopsEl   = document.getElementById('stat-sploops');
-    const grindsEl    = document.getElementById('stat-grinds');
-    const sploopsKmEl = document.getElementById('stat-sploops-km');
-    const grindsMEl   = document.getElementById('stat-grinds-m');
-    const onsensEl    = document.getElementById('stat-onsens');
-
-    if (!doc.exists) {
-      sploopsEl.textContent = '0';
-      grindsEl.textContent  = '0';
-      if (onsensEl) onsensEl.textContent = '0';
-      return;
-    }
-    const s = doc.data();
-
-    if (s.totalDistanceKm > 0) {
-      animateCounter(sploopsEl, Math.round(s.totalDistanceKm));
-      if (sploopsKmEl) sploopsKmEl.textContent = 'km';
-    } else { sploopsEl.textContent = '0'; }
-
-    if (s.totalElevationGain > 0) {
-      animateCounter(grindsEl, Math.round(s.totalElevationGain));
-      if (grindsMEl) grindsMEl.textContent = 'm';
-    } else { grindsEl.textContent = '0'; }
-
-    if (onsensEl && s.onsensCount != null) {
-      animateCounter(onsensEl, s.onsensCount);
-    } else if (onsensEl) { onsensEl.textContent = '0'; }
-  }).catch(() => {
-    document.getElementById('stat-sploops').textContent = '0';
-    document.getElementById('stat-grinds').textContent  = '0';
-    document.getElementById('stat-onsens').textContent  = '0';
-  });
 </script>
 </body>
 </html>
