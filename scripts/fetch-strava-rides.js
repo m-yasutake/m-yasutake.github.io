@@ -714,8 +714,23 @@ async function updateStatsDocument() {
     postRoutes.forEach(route => categorySet.add(route.id));
   }
 
+  // If JAPAN_TRIP_FROM is set, override the category total with a direct date-window
+  // query — so the home-page counter covers the whole trip even without full blog
+  // post coverage.  Set JAPAN_TRIP_TO to cap the window (defaults to now).
+  if (process.env.JAPAN_TRIP_FROM) {
+    const tripFromMs = new Date(process.env.JAPAN_TRIP_FROM).getTime();
+    const tripToMs   = process.env.JAPAN_TRIP_TO
+      ? new Date(process.env.JAPAN_TRIP_TO).getTime()
+      : Date.now();
+    const japanRoutes = routes.filter(r =>
+      r.activityMs !== null && r.activityMs >= tripFromMs && r.activityMs <= tripToMs
+    );
+    console.log(`  Using JAPAN_TRIP_FROM window: ${japanRoutes.length} route(s) between ${process.env.JAPAN_TRIP_FROM} and ${process.env.JAPAN_TRIP_TO || 'now'}`);
+    categoryRouteIds.set('japan', new Set(japanRoutes.map(r => r.id)));
+  }
+
   // Fallback to env date window for Japan when no category routes were inferred.
-  if (!categoryRouteIds.has('japan') || categoryRouteIds.get('japan').size === 0) {
+  else if (!categoryRouteIds.has('japan') || categoryRouteIds.get('japan').size === 0) {
     const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
     const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
     const fallbackJapan = routes.filter(r => {
