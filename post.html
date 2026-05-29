@@ -657,8 +657,11 @@
       .catch(function () {});
 
     var routeQuery = getDb().collection('routes');
-    if (dateFrom) routeQuery = routeQuery.where('activityDate', '>=', new Date(dateFrom + 'T00:00:00Z'));
-    if (dateTo)   routeQuery = routeQuery.where('activityDate', '<=', new Date(dateTo + 'T23:59:59Z'));
+    if (dateFrom) {
+      routeQuery = routeQuery.where('activityDate', '>=', new Date(dateFrom + 'T00:00:00Z'));
+    } else if (dateTo) {
+      routeQuery = routeQuery.where('activityDate', '<=', new Date(dateTo + 'T23:59:59Z'));
+    }
 
     routeQuery.get()
       .then(function (snap) {
@@ -670,6 +673,8 @@
             ? d.activityDate.toDate().toISOString().slice(0, 10)
             : null;
           if (!date) return;
+          if (dateFrom && date < dateFrom) return;
+          if (dateTo   && date > dateTo)   return;
           matching.push({ date: date, route: d });
         });
 
