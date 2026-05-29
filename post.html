@@ -635,7 +635,7 @@
     L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
     var cacheUrl = 'https://firebasestorage.googleapis.com/v0/b/' + BUCKET +
-                   '/o/' + encodeURIComponent('post-routes/post_' + postId) + '?alt=media';
+                   '/o/' + encodeURIComponent('post-routes/post_' + postId + '.json') + '?alt=media';
     fetch(cacheUrl)
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
