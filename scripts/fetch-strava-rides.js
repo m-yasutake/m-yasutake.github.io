@@ -245,6 +245,47 @@ async function getExistingStravaIds() {
   return ids;
 }
 
+// Matches the date segment in: strava_{id}_{YYYY-MM-DD}_{name}.gpx
+const DATE_FROM_FILENAME_RE = /strava_\d+_(\d{4}-\d{2}-\d{2})_/;
+
+/**
+ * For any Strava route doc that is missing `activityDate`, extract the date
+ * from the `fileName` field and write it back. Safe to run on every script
+ * invocation — docs that already have `activityDate` are skipped.
+ */
+async function backfillMissingActivityDates() {
+  const snap = await db.collection('routes')
+    .where('source', '==', 'strava')
+    .get();
+
+  const toUpdate = [];
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (d.activityDate) return;  // already set
+    const candidate = d.fileName || (d.storagePath ? d.storagePath.split('/').pop() : '');
+    const m = candidate.match(DATE_FROM_FILENAME_RE);
+    if (!m) {
+      console.warn(`  backfill: cannot extract date from "${candidate}" (doc ${doc.id}) — skipping`);
+      return;
+    }
+    toUpdate.push({ id: doc.id, dateStr: m[1] });
+  });
+
+  if (toUpdate.length === 0) return;
+
+  console.log(`Backfilling activityDate on ${toUpdate.length} route doc(s)...`);
+  const BATCH_SIZE = 499;
+  for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
+    const batch = db.batch();
+    for (const { id, dateStr } of toUpdate.slice(i, i + BATCH_SIZE)) {
+      const ts = admin.firestore.Timestamp.fromDate(new Date(dateStr + 'T00:00:00Z'));
+      batch.update(db.collection('routes').doc(id), { activityDate: ts });
+    }
+    await batch.commit();
+  }
+  console.log(`  ✓ Backfilled ${toUpdate.length} route doc(s).`);
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   // Determine date window
@@ -270,6 +311,7 @@ async function main() {
 
   if (rideOnly.length === 0) {
     console.log('No rides found.');
+    await backfillMissingActivityDates();
     await updateStatsDocument();
     writeGithubOutput(0);
     return;
@@ -283,6 +325,7 @@ async function main() {
 
   if (newRides.length === 0) {
     console.log('No new rides to save.');
+    await backfillMissingActivityDates();
     await updateStatsDocument();
     writeGithubOutput(0);
     return;
@@ -384,6 +427,7 @@ async function main() {
   }
 
   console.log(`\nDone. Saved ${savedCount} new ride(s), skipped ${skippedCount}.`);
+  await backfillMissingActivityDates();
   await updateStatsDocument();
   writeGithubOutput(savedCount);
 }
