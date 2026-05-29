@@ -7,7 +7,9 @@
  * file to Firebase Storage (gpx/ prefix). A Firestore document is also added
  * to the 'routes' collection so that planning.html displays each ride
  * automatically, and so that the generate-pmtiles workflow can include them
- * in the PMTiles vector-tile overlay.
+ * in the PMTiles vector-tile overlay. The script also updates Firestore stats
+ * docs for trips (stats/japan, stats/norway, etc.) and per-blog-post windows
+ * (stats/post_<blogPostId>) based on each post's tripDateFrom/tripDateTo.
  *
  * Required environment variables:
  *   STRAVA_CLIENT_ID      - Strava application Client ID
@@ -389,54 +391,38 @@ async function main() {
 // ── Stats document ────────────────────────────────────────────────────────────
 
 /**
- * Read all owner routes, compute cumulative totals and the current position
- * (end point of the most recently uploaded route), then write the results to
- * stats/japan. The home page reads this single document instead of
- * downloading the entire routes collection.
+ * Read owner Strava routes and recompute:
+ *   - per-post stats documents (stats/post_<blogPostId>)
+ *   - per-category totals in stats/<category> for home-page counters
  *
  * Uses { merge: true } so onsensCount (written by generate-points-snapshot.js)
- * is preserved.
+ * on stats/japan is preserved.
  */
-async function updateStatsDocument() {
-  console.log('\nRecomputing stats/japan from all owner routes...');
-  const snap = await db.collection('routes').where('isOwner', '==', true).get();
+function parseYmdToUtcMs(ymd, endOfDay = false) {
+  if (!ymd) return null;
+  return new Date(`${ymd}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`).getTime();
+}
 
-  // Optional date range — respects STRAVA_AFTER_DATE / STRAVA_BEFORE_DATE so that
-  // re-running this script for Japan never picks up future Norway routes.
-  const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
-  const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
-
+function computeStatsForRoutes(routes) {
   let totalDistanceKm    = 0;
   let totalElevationGain = 0;
   let latestTs           = -Infinity;
   let latestRouteData    = null;
 
-  snap.forEach(doc => {
-    const d = doc.data();
-
-    // Filter by activityDate if env vars are set.
-    // Routes without activityDate (uploaded before this field was added) are
-    // included unconditionally — they are all pre-existing Japan routes.
-    if (afterMs || beforeMs) {
-      const actMs = d.activityDate ? d.activityDate.toMillis() : null;
-      if (actMs !== null) {
-        if (afterMs  && actMs < afterMs)  return;
-        if (beforeMs && actMs > beforeMs) return;
-      }
-    }
-
-    if (typeof d.distanceKm === 'number')         totalDistanceKm    += d.distanceKm;
-    if (typeof d.totalElevationGain === 'number') totalElevationGain += d.totalElevationGain;
-    if (d.endLatLng) {
-      const ts = d.activityDate ? d.activityDate.toMillis()
-               : (d.uploadedAt && d.uploadedAt.seconds) ? d.uploadedAt.seconds * 1000 : 0;
-      if (ts > latestTs) { latestTs = ts; latestRouteData = d; }
+  routes.forEach(route => {
+    if (typeof route.distanceKm === 'number')         totalDistanceKm    += route.distanceKm;
+    if (typeof route.totalElevationGain === 'number') totalElevationGain += route.totalElevationGain;
+    if (route.endLatLng) {
+      const ts = route.activityDate ? route.activityDate.toMillis()
+               : (route.uploadedAt && route.uploadedAt.seconds) ? route.uploadedAt.seconds * 1000 : 0;
+      if (ts > latestTs) { latestTs = ts; latestRouteData = route; }
     }
   });
 
   const stats = {
     totalDistanceKm:    Math.round(totalDistanceKm * 10) / 10,
     totalElevationGain: Math.round(totalElevationGain),
+    rideCount:          routes.length,
     statsUpdatedAt:     admin.firestore.FieldValue.serverTimestamp(),
   };
   if (latestRouteData) {
@@ -444,12 +430,84 @@ async function updateStatsDocument() {
     stats.currentRouteName = (latestRouteData.metadata && latestRouteData.metadata.name)
       || latestRouteData.fileName || 'Latest ride';
   }
+  return stats;
+}
 
-  await db.collection('stats').doc('japan').set(stats, { merge: true });
-  console.log(`  ✓ totalDistanceKm    = ${stats.totalDistanceKm} km`);
-  console.log(`  ✓ totalElevationGain = ${stats.totalElevationGain} m`);
-  if (latestRouteData) {
-    console.log(`  ✓ currentPosition    = [${stats.currentPosition}] (${stats.currentRouteName})`);
+async function updateStatsDocument() {
+  console.log('\nRecomputing trip/post stats from Firestore routes...');
+  const routesSnap = await db.collection('routes')
+    .where('isOwner', '==', true)
+    .where('source', '==', 'strava')
+    .get();
+
+  const routes = [];
+  routesSnap.forEach(doc => {
+    const d = doc.data();
+    const activityMs = d.activityDate ? d.activityDate.toMillis() : null;
+    routes.push({
+      id: doc.id,
+      ...d,
+      _activityMs: activityMs
+    });
+  });
+
+  const postsSnap = await db.collection('blog_posts').get();
+  const posts = [];
+  postsSnap.forEach(doc => {
+    const d = doc.data();
+    if (!d || !d.tripDateFrom || !d.tripDateTo) return;
+    const fromMs = parseYmdToUtcMs(d.tripDateFrom, false);
+    const toMs   = parseYmdToUtcMs(d.tripDateTo, true);
+    if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs > toMs) return;
+    posts.push({
+      id: doc.id,
+      category: d.category || 'japan',
+      tripDateFrom: d.tripDateFrom,
+      tripDateTo: d.tripDateTo,
+      fromMs,
+      toMs
+    });
+  });
+
+  const categoryRouteIds = new Map();
+  for (const post of posts) {
+    const postRoutes = routes.filter(r => r._activityMs !== null && r._activityMs >= post.fromMs && r._activityMs <= post.toMs);
+    const postStats = computeStatsForRoutes(postRoutes);
+    await db.collection('stats').doc(`post_${post.id}`).set({
+      ...postStats,
+      category: post.category,
+      tripDateFrom: post.tripDateFrom,
+      tripDateTo: post.tripDateTo
+    }, { merge: true });
+    console.log(`  ✓ stats/post_${post.id} updated (${postStats.rideCount} rides)`);
+
+    if (!categoryRouteIds.has(post.category)) categoryRouteIds.set(post.category, new Set());
+    const categorySet = categoryRouteIds.get(post.category);
+    postRoutes.forEach(route => categorySet.add(route.id));
+  }
+
+  // Fallback to env date window for Japan when no category routes were inferred.
+  if (!categoryRouteIds.has('japan') || categoryRouteIds.get('japan').size === 0) {
+    const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
+    const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
+    const fallbackJapan = routes.filter(r => {
+      if (r._activityMs === null) return true;
+      if (afterMs && r._activityMs < afterMs) return false;
+      if (beforeMs && r._activityMs > beforeMs) return false;
+      return true;
+    });
+    categoryRouteIds.set('japan', new Set(fallbackJapan.map(r => r.id)));
+  }
+
+  for (const [category, ids] of categoryRouteIds.entries()) {
+    const categoryRoutes = routes.filter(r => ids.has(r.id));
+    const stats = computeStatsForRoutes(categoryRoutes);
+    await db.collection('stats').doc(category).set(stats, { merge: true });
+    console.log(`  ✓ stats/${category} totalDistanceKm    = ${stats.totalDistanceKm} km`);
+    console.log(`  ✓ stats/${category} totalElevationGain = ${stats.totalElevationGain} m`);
+    if (stats.currentPosition) {
+      console.log(`  ✓ stats/${category} currentPosition    = [${stats.currentPosition}] (${stats.currentRouteName})`);
+    }
   }
 }
 

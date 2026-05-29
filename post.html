@@ -539,7 +539,7 @@
 
     // Initialise route map if dates are set
     if (data.tripDateFrom || data.tripDateTo) {
-      initPostRouteMap(data);
+      initPostRouteMap(postId, data);
     }
 
     // Show draft preview bar and (for the admin) a Publish button
@@ -607,7 +607,7 @@
   // Fetches only the Strava GPX files within the post's date range and renders
   // them as plain Leaflet polylines with start/finish markers and an elevation
   // profile chart drawn on a canvas below the map.
-  function initPostRouteMap(data) {
+  function initPostRouteMap(postId, data) {
     var dateFrom    = data.tripDateFrom || null;
     var dateTo      = data.tripDateTo   || null;
     var category    = data.category || 'japan';
@@ -637,17 +637,38 @@
     ).addTo(map);
     L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
-    getDb().collection('routes')
-      .where('source', '==', 'strava')
-      .get()
+    getDb().collection('stats').doc('post_' + postId).get()
+      .then(function (doc) {
+        if (!doc.exists) return;
+        var s = doc.data() || {};
+        var elDist  = document.getElementById('post-route-stat-dist');
+        var elGain  = document.getElementById('post-route-stat-gain');
+        var elRides = document.getElementById('post-route-stat-rides');
+        if (elDist && typeof s.totalDistanceKm === 'number') {
+          elDist.textContent = Math.round(s.totalDistanceKm) + ' km';
+        }
+        if (elGain && typeof s.totalElevationGain === 'number') {
+          elGain.textContent = s.totalElevationGain > 0 ? Math.round(s.totalElevationGain) + ' m' : '—';
+        }
+        if (elRides && typeof s.rideCount === 'number') {
+          elRides.textContent = s.rideCount + (s.rideCount === 1 ? ' ride' : ' rides');
+        }
+      })
+      .catch(function () {});
+
+    var routeQuery = getDb().collection('routes').where('source', '==', 'strava');
+    if (dateFrom) routeQuery = routeQuery.where('activityDate', '>=', new Date(dateFrom + 'T00:00:00Z'));
+    if (dateTo)   routeQuery = routeQuery.where('activityDate', '<=', new Date(dateTo + 'T23:59:59Z'));
+
+    routeQuery.get()
       .then(function (snap) {
         var matching = [];
         snap.forEach(function (doc) {
-          var d  = doc.data();
-          var fn = d.fileName || '';
-          var m  = fn.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
-          if (!m) return;
-          var date = m[1];
+          var d = doc.data();
+          var date = d.activityDate && typeof d.activityDate.toDate === 'function'
+            ? d.activityDate.toDate().toISOString().slice(0, 10)
+            : null;
+          if (!date) return;
           if (dateFrom && date < dateFrom) return;
           if (dateTo   && date > dateTo)   return;
           matching.push({ date: date, route: d });
