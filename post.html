@@ -657,11 +657,8 @@
       .catch(function () {});
 
     var routeQuery = getDb().collection('routes');
-    if (dateFrom) {
-      routeQuery = routeQuery.where('activityDate', '>=', new Date(dateFrom + 'T00:00:00Z'));
-    } else if (dateTo) {
-      routeQuery = routeQuery.where('activityDate', '<=', new Date(dateTo + 'T23:59:59Z'));
-    }
+    if (dateFrom) routeQuery = routeQuery.where('activityDate', '>=', new Date(dateFrom + 'T00:00:00Z'));
+    if (dateTo)   routeQuery = routeQuery.where('activityDate', '<=', new Date(dateTo + 'T23:59:59Z'));
 
     routeQuery.get()
       .then(function (snap) {
