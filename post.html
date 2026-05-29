@@ -678,7 +678,13 @@
 
         // Elevation chart
         if (cache.elevationProfile && cache.elevationProfile.length > 1) {
+          // Flat ordered coord list — fraction maps hover X → [lat,lng]
+          var coordProfile = [];
+          (cache.routes || []).forEach(function (r) {
+            (r.pts || []).forEach(function (pt) { coordProfile.push(pt); });
+          });
           drawElevationChart(cache.elevationProfile);
+          attachElevHover(coordProfile, map);
         } else {
           var elevWrap = document.getElementById('post-elevation-wrap');
           if (elevWrap) elevWrap.style.display = 'none';
@@ -769,6 +775,64 @@
       }
       ctx.strokeStyle = '#E76F51'; ctx.lineWidth = 1.75; ctx.lineJoin = 'round';
       ctx.stroke();
+    });
+  }
+
+  function attachElevHover(coordProfile, map) {
+    var canvas = document.getElementById('post-elevation-canvas');
+    if (!canvas || !coordProfile.length) return;
+    canvas.style.cursor = 'crosshair';
+
+    // Overlay canvas sits on top of the chart canvas and draws the hover line
+    var wrap = canvas.parentNode;
+    wrap.style.position = 'relative';
+    var overlay = document.createElement('canvas');
+    overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none';
+    wrap.appendChild(overlay);
+
+    var hoverMarker = null;
+    var dpr = window.devicePixelRatio || 1;
+    var PAD_L = 52, PAD_R = 16, PAD_T = 14, PAD_B = 30;
+
+    canvas.addEventListener('mousemove', function (e) {
+      var rect   = canvas.getBoundingClientRect();
+      var mouseX = e.clientX - rect.left;
+      var W      = canvas.clientWidth;
+      var H      = canvas.clientHeight;
+      var cW     = W - PAD_L - PAD_R;
+      var frac   = Math.max(0, Math.min(1, (mouseX - PAD_L) / cW));
+      var idx    = Math.min(Math.round(frac * (coordProfile.length - 1)), coordProfile.length - 1);
+      var pt     = coordProfile[idx];
+      if (!pt) return;
+
+      // Resize overlay each frame (resets it) then draw the vertical line
+      overlay.width  = Math.round(W * dpr);
+      overlay.height = Math.round(H * dpr);
+      var ctx = overlay.getContext('2d');
+      ctx.scale(dpr, dpr);
+      var xPos = Math.max(PAD_L, Math.min(W - PAD_R, mouseX));
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(xPos, PAD_T);
+      ctx.lineTo(xPos, H - PAD_B);
+      ctx.stroke();
+
+      // Move map marker
+      if (!hoverMarker) {
+        hoverMarker = L.circleMarker(pt, {
+          radius: 7, fillColor: '#E76F51', color: '#fff',
+          weight: 2.5, fillOpacity: 1, zIndexOffset: 1000
+        }).addTo(map);
+      } else {
+        hoverMarker.setLatLng(pt);
+      }
+    });
+
+    canvas.addEventListener('mouseleave', function () {
+      overlay.width = overlay.width; // clear
+      if (hoverMarker) { hoverMarker.remove(); hoverMarker = null; }
     });
   }
 })();
