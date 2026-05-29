@@ -660,8 +660,7 @@
     if (dateFrom) routeQuery = routeQuery.where('activityDate', '>=', new Date(dateFrom + 'T00:00:00Z'));
     if (dateTo)   routeQuery = routeQuery.where('activityDate', '<=', new Date(dateTo + 'T23:59:59Z'));
 
-    routeQuery.get()
-      .then(function (snap) {
+    function processRoutesSnapshot(snap) {
         var matching = [];
         snap.forEach(function (doc) {
           var d = doc.data();
@@ -806,8 +805,13 @@
               if (--pending === 0) onAllLoaded();
             });
         });
-      })
-      .catch(function () {});
+    }
+
+    routeQuery.get()
+      .then(processRoutesSnapshot)
+      .catch(function () {
+        return getDb().collection('routes').get().then(processRoutesSnapshot).catch(function () {});
+      });
   }
 
   function drawElevationChart(elevProfile) {
