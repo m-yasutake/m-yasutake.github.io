@@ -809,7 +809,8 @@
 
     routeQuery.get()
       .then(processRoutesSnapshot)
-      .catch(function () {
+      .catch(function (err) {
+        console.warn('Post route bounded query failed, falling back to full routes scan.', err && err.message ? err.message : err);
         return getDb().collection('routes').get().then(processRoutesSnapshot).catch(function () {});
       });
   }
