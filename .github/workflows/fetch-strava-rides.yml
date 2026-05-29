@@ -66,6 +66,9 @@ jobs:
           STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
           STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
           STRAVA_AFTER_DATE:    ${{ vars.STRAVA_AFTER_DATE }}
+          STRAVA_BEFORE_DATE:   ${{ vars.STRAVA_BEFORE_DATE }}
+          JAPAN_TRIP_FROM:      ${{ vars.JAPAN_TRIP_FROM }}
+          JAPAN_TRIP_TO:        ${{ vars.JAPAN_TRIP_TO }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node fetch-strava-rides.js
 
