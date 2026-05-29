@@ -665,8 +665,14 @@
         if (elGain  && typeof cache.totalElevationGain === 'number') elGain.textContent  = cache.totalElevationGain > 0 ? Math.round(cache.totalElevationGain) + ' m' : '—';
         if (elRides && typeof cache.rideCount          === 'number') elRides.textContent = cache.rideCount + (cache.rideCount === 1 ? ' ride' : ' rides');
 
-        // Draw one polyline per route
-        (cache.routes || []).forEach(function (r) {
+        // Sort routes chronologically by date so polylines, start/end markers,
+        // and the elevation hover all move in the correct order.
+        var sortedRoutes = (cache.routes || []).slice().sort(function (a, b) {
+          return (a.date || '') < (b.date || '') ? -1 : (a.date || '') > (b.date || '') ? 1 : 0;
+        });
+
+        // Draw one polyline per route (in date order)
+        sortedRoutes.forEach(function (r) {
           if (r.pts && r.pts.length > 1) {
             L.polyline(r.pts, { color: ROUTE_COLOR, weight: 3, opacity: 0.9 }).addTo(map);
           }
@@ -677,29 +683,51 @@
           try { map.fitBounds(cache.bounds, { padding: [30, 30] }); } catch (e) {}
         }
 
-        // Start marker — green
-        if (cache.firstPoint) {
-          L.circleMarker(cache.firstPoint, {
+        // Start marker — green dot anchored to first point of chronologically first ride
+        var firstRoutePts = sortedRoutes.length > 0 ? (sortedRoutes[0].pts || []) : [];
+        var startPt = firstRoutePts.length > 0 ? firstRoutePts[0] : cache.firstPoint;
+        if (startPt) {
+          L.circleMarker(startPt, {
             radius: 8, fillColor: '#2ecc71', color: '#fff', weight: 2.5, fillOpacity: 1
           }).bindTooltip('Start').addTo(map);
         }
 
-        // Finish marker — red
-        if (cache.lastPoint) {
-          L.circleMarker(cache.lastPoint, {
+        // Finish marker — red dot anchored to last point of chronologically last ride
+        var lastRoute = sortedRoutes.length > 0 ? sortedRoutes[sortedRoutes.length - 1] : null;
+        var lastRoutePts = lastRoute ? (lastRoute.pts || []) : [];
+        var endPt = lastRoutePts.length > 0 ? lastRoutePts[lastRoutePts.length - 1] : cache.lastPoint;
+        if (endPt) {
+          L.circleMarker(endPt, {
             radius: 8, fillColor: '#e74c3c', color: '#fff', weight: 2.5, fillOpacity: 1
           }).bindTooltip('Finish').addTo(map);
         }
 
-        // Elevation chart
+        // Elevation chart + distance-aware hover
         if (cache.elevationProfile && cache.elevationProfile.length > 1) {
-          // Flat ordered coord list — fraction maps hover X → [lat,lng]
+          // Build coordProfile with cumulative km per downsampled point so the
+          // hover binary-searches by distance and stays aligned with the chart's
+          // X-axis (cumulative km), rather than mapping by array-index fraction.
           var coordProfile = [];
-          (cache.routes || []).forEach(function (r) {
-            (r.pts || []).forEach(function (pt) { coordProfile.push(pt); });
+          var cumDist = 0;
+          sortedRoutes.forEach(function (r) {
+            var pts = r.pts || [];
+            for (var i = 0; i < pts.length; i++) {
+              if (i > 0) {
+                var dLat = (pts[i][0] - pts[i-1][0]) * Math.PI / 180;
+                var dLon = (pts[i][1] - pts[i-1][1]) * Math.PI / 180;
+                var sinDLat = Math.sin(dLat / 2);
+                var sinDLon = Math.sin(dLon / 2);
+                var a = sinDLat * sinDLat +
+                        Math.cos(pts[i-1][0] * Math.PI / 180) * Math.cos(pts[i][0] * Math.PI / 180) *
+                        sinDLon * sinDLon;
+                cumDist += 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              }
+              coordProfile.push({ dist: cumDist, pt: pts[i] });
+            }
           });
+          var elevMaxDist = Math.max(cache.elevationProfile[cache.elevationProfile.length - 1].dist, 0.001);
           drawElevationChart(cache.elevationProfile);
-          attachElevHover(coordProfile, map);
+          attachElevHover(coordProfile, elevMaxDist, map);
         } else {
           var elevWrap = document.getElementById('post-elevation-wrap');
           if (elevWrap) elevWrap.style.display = 'none';
@@ -793,7 +821,9 @@
     });
   }
 
-  function attachElevHover(coordProfile, map) {
+  // coordProfile: array of { dist: cumulative km, pt: [lat, lng] }
+  // maxDist: total distance in km (= last entry of elevationProfile)
+  function attachElevHover(coordProfile, maxDist, map) {
     var canvas = document.getElementById('post-elevation-canvas');
     if (!canvas || !coordProfile.length) return;
     canvas.style.cursor = 'crosshair';
@@ -816,8 +846,16 @@
       var H      = canvas.clientHeight;
       var cW     = W - PAD_L - PAD_R;
       var frac   = Math.max(0, Math.min(1, (mouseX - PAD_L) / cW));
-      var idx    = Math.min(Math.round(frac * (coordProfile.length - 1)), coordProfile.length - 1);
-      var pt     = coordProfile[idx];
+      // Binary-search coordProfile by cumulative distance so the hover marker
+      // stays aligned with the elevation chart's distance-based X axis.
+      var targetDist = frac * maxDist;
+      var lo = 0, hi = coordProfile.length - 1;
+      while (lo < hi) {
+        var mid = (lo + hi) >> 1;
+        if (coordProfile[mid].dist < targetDist) lo = mid + 1;
+        else hi = mid;
+      }
+      var pt = coordProfile[lo].pt;
       if (!pt) return;
 
       // Resize overlay each frame (resets it) then draw the vertical line
@@ -843,6 +881,7 @@
       } else {
         hoverMarker.setLatLng(pt);
       }
+
     });
 
     canvas.addEventListener('mouseleave', function () {
