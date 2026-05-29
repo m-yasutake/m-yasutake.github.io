@@ -447,7 +447,7 @@ async function updateStatsDocument() {
     routes.push({
       id: doc.id,
       ...d,
-      _activityMs: activityMs
+      activityMs
     });
   });
 
@@ -471,7 +471,7 @@ async function updateStatsDocument() {
 
   const categoryRouteIds = new Map();
   for (const post of posts) {
-    const postRoutes = routes.filter(r => r._activityMs !== null && r._activityMs >= post.fromMs && r._activityMs <= post.toMs);
+    const postRoutes = routes.filter(r => r.activityMs !== null && r.activityMs >= post.fromMs && r.activityMs <= post.toMs);
     const postStats = computeStatsForRoutes(postRoutes);
     await db.collection('stats').doc(`post_${post.id}`).set({
       ...postStats,
@@ -491,9 +491,9 @@ async function updateStatsDocument() {
     const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
     const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
     const fallbackJapan = routes.filter(r => {
-      if (r._activityMs === null) return true;
-      if (afterMs && r._activityMs < afterMs) return false;
-      if (beforeMs && r._activityMs > beforeMs) return false;
+      if (r.activityMs === null) return true;
+      if (afterMs && r.activityMs < afterMs) return false;
+      if (beforeMs && r.activityMs > beforeMs) return false;
       return true;
     });
     categoryRouteIds.set('japan', new Set(fallbackJapan.map(r => r.id)));
