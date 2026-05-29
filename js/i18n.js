@@ -21,6 +21,7 @@ const TRANSLATIONS = {
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 Home',
+    'mobile.blog':      '✍️ Blog',
     'mobile.japan':     'Japan',
     'mobile.norway':    'Norway',
     'mobile.gear':      '🎒 Gear',
@@ -223,6 +224,7 @@ const TRANSLATIONS = {
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 ホーム',
+    'mobile.blog':      '✍️ ブログ',
     'mobile.japan':     '日本',
     'mobile.norway':    'ノルウェー',
     'mobile.gear':      '🎒 ギア',
@@ -425,6 +427,7 @@ const TRANSLATIONS = {
 
     /* ── Mobile menu ── */
     'mobile.home':      '🏠 Hjem',
+    'mobile.blog':      '✍️ Blogg',
     'mobile.japan':     'Japan',
     'mobile.norway':    'Norge',
     'mobile.gear':      '🎒 Utstyr',

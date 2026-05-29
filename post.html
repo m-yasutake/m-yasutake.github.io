@@ -290,6 +290,7 @@
           <li><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></li>
         </ul>
       </li>
+      <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
       <li><a href="gear.html" data-i18n="nav.gear">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html" data-i18n="nav.admin">Admin</a></li>
     </ul>
@@ -320,6 +321,7 @@
     <a href="planning-japan.html" data-i18n="mobile.japan">Japan</a>
     <a href="planning-norway.html" data-i18n="mobile.norway">Norway</a>
   </div>
+  <a href="blog.html" data-i18n="mobile.blog">✍️ Blog</a>
   <a href="gear.html" data-i18n="mobile.gear">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none" data-i18n="mobile.admin">⚙️ Admin</a>
   <div class="mobile-lang-row">
@@ -539,7 +541,7 @@
 
     // Initialise route map if dates are set
     if (data.tripDateFrom || data.tripDateTo) {
-      initPostRouteMap(postId, data);
+      initPostRouteMap(id, data);
     }
 
     // Show draft preview bar and (for the admin) a Publish button
@@ -604,15 +606,12 @@
   });
 
   // ── Route map initialisation ─────────────────────────────────────────────
-  // Fetches only the Strava GPX files within the post's date range and renders
-  // them as plain Leaflet polylines with start/finish markers and an elevation
-  // profile chart drawn on a canvas below the map.
+  // Fetches the pre-computed per-post route cache from Firebase Storage
+  // (post-routes/post_<id>.json) — one request instead of N GPX fetches.
   function initPostRouteMap(postId, data) {
-    var dateFrom    = data.tripDateFrom || null;
-    var dateTo      = data.tripDateTo   || null;
-    var category    = data.category || 'japan';
     var BUCKET      = 'roots-eddf5.firebasestorage.app';
     var ROUTE_COLOR = '#E76F51';
+    var category    = data.category || 'japan';
 
     if (typeof L === 'undefined') {
       console.warn('Leaflet not available for post map');
@@ -626,9 +625,7 @@
     }
 
     var defaultCenter = category === 'norway' ? [62.0, 10.0] : [36.5, 138.0];
-
-    var map = L.map('post-route-map', { zoomControl: true })
-                .setView(defaultCenter, 6);
+    var map = L.map('post-route-map', { zoomControl: true }).setView(defaultCenter, 6);
     window._postRouteMapInstance = map;
 
     L.tileLayer(
@@ -637,181 +634,60 @@
     ).addTo(map);
     L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
-    getDb().collection('stats').doc('post_' + postId).get()
-      .then(function (doc) {
-        if (!doc.exists) return;
-        var s = doc.data() || {};
+    var cacheUrl = 'https://firebasestorage.googleapis.com/v0/b/' + BUCKET +
+                   '/o/' + encodeURIComponent('post-routes/post_' + postId) + '?alt=media';
+    fetch(cacheUrl)
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (cache) {
+        // Stat pills
         var elDist  = document.getElementById('post-route-stat-dist');
         var elGain  = document.getElementById('post-route-stat-gain');
         var elRides = document.getElementById('post-route-stat-rides');
-        if (elDist && typeof s.totalDistanceKm === 'number') {
-          elDist.textContent = Math.round(s.totalDistanceKm) + ' km';
+        if (elDist  && typeof cache.totalDistanceKm    === 'number') elDist.textContent  = Math.round(cache.totalDistanceKm) + ' km';
+        if (elGain  && typeof cache.totalElevationGain === 'number') elGain.textContent  = cache.totalElevationGain > 0 ? Math.round(cache.totalElevationGain) + ' m' : '—';
+        if (elRides && typeof cache.rideCount          === 'number') elRides.textContent = cache.rideCount + (cache.rideCount === 1 ? ' ride' : ' rides');
+
+        // Draw one polyline per route
+        (cache.routes || []).forEach(function (r) {
+          if (r.pts && r.pts.length > 1) {
+            L.polyline(r.pts, { color: ROUTE_COLOR, weight: 3, opacity: 0.9 }).addTo(map);
+          }
+        });
+
+        // Fit map to bounding box
+        if (cache.bounds) {
+          try { map.fitBounds(cache.bounds, { padding: [30, 30] }); } catch (e) {}
         }
-        if (elGain && typeof s.totalElevationGain === 'number') {
-          elGain.textContent = s.totalElevationGain > 0 ? Math.round(s.totalElevationGain) + ' m' : '—';
+
+        // Start marker — green
+        if (cache.firstPoint) {
+          L.circleMarker(cache.firstPoint, {
+            radius: 8, fillColor: '#2ecc71', color: '#fff', weight: 2.5, fillOpacity: 1
+          }).bindTooltip('Start').addTo(map);
         }
-        if (elRides && typeof s.rideCount === 'number') {
-          elRides.textContent = s.rideCount + (s.rideCount === 1 ? ' ride' : ' rides');
+
+        // Finish marker — red
+        if (cache.lastPoint) {
+          L.circleMarker(cache.lastPoint, {
+            radius: 8, fillColor: '#e74c3c', color: '#fff', weight: 2.5, fillOpacity: 1
+          }).bindTooltip('Finish').addTo(map);
+        }
+
+        // Elevation chart
+        if (cache.elevationProfile && cache.elevationProfile.length > 1) {
+          drawElevationChart(cache.elevationProfile);
+        } else {
+          var elevWrap = document.getElementById('post-elevation-wrap');
+          if (elevWrap) elevWrap.style.display = 'none';
         }
       })
-      .catch(function () {});
-
-    var routeQuery = getDb().collection('routes');
-    if (dateFrom) routeQuery = routeQuery.where('activityDate', '>=', new Date(dateFrom + 'T00:00:00Z'));
-    if (dateTo)   routeQuery = routeQuery.where('activityDate', '<=', new Date(dateTo + 'T23:59:59Z'));
-
-    function processRoutesSnapshot(snap) {
-        var matching = [];
-        snap.forEach(function (doc) {
-          var d = doc.data();
-          if (d.source !== 'strava') return;
-          var date = d.activityDate && typeof d.activityDate.toDate === 'function'
-            ? d.activityDate.toDate().toISOString().slice(0, 10)
-            : null;
-          if (!date) return;
-          if (dateFrom && date < dateFrom) return;
-          if (dateTo   && date > dateTo)   return;
-          matching.push({ date: date, route: d });
-        });
-
-        if (matching.length === 0) return;
-
-        // Sort chronologically so first/last markers are meaningful
-        matching.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-
-        var allBounds    = [];  // [lat,lng] pairs for fitBounds
-        var elevProfile  = [];  // { dist: cumKm, ele: m }
-        var cumDist      = 0;
-        var totalGain    = 0;
-        var firstPoint   = null;
-        var lastPoint    = null;
-        var pending      = matching.length;
-        var routeResults = new Array(matching.length);
-
-        function haversineKm(la1, lo1, la2, lo2) {
-          var R    = 6371;
-          var dLat = (la2 - la1) * Math.PI / 180;
-          var dLon = (lo2 - lo1) * Math.PI / 180;
-          var a    = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                     Math.cos(la1 * Math.PI / 180) * Math.cos(la2 * Math.PI / 180) *
-                     Math.sin(dLon / 2) * Math.sin(dLon / 2);
-          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
-
-        function onAllLoaded() {
-          for (var i = 0; i < routeResults.length; i++) {
-            var res = routeResults[i];
-            if (!res || !res.pts.length) continue;
-            var pts  = res.pts;
-            var eles = res.eles;
-
-            if (!firstPoint) firstPoint = pts[0];
-            lastPoint = pts[pts.length - 1];
-
-            L.polyline(pts, { color: ROUTE_COLOR, weight: 3, opacity: 0.9 }).addTo(map);
-            for (var p = 0; p < pts.length; p++) allBounds.push(pts[p]);
-
-            for (var j = 0; j < pts.length; j++) {
-              if (j > 0) {
-                cumDist += haversineKm(pts[j-1][0], pts[j-1][1], pts[j][0], pts[j][1]);
-              }
-              if (eles[j] != null) {
-                elevProfile.push({ dist: cumDist, ele: eles[j] });
-                if (j > 0 && eles[j-1] != null && eles[j] > eles[j-1]) {
-                  totalGain += eles[j] - eles[j-1];
-                }
-              }
-            }
-          }
-
-          // Fit map
-          if (allBounds.length > 0) {
-            try { map.fitBounds(L.latLngBounds(allBounds), { padding: [30, 30] }); } catch (e) {}
-          }
-
-          // Start marker — green circle
-          if (firstPoint) {
-            L.circleMarker(firstPoint, {
-              radius: 8, fillColor: '#2ecc71', color: '#fff', weight: 2.5, fillOpacity: 1
-            }).bindTooltip('Start').addTo(map);
-          }
-
-          // Finish marker — red circle
-          if (lastPoint) {
-            L.circleMarker(lastPoint, {
-              radius: 8, fillColor: '#e74c3c', color: '#fff', weight: 2.5, fillOpacity: 1
-            }).bindTooltip('Finish').addTo(map);
-          }
-
-          // Update stat pills
-          var elDist  = document.getElementById('post-route-stat-dist');
-          var elGain  = document.getElementById('post-route-stat-gain');
-          var elRides = document.getElementById('post-route-stat-rides');
-          if (elDist)  elDist.textContent  = cumDist.toFixed(0) + ' km';
-          if (elGain)  elGain.textContent  = totalGain > 0 ? Math.round(totalGain) + ' m' : '—';
-          if (elRides) elRides.textContent = matching.length + (matching.length === 1 ? ' ride' : ' rides');
-
-          // Draw elevation chart
-          if (elevProfile.length > 1) {
-            drawElevationChart(elevProfile);
-          } else {
-            var elevWrap = document.getElementById('post-elevation-wrap');
-            if (elevWrap) elevWrap.style.display = 'none';
-          }
-        }
-
-        // Fetch GPX files in parallel, preserving order via index
-        matching.forEach(function (item, idx) {
-          var sp = item.route.storagePath || '';
-          if (!sp) {
-            routeResults[idx] = { pts: [], eles: [] };
-            if (--pending === 0) onAllLoaded();
-            return;
-          }
-          var url = 'https://firebasestorage.googleapis.com/v0/b/' + BUCKET +
-                    '/o/' + encodeURIComponent(sp) + '?alt=media';
-          fetch(url)
-            .then(function (res) {
-              if (!res.ok) throw new Error('HTTP ' + res.status);
-              return res.text();
-            })
-            .then(function (gpxText) {
-              var pts = [], eles = [];
-              try {
-                var gpxDoc     = (new DOMParser()).parseFromString(gpxText, 'application/xml');
-                var trkptNodes = gpxDoc.querySelectorAll('trkpt');
-                trkptNodes.forEach(function (tp) {
-                  var lat = parseFloat(tp.getAttribute('lat'));
-                  var lon = parseFloat(tp.getAttribute('lon'));
-                  if (isNaN(lat) || isNaN(lon)) return;
-                  pts.push([lat, lon]);
-                  var eleEl = tp.querySelector('ele');
-                  eles.push(eleEl ? parseFloat(eleEl.textContent) : null);
-                });
-              } catch (e) {
-                // Regex fallback for malformed XML
-                var tags = gpxText.match(/<trkpt[^>]*>/g) || [];
-                tags.forEach(function (tag) {
-                  var latM = tag.match(/lat="([^"]+)"/);
-                  var lonM = tag.match(/lon="([^"]+)"/);
-                  if (latM && lonM) { pts.push([parseFloat(latM[1]), parseFloat(lonM[1])]); eles.push(null); }
-                });
-              }
-              routeResults[idx] = { pts: pts, eles: eles };
-              if (--pending === 0) onAllLoaded();
-            })
-            .catch(function () {
-              routeResults[idx] = { pts: [], eles: [] };
-              if (--pending === 0) onAllLoaded();
-            });
-        });
-    }
-
-    routeQuery.get()
-      .then(processRoutesSnapshot)
       .catch(function (err) {
-        console.warn('Post route bounded query failed, falling back to full routes scan.', err && err.message ? err.message : err);
-        return getDb().collection('routes').get().then(processRoutesSnapshot).catch(function () {});
+        console.warn('Could not load route cache:', err.message);
+        var elevWrap = document.getElementById('post-elevation-wrap');
+        if (elevWrap) elevWrap.style.display = 'none';
       });
   }
 

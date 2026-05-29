@@ -733,6 +733,7 @@
           <li><a href="planning-norway.html">Norway</a></li>
         </ul>
       </li>
+      <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
       <li><a href="gear.html">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html">Admin</a></li>
     </ul>
@@ -754,6 +755,7 @@
     <a href="planning-japan.html">Japan</a>
     <a href="planning-norway.html">Norway</a>
   </div>
+  <a href="blog.html">✍️ Blog</a>
   <a href="gear.html">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none">⚙️ Admin</a>
 </div>
@@ -2841,7 +2843,7 @@ async function adminBlogPreview() {
     TomikaBikes.showToast('Save the post first before previewing', 'info');
     return;
   }
-  window.open('post.html?id=' + encodeURIComponent(id), '_blank');
+  window.open('post?id=' + encodeURIComponent(id), '_blank');
 }
 
 // Set default date on new post on page load

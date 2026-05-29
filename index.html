@@ -121,6 +121,7 @@
           <li><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></li>
         </ul>
       </li>
+      <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
       <li><a href="gear.html" data-i18n="nav.gear">Gear</a></li>
       <li class="admin-only-link" style="display:none"><a href="admin.html" data-i18n="nav.admin">Admin</a></li>
     </ul>
@@ -156,6 +157,7 @@
     <a href="planning-japan.html" data-i18n="mobile.japan">Japan</a>
     <a href="planning-norway.html" data-i18n="mobile.norway">Norway</a>
   </div>
+  <a href="blog.html" data-i18n="mobile.blog">✍️ Blog</a>
   <a href="gear.html" data-i18n="mobile.gear">🎒 Gear</a>
   <a href="admin.html" class="admin-only-link" style="display:none" data-i18n="mobile.admin">⚙️ Admin</a>
   <div class="mobile-lang-row">
@@ -563,7 +565,7 @@
               '</div>' +
               '<div class="card-footer">' +
                 '<span data-i18n-date="' + esc(d.date || '') + '" data-i18n-date-format="month-year">' + esc(fmtMonthYear(d.date)) + '</span>' +
-                '<a href="post.html?id=' + encodeURIComponent(p.id) + '" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
+                '<a href="post?id=' + encodeURIComponent(p.id) + '" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
               '</div>';
             grid.appendChild(card);
           });
