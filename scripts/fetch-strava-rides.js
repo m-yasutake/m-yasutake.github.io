@@ -673,19 +673,24 @@ async function updateStatsDocument() {
     });
   });
 
+  const withDate    = routes.filter(r => r.activityMs !== null).length;
+  const withoutDate = routes.length - withDate;
+  console.log(`  ${routes.length} Firestore routes: ${withDate} with activityDate, ${withoutDate} without`);
+
   const postsSnap = await db.collection('blog_posts').get();
   const posts = [];
   postsSnap.forEach(doc => {
     const d = doc.data();
-    if (!d || !d.tripDateFrom || !d.tripDateTo) return;
+    if (!d || !d.tripDateFrom) return;
     const fromMs = parseYmdToUtcMs(d.tripDateFrom, false);
-    const toMs   = parseYmdToUtcMs(d.tripDateTo, true);
+    // If tripDateTo is absent the trip is ongoing — use the current time as the window end.
+    const toMs   = d.tripDateTo ? parseYmdToUtcMs(d.tripDateTo, true) : Date.now();
     if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs > toMs) return;
     posts.push({
       id: doc.id,
       category: d.category || 'japan',
       tripDateFrom: d.tripDateFrom,
-      tripDateTo: d.tripDateTo,
+      tripDateTo: d.tripDateTo || '(ongoing)',
       fromMs,
       toMs
     });

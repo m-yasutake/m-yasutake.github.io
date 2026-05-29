@@ -456,6 +456,23 @@
     outline: none;
   }
 
+  /* ── Video insert modal ─────────────────────────────── */
+  #video-insert-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  #video-insert-overlay.open { display: flex; }
+  #video-insert-overlay .photo-picker-modal {
+    max-width: 480px;
+    min-height: 0;
+    width: 100%;
+  }
+
   /* ── Gear admin in admin panel ──────────────────────── */
   .admin-gear-bar {
     display: flex;
@@ -1024,7 +1041,10 @@
             <div class="form-group">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
                 <label style="margin:0">Content <span style="font-weight:400;color:var(--color-gray-500)">(supports basic HTML)</span></label>
-                <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openPhotoPicker()">📷 Insert Photo</button>
+                <div style="display:flex;gap:.4rem">
+                  <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openPhotoPicker()">📷 Insert Photo</button>
+                  <button type="button" class="btn" style="padding:.25rem .7rem;font-size:.78rem;background:var(--color-gray-200)" onclick="openVideoInsert()">🎬 Insert Video</button>
+                </div>
               </div>
               <div class="fmt-toolbar" id="blog-fmt-toolbar">
                 <!-- Block elements -->
@@ -1559,6 +1579,35 @@
         </select>
       </div>
       <button class="btn btn-primary" onclick="ppInsert()" id="pp-insert-btn" disabled>Insert</button>
+    </div>
+  </div>
+</div>
+
+<!-- Video Insert Modal -->
+<div id="video-insert-overlay">
+  <div class="photo-picker-modal">
+    <div class="photo-picker-header">
+      <h3>🎬 Insert Video</h3>
+      <button class="photo-picker-close" onclick="closeVideoInsert()">✕</button>
+    </div>
+    <div class="photo-picker-body" style="padding:1.25rem 1.5rem;overflow:visible;flex:none">
+      <div class="form-group" style="margin-bottom:1rem">
+        <label style="font-size:.85rem;font-weight:600;margin-bottom:.35rem;display:block">Video URL</label>
+        <input type="url" id="video-url-input" class="form-control"
+          placeholder="https://youtube.com/watch?v=… or direct .mp4 URL"
+          style="font-size:.875rem" />
+        <p style="font-size:.75rem;color:var(--color-gray-500);margin:.35rem 0 0">Supports YouTube, Vimeo, and direct video files (.mp4, .webm)</p>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label style="font-size:.85rem;font-weight:600;margin-bottom:.35rem;display:block">Caption <span style="font-weight:400;color:var(--color-gray-500)">(optional)</span></label>
+        <input type="text" id="video-caption-input" class="form-control"
+          placeholder="e.g. Day 12 – the climb out of Nagano"
+          style="font-size:.875rem" />
+      </div>
+    </div>
+    <div class="photo-picker-footer">
+      <button class="btn" onclick="closeVideoInsert()">Cancel</button>
+      <button class="btn btn-primary" onclick="doInsertVideo()">Insert</button>
     </div>
   </div>
 </div>
@@ -3085,6 +3134,92 @@ function blogFmt(tag) {
   // Close on Escape
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && document.getElementById('photo-picker-overlay').classList.contains('open')) closePhotoPicker();
+  });
+})();
+</script>
+
+<script>
+// ── Video Insert ──────────────────────────────────────────────
+(function () {
+  function getYouTubeId(url) {
+    let m;
+    m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+    if (m) return m[1];
+    m = url.match(/youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+    if (m) return m[1];
+    return null;
+  }
+
+  function getVimeoId(url) {
+    const m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    return m ? m[1] : null;
+  }
+
+  window.openVideoInsert = function () {
+    document.getElementById('video-url-input').value = '';
+    document.getElementById('video-caption-input').value = '';
+    document.getElementById('video-insert-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('video-url-input').focus(), 50);
+  };
+
+  window.closeVideoInsert = function () {
+    document.getElementById('video-insert-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  window.doInsertVideo = function () {
+    const url     = document.getElementById('video-url-input').value.trim();
+    const caption = document.getElementById('video-caption-input').value.trim();
+    if (!url) { document.getElementById('video-url-input').focus(); return; }
+
+    const safeUrl = url.replace(/"/g, '%22');
+    const ytId  = getYouTubeId(url);
+    const viId  = getVimeoId(url);
+    let html;
+
+    if (ytId) {
+      html = `\n<div class="video-embed">\n  <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe>\n</div>\n`;
+    } else if (viId) {
+      html = `\n<div class="video-embed">\n  <iframe src="https://player.vimeo.com/video/${viId}" allowfullscreen loading="lazy"></iframe>\n</div>\n`;
+    } else if (/\.(mp4|webm|mov|ogg)(\?|$)/i.test(url)) {
+      html = `\n<video src="${safeUrl}" controls playsinline style="width:100%;border-radius:8px;margin:.75rem 0"></video>\n`;
+    } else {
+      // Unknown URL – insert as generic iframe
+      html = `\n<div class="video-embed">\n  <iframe src="${safeUrl}" allowfullscreen loading="lazy"></iframe>\n</div>\n`;
+    }
+
+    if (caption) {
+      const safeCaption = caption.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      html += `<p><em>${safeCaption}</em></p>\n`;
+    }
+
+    const taId = window._activeBlogContent || 'blog-content';
+    const ta = document.getElementById(taId);
+    if (!ta) { closeVideoInsert(); return; }
+
+    const start = ta.selectionStart;
+    const end   = ta.selectionEnd;
+    ta.value = ta.value.slice(0, start) + html + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + html.length;
+    ta.focus();
+    closeVideoInsert();
+    if (typeof TomikaBikes !== 'undefined') TomikaBikes.showToast('Video inserted ✅', 'success');
+  };
+
+  // Close on backdrop click
+  document.getElementById('video-insert-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('video-insert-overlay')) closeVideoInsert();
+  });
+
+  // Keyboard shortcuts
+  document.getElementById('video-url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doInsertVideo();
+    else if (e.key === 'Escape') closeVideoInsert();
+  });
+  document.getElementById('video-caption-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doInsertVideo();
+    else if (e.key === 'Escape') closeVideoInsert();
   });
 })();
 </script>
