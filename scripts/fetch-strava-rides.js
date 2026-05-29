@@ -7,7 +7,9 @@
  * file to Firebase Storage (gpx/ prefix). A Firestore document is also added
  * to the 'routes' collection so that planning.html displays each ride
  * automatically, and so that the generate-pmtiles workflow can include them
- * in the PMTiles vector-tile overlay.
+ * in the PMTiles vector-tile overlay. The script also updates Firestore stats
+ * docs for trips (stats/japan, stats/norway, etc.) and per-blog-post windows
+ * (stats/post_<blogPostId>) based on each post's tripDateFrom/tripDateTo.
  *
  * Required environment variables:
  *   STRAVA_CLIENT_ID      - Strava application Client ID
@@ -389,54 +391,38 @@ async function main() {
 // ── Stats document ────────────────────────────────────────────────────────────
 
 /**
- * Read all owner routes, compute cumulative totals and the current position
- * (end point of the most recently uploaded route), then write the results to
- * stats/japan. The home page reads this single document instead of
- * downloading the entire routes collection.
+ * Read owner Strava routes and recompute:
+ *   - per-post stats documents (stats/post_<blogPostId>)
+ *   - per-category totals in stats/<category> for home-page counters
  *
  * Uses { merge: true } so onsensCount (written by generate-points-snapshot.js)
- * is preserved.
+ * on stats/japan is preserved.
  */
-async function updateStatsDocument() {
-  console.log('\nRecomputing stats/japan from all owner routes...');
-  const snap = await db.collection('routes').where('isOwner', '==', true).get();
+function parseYmdToUtcMs(ymd, endOfDay = false) {
+  if (!ymd) return null;
+  return new Date(`${ymd}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`).getTime();
+}
 
-  // Optional date range — respects STRAVA_AFTER_DATE / STRAVA_BEFORE_DATE so that
-  // re-running this script for Japan never picks up future Norway routes.
-  const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
-  const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
-
+function computeStatsForRoutes(routes) {
   let totalDistanceKm    = 0;
   let totalElevationGain = 0;
   let latestTs           = -Infinity;
   let latestRouteData    = null;
 
-  snap.forEach(doc => {
-    const d = doc.data();
-
-    // Filter by activityDate if env vars are set.
-    // Routes without activityDate (uploaded before this field was added) are
-    // included unconditionally — they are all pre-existing Japan routes.
-    if (afterMs || beforeMs) {
-      const actMs = d.activityDate ? d.activityDate.toMillis() : null;
-      if (actMs !== null) {
-        if (afterMs  && actMs < afterMs)  return;
-        if (beforeMs && actMs > beforeMs) return;
-      }
-    }
-
-    if (typeof d.distanceKm === 'number')         totalDistanceKm    += d.distanceKm;
-    if (typeof d.totalElevationGain === 'number') totalElevationGain += d.totalElevationGain;
-    if (d.endLatLng) {
-      const ts = d.activityDate ? d.activityDate.toMillis()
-               : (d.uploadedAt && d.uploadedAt.seconds) ? d.uploadedAt.seconds * 1000 : 0;
-      if (ts > latestTs) { latestTs = ts; latestRouteData = d; }
+  routes.forEach(route => {
+    if (typeof route.distanceKm === 'number')         totalDistanceKm    += route.distanceKm;
+    if (typeof route.totalElevationGain === 'number') totalElevationGain += route.totalElevationGain;
+    if (route.endLatLng) {
+      const ts = route.activityDate ? route.activityDate.toMillis()
+               : (route.uploadedAt && route.uploadedAt.seconds) ? route.uploadedAt.seconds * 1000 : 0;
+      if (ts > latestTs) { latestTs = ts; latestRouteData = route; }
     }
   });
 
   const stats = {
     totalDistanceKm:    Math.round(totalDistanceKm * 10) / 10,
     totalElevationGain: Math.round(totalElevationGain),
+    rideCount:          routes.length,
     statsUpdatedAt:     admin.firestore.FieldValue.serverTimestamp(),
   };
   if (latestRouteData) {
@@ -444,12 +430,263 @@ async function updateStatsDocument() {
     stats.currentRouteName = (latestRouteData.metadata && latestRouteData.metadata.name)
       || latestRouteData.fileName || 'Latest ride';
   }
+  return stats;
+}
 
-  await db.collection('stats').doc('japan').set(stats, { merge: true });
-  console.log(`  ✓ totalDistanceKm    = ${stats.totalDistanceKm} km`);
-  console.log(`  ✓ totalElevationGain = ${stats.totalElevationGain} m`);
-  if (latestRouteData) {
-    console.log(`  ✓ currentPosition    = [${stats.currentPosition}] (${stats.currentRouteName})`);
+// ── Per-post route cache ──────────────────────────────────────────────────────
+
+/**
+ * Haversine great-circle distance in km.
+ */
+function haversineKm(la1, lo1, la2, lo2) {
+  const R    = 6371;
+  const dLat = (la2 - la1) * Math.PI / 180;
+  const dLon = (lo2 - lo1) * Math.PI / 180;
+  const a    = Math.sin(dLat / 2) ** 2 +
+               Math.cos(la1 * Math.PI / 180) * Math.cos(la2 * Math.PI / 180) *
+               Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Fetch GPX files for `matchingRoutes`, downsample the polylines, compute a
+ * cumulative elevation profile, then upload a compact JSON cache to Firebase
+ * Storage at `post-routes/post_<postId>.json`.
+ *
+ * Cache schema:
+ *   { totalDistanceKm, totalElevationGain, rideCount,
+ *     bounds: [[minLat,minLng],[maxLat,maxLng]],
+ *     firstPoint: [lat,lng], lastPoint: [lat,lng],
+ *     routes: [{ date, pts: [[lat,lng],...], eles: [m|null,...] }],
+ *     elevationProfile: [{ dist: km, ele: m }, ...],
+ *     generatedAt: ISO string }
+ */
+async function generatePostRouteCache(post, matchingRoutes) {
+  const BUCKET            = 'roots-eddf5.firebasestorage.app';
+  const MAX_PTS_PER_ROUTE = 300;  // max trackpoints per route after downsampling
+  const MAX_ELEV_PTS      = 600;  // max elevation profile points total
+
+  if (!matchingRoutes || matchingRoutes.length === 0) return;
+
+  // Sort chronologically so first/last markers are correct
+  const sorted = [...matchingRoutes].sort((a, b) => (a.activityMs || 0) - (b.activityMs || 0));
+
+  let totalDistanceKm    = 0;
+  let totalElevationGain = 0;
+  let minLat = Infinity,  maxLat = -Infinity;
+  let minLng = Infinity,  maxLng = -Infinity;
+  let firstPoint = null,  lastPoint = null;
+  const cacheRoutes    = [];
+  const rawElevProfile = [];  // full-resolution { dist, ele }
+  let cumDistGlobal    = 0;
+
+  for (const route of sorted) {
+    if (!route.storagePath) continue;
+
+    const url = `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/` +
+                `${encodeURIComponent(route.storagePath)}?alt=media`;
+
+    let pts = [], eles = [];
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`    GPX fetch failed (${res.status}) for ${route.storagePath}`);
+        continue;
+      }
+      const gpxText = await res.text();
+
+      // Parse trkpt elements with a regex (no DOM available in Node)
+      const trkptRe = /<trkpt([^>]*)>([\s\S]*?)<\/trkpt>/g;
+      let m;
+      while ((m = trkptRe.exec(gpxText)) !== null) {
+        const latM = m[1].match(/lat="([^"]+)"/);
+        const lonM = m[1].match(/lon="([^"]+)"/);
+        if (!latM || !lonM) continue;
+        const lat = parseFloat(latM[1]);
+        const lon = parseFloat(lonM[1]);
+        if (isNaN(lat) || isNaN(lon)) continue;
+        pts.push([lat, lon]);
+        const eleM = m[2].match(/<ele>([^<]+)<\/ele>/);
+        eles.push(eleM ? parseFloat(eleM[1]) : null);
+      }
+    } catch (err) {
+      console.warn(`    Could not process GPX for route ${route.id}: ${err.message}`);
+      continue;
+    }
+
+    if (pts.length === 0) continue;
+
+    // Accumulate distance + elevation gain at full resolution
+    for (let i = 0; i < pts.length; i++) {
+      if (i > 0) {
+        const seg = haversineKm(pts[i-1][0], pts[i-1][1], pts[i][0], pts[i][1]);
+        totalDistanceKm += seg;
+        cumDistGlobal   += seg;
+        if (eles[i] != null && eles[i-1] != null && eles[i] > eles[i-1]) {
+          totalElevationGain += eles[i] - eles[i-1];
+        }
+      }
+      if (eles[i] != null) rawElevProfile.push({ dist: cumDistGlobal, ele: eles[i] });
+      if (pts[i][0] < minLat) minLat = pts[i][0];
+      if (pts[i][0] > maxLat) maxLat = pts[i][0];
+      if (pts[i][1] < minLng) minLng = pts[i][1];
+      if (pts[i][1] > maxLng) maxLng = pts[i][1];
+    }
+
+    if (!firstPoint) firstPoint = pts[0];
+    lastPoint = pts[pts.length - 1];
+
+    // Downsample to at most MAX_PTS_PER_ROUTE points, always keeping the last
+    const step = Math.max(1, Math.ceil(pts.length / MAX_PTS_PER_ROUTE));
+    const indices = new Set();
+    for (let i = 0; i < pts.length; i += step) indices.add(i);
+    indices.add(pts.length - 1);
+    const sPts = [], sEles = [];
+    for (const i of [...indices].sort((a, b) => a - b)) {
+      sPts.push([Math.round(pts[i][0] * 1e5) / 1e5, Math.round(pts[i][1] * 1e5) / 1e5]);
+      sEles.push(eles[i] != null ? Math.round(eles[i]) : null);
+    }
+
+    const dateStr = route.activityMs
+      ? new Date(route.activityMs).toISOString().slice(0, 10)
+      : null;
+    cacheRoutes.push({ date: dateStr, pts: sPts, eles: sEles });
+  }
+
+  if (cacheRoutes.length === 0) {
+    console.log(`  No valid GPX data for post ${post.id}, skipping cache.`);
+    return;
+  }
+
+  // Downsample elevation profile to MAX_ELEV_PTS points
+  let elevProfile = rawElevProfile;
+  if (rawElevProfile.length > MAX_ELEV_PTS) {
+    const step = Math.ceil(rawElevProfile.length / MAX_ELEV_PTS);
+    elevProfile = rawElevProfile.filter((_, i) =>
+      i === 0 || i === rawElevProfile.length - 1 || i % step === 0
+    );
+  }
+  elevProfile = elevProfile.map(p => ({
+    dist: Math.round(p.dist * 10) / 10,
+    ele:  Math.round(p.ele)
+  }));
+
+  const bounds = minLat < Infinity
+    ? [[Math.round(minLat * 1e5) / 1e5, Math.round(minLng * 1e5) / 1e5],
+       [Math.round(maxLat * 1e5) / 1e5, Math.round(maxLng * 1e5) / 1e5]]
+    : null;
+
+  const cacheDoc = {
+    totalDistanceKm:    Math.round(totalDistanceKm * 10) / 10,
+    totalElevationGain: Math.round(totalElevationGain),
+    rideCount:          cacheRoutes.length,
+    bounds,
+    firstPoint: firstPoint
+      ? [Math.round(firstPoint[0] * 1e5) / 1e5, Math.round(firstPoint[1] * 1e5) / 1e5]
+      : null,
+    lastPoint: lastPoint
+      ? [Math.round(lastPoint[0] * 1e5) / 1e5, Math.round(lastPoint[1] * 1e5) / 1e5]
+      : null,
+    routes:           cacheRoutes,
+    elevationProfile: elevProfile,
+    generatedAt:      new Date().toISOString()
+  };
+
+  const storagePath = `post-routes/post_${post.id}.json`;
+  const jsonBuffer  = Buffer.from(JSON.stringify(cacheDoc), 'utf8');
+  console.log(`  Uploading ${storagePath} ` +
+    `(${(jsonBuffer.length / 1024).toFixed(1)} KB, ${cacheRoutes.length} route(s), ` +
+    `${Math.round(totalDistanceKm)} km)...`);
+
+  const fileRef = bucket.file(storagePath);
+  await fileRef.save(jsonBuffer, {
+    contentType: 'application/json',
+    metadata:    { cacheControl: 'public, max-age=3600' }
+  });
+  try {
+    await fileRef.makePublic();
+  } catch (err) {
+    console.warn(`  Note: could not set public ACL (${err.message})`);
+  }
+  console.log(`  ✓ post-routes/post_${post.id}.json saved`);
+}
+
+async function updateStatsDocument() {
+  console.log('\nRecomputing trip/post stats from Firestore routes...');
+  const routesSnap = await db.collection('routes')
+    .where('isOwner', '==', true)
+    .where('source', '==', 'strava')
+    .get();
+
+  const routes = [];
+  routesSnap.forEach(doc => {
+    const d = doc.data();
+    const activityMs = d.activityDate ? d.activityDate.toMillis() : null;
+    routes.push({
+      id: doc.id,
+      ...d,
+      activityMs
+    });
+  });
+
+  const postsSnap = await db.collection('blog_posts').get();
+  const posts = [];
+  postsSnap.forEach(doc => {
+    const d = doc.data();
+    if (!d || !d.tripDateFrom || !d.tripDateTo) return;
+    const fromMs = parseYmdToUtcMs(d.tripDateFrom, false);
+    const toMs   = parseYmdToUtcMs(d.tripDateTo, true);
+    if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs > toMs) return;
+    posts.push({
+      id: doc.id,
+      category: d.category || 'japan',
+      tripDateFrom: d.tripDateFrom,
+      tripDateTo: d.tripDateTo,
+      fromMs,
+      toMs
+    });
+  });
+
+  const categoryRouteIds = new Map();
+  for (const post of posts) {
+    const postRoutes = routes.filter(r => r.activityMs !== null && r.activityMs >= post.fromMs && r.activityMs <= post.toMs);
+    const postStats = computeStatsForRoutes(postRoutes);
+    await db.collection('stats').doc(`post_${post.id}`).set({
+      ...postStats,
+      category: post.category,
+      tripDateFrom: post.tripDateFrom,
+      tripDateTo: post.tripDateTo
+    }, { merge: true });
+    console.log(`  ✓ stats/post_${post.id} updated (${postStats.rideCount} rides)`);
+    await generatePostRouteCache(post, postRoutes);
+
+    if (!categoryRouteIds.has(post.category)) categoryRouteIds.set(post.category, new Set());
+    const categorySet = categoryRouteIds.get(post.category);
+    postRoutes.forEach(route => categorySet.add(route.id));
+  }
+
+  // Fallback to env date window for Japan when no category routes were inferred.
+  if (!categoryRouteIds.has('japan') || categoryRouteIds.get('japan').size === 0) {
+    const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
+    const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
+    const fallbackJapan = routes.filter(r => {
+      if (r.activityMs === null) return true;
+      if (afterMs && r.activityMs < afterMs) return false;
+      if (beforeMs && r.activityMs > beforeMs) return false;
+      return true;
+    });
+    categoryRouteIds.set('japan', new Set(fallbackJapan.map(r => r.id)));
+  }
+
+  for (const [category, ids] of categoryRouteIds.entries()) {
+    const categoryRoutes = routes.filter(r => ids.has(r.id));
+    const stats = computeStatsForRoutes(categoryRoutes);
+    await db.collection('stats').doc(category).set(stats, { merge: true });
+    console.log(`  ✓ stats/${category} totalDistanceKm    = ${stats.totalDistanceKm} km`);
+    console.log(`  ✓ stats/${category} totalElevationGain = ${stats.totalElevationGain} m`);
+    if (stats.currentPosition) {
+      console.log(`  ✓ stats/${category} currentPosition    = [${stats.currentPosition}] (${stats.currentRouteName})`);
+    }
   }
 }
 
