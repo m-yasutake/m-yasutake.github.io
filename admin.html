@@ -3797,7 +3797,7 @@ const GearManagerAdmin = (function () {
   async function uploadGpxFile(file, sourceUrl) {
     const storagePath = 'gpx/' + Date.now() + '_' + file.name;
     const country = getSelectedMapCountry();
-    const metadata = sourceUrl ? { sourceUrl, country } : { country };
+    const metadata = sourceUrl ? { sourceUrl } : {};
     await _mapStorage.ref(storagePath).put(file);
     await _mapDb.collection('routes').add({
       fileName: file.name, storagePath,
@@ -3852,7 +3852,7 @@ const GearManagerAdmin = (function () {
           pts.forEach(p => {
             const ref = _mapDb.collection('points').doc();
             batch.set(ref, { name: p.name, lat: p.lat, lon: p.lon, url: p.url || null,
-              country, metadata: { ...(p.metadata || {}), country }, fileName: file.name, storagePath,
+              country, metadata: p.metadata || {}, fileName: file.name, storagePath,
               uploadedAt: firebase.firestore.FieldValue.serverTimestamp() });
           });
           await batch.commit();
@@ -3890,7 +3890,7 @@ const GearManagerAdmin = (function () {
           _mapDb.collection('points').add({
             name: pointName, lat: parsed.lat, lon: parsed.lon, url,
             country,
-            metadata: { Type: type, country },
+            metadata: { Type: type },
             fileName: 'Google Maps - ' + pointName, storagePath: null,
             uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
           })
