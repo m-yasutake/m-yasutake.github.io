@@ -51,6 +51,8 @@ admin.initializeApp({
 
 const db     = admin.firestore();
 const bucket = admin.storage().bucket();
+const CLUSTER_CELL_SIZE = 0.08; // ~8-9km at Japan latitudes for overview clustering
+const MAX_CLUSTER_ITEMS = 12;
 
 function normalizePointType(rawType) {
   const type = rawType ? String(rawType).trim() : '';
@@ -68,15 +70,14 @@ function normalizePointType(rawType) {
 }
 
 function buildServerClusters(points) {
-  const CELL_SIZE = 0.08; // ~8-9km at Japan latitudes; tuned for planning-map overview
   const buckets = new Map();
 
   for (const p of points) {
     if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
     const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
     const type = normalizePointType(rawType);
-    const latKey = Math.floor(p.lat / CELL_SIZE);
-    const lonKey = Math.floor(p.lon / CELL_SIZE);
+    const latKey = Math.floor(p.lat / CLUSTER_CELL_SIZE);
+    const lonKey = Math.floor(p.lon / CLUSTER_CELL_SIZE);
     const key = `${type}:${latKey}:${lonKey}`;
     if (!buckets.has(key)) {
       buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [] });
@@ -85,7 +86,7 @@ function buildServerClusters(points) {
     bucket.latSum += p.lat;
     bucket.lonSum += p.lon;
     bucket.count += 1;
-    if (bucket.items.length < 12) {
+    if (bucket.items.length < MAX_CLUSTER_ITEMS) {
       bucket.items.push({ name: p.name || 'Point', url: p.url || null });
     }
   }

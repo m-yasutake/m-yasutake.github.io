@@ -710,17 +710,19 @@
   }
 
   function createPointMarker(pointData) {
-    const clusterCount = Number(pointData && pointData.metadata && pointData.metadata.clusterCount) || 0;
+    const clusterMeta = pointData && pointData.metadata && pointData.metadata.__cluster;
+    const clusterCount = Number(clusterMeta && clusterMeta.count) || 0;
     if (clusterCount > 1) {
+      const clusterClass = clusterCount > 100 ? 'marker-cluster-large' : (clusterCount > 10 ? 'marker-cluster-medium' : 'marker-cluster-small');
       const marker = L.marker([pointData.lat, pointData.lon], {
         icon: L.divIcon({
           html: '<div><span>' + clusterCount + '</span></div>',
-          className: 'marker-cluster marker-cluster-medium',
+          className: 'marker-cluster ' + clusterClass,
           iconSize: L.point(40, 40)
         })
       });
       marker.bindPopup(function() {
-        const items = (pointData.metadata && pointData.metadata.clusterItems) || [];
+        const items = (clusterMeta && clusterMeta.items) || [];
         let html = '<b>' + escapeHtml(pointData.name || 'Cluster') + '</b><br><span style="font-size:0.9em;color:#6c757d;">' + clusterCount + ' points</span>';
         if (items.length > 0) {
           html += '<ul style="margin:0.4em 0 0 1.1em;padding:0;max-height:180px;overflow:auto">';
@@ -1008,8 +1010,10 @@
               url: d.url || null,
               type: d.type || null,
               metadata: Object.assign({}, d.metadata || {}, {
-                clusterCount: d.count || 1,
-                clusterItems: d.items || null
+                __cluster: {
+                  count: d.count || 1,
+                  items: d.items || null
+                }
               })
             },
             fileName: d.fileName || 'points.json',
