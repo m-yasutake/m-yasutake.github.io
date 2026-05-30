@@ -4,9 +4,9 @@
  * generate-points-snapshot.js
  *
  * Downloads all point documents from the Firestore 'points' collection and
- * writes a points snapshot plus pre-clustered map markers to Firebase Storage
- * at points/points.json. The planning map page fetches this file on load
- * instead of paginating through Firestore and clustering on-device.
+ * writes a points snapshot plus server-prebuilt dynamic cluster levels to
+ * Firebase Storage at points/points.json. The planning map page fetches this
+ * file on load and switches cluster levels by zoom without clustering on-device.
  *
  * Usage:
  *   FIREBASE_SERVICE_ACCOUNT='<json>' node generate-points-snapshot.js
@@ -51,8 +51,10 @@ admin.initializeApp({
 
 const db     = admin.firestore();
 const bucket = admin.storage().bucket();
-const CLUSTER_CELL_SIZE = 0.5; // degrees; ~55km at ~36°N (Japan) — coarse cells keep the overview marker count low for performance
 const MAX_CLUSTER_ITEMS = 12; // keep popup lists readable while still showing representative nearby points
+const SERVER_CLUSTER_MIN_ZOOM = 3;
+const SERVER_CLUSTER_MAX_ZOOM = 8;
+const BASE_CLUSTER_CELL_SIZE = 1.2; // degrees at min zoom; cell size halves each zoom level for dynamic dissolve
 
 function normalizePointType(rawType) {
   const type = rawType ? String(rawType).trim() : '';
@@ -69,23 +71,29 @@ function normalizePointType(rawType) {
   return type;
 }
 
-function buildServerClusters(points) {
+function getClusterCellSizeForZoom(zoom) {
+  return BASE_CLUSTER_CELL_SIZE / Math.pow(2, Math.max(0, zoom - SERVER_CLUSTER_MIN_ZOOM));
+}
+
+function buildServerClustersForZoom(points, zoom) {
+  const cellSize = getClusterCellSizeForZoom(zoom);
   const buckets = new Map();
 
   for (const p of points) {
     if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
     const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
     const type = normalizePointType(rawType);
-    const latKey = Math.round(p.lat / CLUSTER_CELL_SIZE);
-    const lonKey = Math.round(p.lon / CLUSTER_CELL_SIZE);
+    const latKey = Math.round(p.lat / cellSize);
+    const lonKey = Math.round(p.lon / cellSize);
     const key = `${type}:${latKey}:${lonKey}`;
     if (!buckets.has(key)) {
-      buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [] });
+      buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [], points: [] });
     }
     const bucket = buckets.get(key);
     bucket.latSum += p.lat;
     bucket.lonSum += p.lon;
     bucket.count += 1;
+    bucket.points.push(p);
     if (bucket.items.length < MAX_CLUSTER_ITEMS) {
       bucket.items.push({ name: p.name || 'Point', url: p.url || null });
     }
@@ -93,15 +101,40 @@ function buildServerClusters(points) {
 
   return Array.from(buckets.values()).map((bucket) => {
     const count = bucket.count;
+    if (count === 1) {
+      const single = bucket.points[0];
+      return {
+        id: single.id || null,
+        name: single.name || 'Point',
+        lat: single.lat,
+        lon: single.lon,
+        url: single.url || null,
+        type: single.type || null,
+        metadata: single.metadata || {},
+        fileName: single.fileName || null
+      };
+    }
     return {
       name: count > 1 ? `${bucket.type} (${count})` : (bucket.items[0] && bucket.items[0].name) || bucket.type,
       lat: bucket.latSum / count,
       lon: bucket.lonSum / count,
       type: bucket.type,
-      count,
-      items: bucket.items
+      metadata: {
+        __cluster: {
+          count,
+          items: bucket.items
+        }
+      }
     };
   });
+}
+
+function buildServerClusterLevels(points) {
+  const levels = {};
+  for (let zoom = SERVER_CLUSTER_MIN_ZOOM; zoom <= SERVER_CLUSTER_MAX_ZOOM; zoom++) {
+    levels[String(zoom)] = buildServerClustersForZoom(points, zoom);
+  }
+  return levels;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -172,14 +205,21 @@ async function main() {
   );
   console.log('  ✓ stats/japan onsensCount updated.');
 
-  const clusters = buildServerClusters(points);
-  console.log(`Server clusters: ${clusters.length}`);
+  const clustersByZoom = buildServerClusterLevels(points);
+  Object.keys(clustersByZoom).forEach((zoom) => {
+    console.log(`Server clusters @ z${zoom}: ${clustersByZoom[zoom].length}`);
+  });
 
   // Serialise to JSON — wrap in an envelope so the client can detect the
   // generation time and query Firestore for only the delta (new points added
   // since the snapshot was taken).
   const generatedAt = new Date().toISOString();
-  const json   = JSON.stringify({ generatedAt, points, clusters });
+  const json   = JSON.stringify({
+    generatedAt,
+    points,
+    clustersByZoom,
+    clusterZoomRange: { min: SERVER_CLUSTER_MIN_ZOOM, max: SERVER_CLUSTER_MAX_ZOOM, disableClusteringAtZoom: SERVER_CLUSTER_MAX_ZOOM + 1 }
+  });
   const buffer = Buffer.from(json, 'utf8');
   console.log(`Snapshot size: ${(buffer.length / 1024).toFixed(1)} KB`);
 
