@@ -991,7 +991,7 @@
 
   function normalizeServerClusterPoint(d) {
     const pointData = normalizeSnapshotPoint(d);
-    const count = Number((d && d.count) || (d && d.metadata && d.metadata.__cluster && d.metadata.__cluster.count));
+    const count = Number(d?.count ?? d?.metadata?.__cluster?.count ?? 0);
     if (count > 1 && (!pointData.metadata || !pointData.metadata.__cluster)) {
       pointData.metadata = Object.assign({}, pointData.metadata, {
         __cluster: {
@@ -1062,7 +1062,8 @@
           } else if (data && Array.isArray(data.points)) {
             generatedAt = data.generatedAt || null;
             snapPoints = data.points;
-            const disableZoom = Number(data.clusterZoomRange && data.clusterZoomRange.disableClusteringAtZoom);
+            const disableZoomRaw = data.clusterZoomRange?.disableClusteringAtZoom;
+            const disableZoom = Number(disableZoomRaw);
             serverClusterDisableZoom = Number.isFinite(disableZoom) ? disableZoom : 9;
             if (data.clustersByZoom && typeof data.clustersByZoom === 'object') {
               serverClusterLevels = data.clustersByZoom;

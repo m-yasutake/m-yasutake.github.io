@@ -54,6 +54,7 @@ const bucket = admin.storage().bucket();
 const MAX_CLUSTER_ITEMS = 12; // keep popup lists readable while still showing representative nearby points
 const SERVER_CLUSTER_MIN_ZOOM = 3;
 const SERVER_CLUSTER_MAX_ZOOM = 8;
+const SERVER_CLUSTER_DISABLE_ZOOM = 9; // above this zoom render raw points for full detail
 const BASE_CLUSTER_CELL_SIZE = 1.2; // degrees at min zoom; cell size halves each zoom level for dynamic dissolve
 
 function normalizePointType(rawType) {
@@ -218,7 +219,7 @@ async function main() {
     generatedAt,
     points,
     clustersByZoom,
-    clusterZoomRange: { min: SERVER_CLUSTER_MIN_ZOOM, max: SERVER_CLUSTER_MAX_ZOOM, disableClusteringAtZoom: SERVER_CLUSTER_MAX_ZOOM + 1 }
+    clusterZoomRange: { min: SERVER_CLUSTER_MIN_ZOOM, max: SERVER_CLUSTER_MAX_ZOOM, disableClusteringAtZoom: SERVER_CLUSTER_DISABLE_ZOOM }
   });
   const buffer = Buffer.from(json, 'utf8');
   console.log(`Snapshot size: ${(buffer.length / 1024).toFixed(1)} KB`);
