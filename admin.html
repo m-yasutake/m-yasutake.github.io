@@ -1305,6 +1305,13 @@
       <div class="admin-header">
         <h1>Map Data 🗺️</h1>
         <p>Upload GPX routes, CSV point files, or add points from Google Maps. Changes appear on the Map page immediately.</p>
+        <div class="form-group" style="max-width:260px;margin-top:.9rem">
+          <label for="mapdata-country-select">Country Tag</label>
+          <select id="mapdata-country-select" class="form-control">
+            <option value="Japan" selected>Japan</option>
+            <option value="Norway">Norway</option>
+          </select>
+        </div>
       </div>
 
       <!-- GPX Routes upload -->
@@ -3624,6 +3631,17 @@ const GearManagerAdmin = (function () {
     }
   }
 
+  function getSelectedMapCountry() {
+    const select = document.getElementById('mapdata-country-select');
+    if (!select) return '';
+    const value = select.value.trim();
+    if (value) return value;
+    const fallback = select.options && select.options[0] && select.options[0].value
+      ? String(select.options[0].value).trim()
+      : '';
+    return fallback;
+  }
+
   function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
     if (lines.length < 2) return [];
@@ -3783,11 +3801,12 @@ const GearManagerAdmin = (function () {
 
   async function uploadGpxFile(file, sourceUrl) {
     const storagePath = 'gpx/' + Date.now() + '_' + file.name;
+    const country = getSelectedMapCountry();
     const metadata = sourceUrl ? { sourceUrl } : {};
     await _mapStorage.ref(storagePath).put(file);
     await _mapDb.collection('routes').add({
       fileName: file.name, storagePath,
-      metadata, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+      country, metadata, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
 
@@ -3834,10 +3853,11 @@ const GearManagerAdmin = (function () {
           const storagePath = 'csv/' + Date.now() + '_' + file.name;
           await _mapStorage.ref(storagePath).put(file);
           const batch = _mapDb.batch();
+          const country = getSelectedMapCountry();
           pts.forEach(p => {
             const ref = _mapDb.collection('points').doc();
             batch.set(ref, { name: p.name, lat: p.lat, lon: p.lon, url: p.url || null,
-              metadata: p.metadata, fileName: file.name, storagePath,
+              country, metadata: p.metadata, fileName: file.name, storagePath,
               uploadedAt: firebase.firestore.FieldValue.serverTimestamp() });
           });
           await batch.commit();
@@ -3864,6 +3884,7 @@ const GearManagerAdmin = (function () {
       if (!url) { TomikaBikes.showToast('Please enter a Google Maps URL', 'error'); return; }
       const nameOverride = document.getElementById('gmaps-admin-name').value.trim();
       const type = document.getElementById('gmaps-admin-type').value;
+      const country = getSelectedMapCountry();
       const statusEl = document.getElementById('gmaps-admin-status');
       statusEl.textContent = 'Processing…';
       btn.disabled = true;
@@ -3873,6 +3894,7 @@ const GearManagerAdmin = (function () {
         return ensureMapReady().then(() =>
           _mapDb.collection('points').add({
             name: pointName, lat: parsed.lat, lon: parsed.lon, url,
+            country,
             metadata: { Type: type },
             fileName: 'Google Maps - ' + pointName, storagePath: null,
             uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
