@@ -3634,7 +3634,11 @@ const GearManagerAdmin = (function () {
   function getSelectedMapCountry() {
     const select = document.getElementById('mapdata-country-select');
     const value = select && typeof select.value === 'string' ? select.value.trim() : '';
-    return value || 'Japan';
+    if (value) return value;
+    const fallback = select && select.options && select.options[0] && select.options[0].value
+      ? String(select.options[0].value).trim()
+      : '';
+    return fallback || 'Japan';
   }
 
   function parseCSV(csvText) {
@@ -3852,7 +3856,7 @@ const GearManagerAdmin = (function () {
           pts.forEach(p => {
             const ref = _mapDb.collection('points').doc();
             batch.set(ref, { name: p.name, lat: p.lat, lon: p.lon, url: p.url || null,
-              country, metadata: p.metadata || {}, fileName: file.name, storagePath,
+              country, metadata: p.metadata, fileName: file.name, storagePath,
               uploadedAt: firebase.firestore.FieldValue.serverTimestamp() });
           });
           await batch.commit();
