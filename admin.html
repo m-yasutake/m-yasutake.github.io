@@ -3626,12 +3626,15 @@ const GearManagerAdmin = (function () {
     const SDK_LOAD_TIMEOUT_MS = 10000;
     const SDK_POLL_INTERVAL_MS = 200;
     const already = src => [...document.scripts].some(s => (s.getAttribute('src') || '').includes(src));
-    const waitFor = ready => new Promise((resolve, reject) => {
+    const waitFor = (ready, sdkName) => new Promise((resolve, reject) => {
       if (ready()) { resolve(); return; }
       const start = Date.now();
       (function poll() {
         if (ready()) { resolve(); return; }
-        if (Date.now() - start > SDK_LOAD_TIMEOUT_MS) { reject(new Error('Timed out loading Firebase SDK')); return; }
+        if (Date.now() - start > SDK_LOAD_TIMEOUT_MS) {
+          reject(new Error('Timed out loading Firebase ' + sdkName + ' SDK'));
+          return;
+        }
         setTimeout(poll, SDK_POLL_INTERVAL_MS);
       })();
     });
@@ -3642,9 +3645,9 @@ const GearManagerAdmin = (function () {
       document.head.appendChild(s);
     });
     return load(FIREBASE_AUTH_COMPAT_URL)
-      .then(() => waitFor(() => typeof firebase.auth === 'function'))
+      .then(() => waitFor(() => typeof firebase.auth === 'function', 'Auth'))
       .then(() => load(FIREBASE_STORAGE_COMPAT_URL))
-      .then(() => waitFor(() => typeof firebase.storage === 'function'))
+      .then(() => waitFor(() => typeof firebase.storage === 'function', 'Storage'))
       .then(() => { _mapSdkLoaded = true; });
   }
 
