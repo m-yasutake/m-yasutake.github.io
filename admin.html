@@ -3620,14 +3620,19 @@ const GearManagerAdmin = (function () {
 
   function loadMapSdks() {
     if (_mapSdkLoaded) return Promise.resolve();
+    const FIREBASE_SDK_VERSION = '10.12.2';
+    const FIREBASE_AUTH_COMPAT_URL = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION + '/firebase-auth-compat.js';
+    const FIREBASE_STORAGE_COMPAT_URL = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION + '/firebase-storage-compat.js';
+    const SDK_LOAD_TIMEOUT_MS = 10000;
+    const SDK_POLL_INTERVAL_MS = 200;
     const already = src => [...document.scripts].some(s => (s.getAttribute('src') || '').includes(src));
     const waitFor = ready => new Promise((resolve, reject) => {
       if (ready()) { resolve(); return; }
       const start = Date.now();
       (function poll() {
         if (ready()) { resolve(); return; }
-        if (Date.now() - start > 10000) { reject(new Error('Timed out loading Firebase SDK')); return; }
-        setTimeout(poll, 200);
+        if (Date.now() - start > SDK_LOAD_TIMEOUT_MS) { reject(new Error('Timed out loading Firebase SDK')); return; }
+        setTimeout(poll, SDK_POLL_INTERVAL_MS);
       })();
     });
     const load = src => new Promise((res, rej) => {
@@ -3636,9 +3641,9 @@ const GearManagerAdmin = (function () {
       s.src = src; s.onload = res; s.onerror = rej;
       document.head.appendChild(s);
     });
-    return load('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js')
+    return load(FIREBASE_AUTH_COMPAT_URL)
       .then(() => waitFor(() => typeof firebase.auth === 'function'))
-      .then(() => load('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js'))
+      .then(() => load(FIREBASE_STORAGE_COMPAT_URL))
       .then(() => waitFor(() => typeof firebase.storage === 'function'))
       .then(() => { _mapSdkLoaded = true; });
   }
