@@ -88,13 +88,14 @@ function buildServerClustersForZoom(points, zoom) {
     const lonKey = Math.round(p.lon / cellSize);
     const key = `${type}:${latKey}:${lonKey}`;
     if (!buckets.has(key)) {
-      buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [], points: [] });
+      buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [], singlePoint: null });
     }
     const bucket = buckets.get(key);
     bucket.latSum += p.lat;
     bucket.lonSum += p.lon;
     bucket.count += 1;
-    bucket.points.push(p);
+    if (bucket.count === 1) bucket.singlePoint = p;
+    else bucket.singlePoint = null;
     if (bucket.items.length < MAX_CLUSTER_ITEMS) {
       bucket.items.push({ name: p.name || 'Point', url: p.url || null });
     }
@@ -103,7 +104,7 @@ function buildServerClustersForZoom(points, zoom) {
   return Array.from(buckets.values()).map((bucket) => {
     const count = bucket.count;
     if (count === 1) {
-      const single = bucket.points[0];
+      const single = bucket.singlePoint;
       return {
         id: single.id || null,
         name: single.name || 'Point',

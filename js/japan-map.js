@@ -975,6 +975,7 @@
   let serverClusterLevels = null;
   let serverClusterLevelKeys = [];
   let serverClusterLevelActiveKey = null;
+  let snapshotZoomListener = null;
 
   function normalizeSnapshotPoint(d) {
     return {
@@ -1088,7 +1089,12 @@
           snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
           applySnapshotDisplayForZoom(map.getZoom(), true);
           if (serverClusterLevelKeys.length > 0) {
-            map.on('zoomend', function() { applySnapshotDisplayForZoom(map.getZoom(), false); });
+            if (snapshotZoomListener) map.off('zoomend', snapshotZoomListener);
+            snapshotZoomListener = function() { applySnapshotDisplayForZoom(map.getZoom(), false); };
+            map.on('zoomend', snapshotZoomListener);
+          } else if (snapshotZoomListener) {
+            map.off('zoomend', snapshotZoomListener);
+            snapshotZoomListener = null;
           }
           if (generatedAt && db) {
             const since = firebase.firestore.Timestamp.fromDate(new Date(generatedAt));
