@@ -185,7 +185,30 @@
 
   L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
-  const markerClusterGroup = L.layerGroup();
+  const markerClusterGroup = L.markerClusterGroup({
+    maxClusterRadius: function(zoom) {
+      if (zoom >= 9) return 0;
+      return Math.max(0, 80 - (zoom * 4));
+    },
+    disableClusteringAtZoom: 9,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    chunkedLoading: true,
+    chunkInterval: 100,
+    chunkDelay: 20,
+    iconCreateFunction: function(cluster) {
+      const count = cluster.getChildCount();
+      let clusterClass = 'marker-cluster-small';
+      if (count > 100) clusterClass = 'marker-cluster-large';
+      else if (count > 10) clusterClass = 'marker-cluster-medium';
+      return L.divIcon({
+        html: '<div><span>' + count + '</span></div>',
+        className: 'marker-cluster ' + clusterClass,
+        iconSize: L.point(40, 40)
+      });
+    }
+  });
   markerClusterGroup.addTo(map);
 
   // ── Route layer groups ─────────────────────────────────────
@@ -985,24 +1008,17 @@
           return res.json();
         })
         .then(data => {
-          let snapPoints, generatedAt, usingServerClusters = false;
+          let snapPoints, generatedAt;
           if (Array.isArray(data)) {
             snapPoints = data; generatedAt = null;
           } else if (data && Array.isArray(data.points)) {
             generatedAt = data.generatedAt || null;
-            if (Array.isArray(data.clusters) && data.clusters.length > 0) {
-              usingServerClusters = true;
-              snapPoints = data.clusters;
-            } else {
-              snapPoints = data.points;
-            }
+            snapPoints = data.points;
           } else {
             throw new Error('unrecognised snapshot format');
           }
           if (snapPoints.length === 0) throw new Error('empty snapshot');
-          if (!usingServerClusters) {
-            snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
-          }
+          snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
           const batch = snapPoints.map(d => ({
             pointData: {
               name: d.name || 'Point',
@@ -1010,18 +1026,13 @@
               lon: d.lon,
               url: d.url || null,
               type: d.type || null,
-              metadata: Object.assign({}, d.metadata || {}, (d.count && d.count > 1) ? {
-                __cluster: {
-                  count: d.count,
-                  items: d.items || null
-                }
-              } : {})
+              metadata: d.metadata || {}
             },
             fileName: d.fileName || 'points.json',
             firebaseDocId: d.id || null
           }));
           addPointsBatch(batch);
-          if (!usingServerClusters && generatedAt && db) {
+          if (generatedAt && db) {
             const since = firebase.firestore.Timestamp.fromDate(new Date(generatedAt));
             db.collection('points').where('uploadedAt', '>', since).get()
               .then(snap => {
@@ -1037,9 +1048,6 @@
               })
               .catch(() => markLoaded('points'));
           } else {
-            if (usingServerClusters) {
-              console.info('Using server-side point clusters from snapshot; skipping Firestore delta query.');
-            }
             markLoaded('points');
           }
         })
