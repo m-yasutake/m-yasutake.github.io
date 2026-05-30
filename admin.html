@@ -3627,7 +3627,7 @@ const GearManagerAdmin = (function () {
       (function poll() {
         if (ready()) { resolve(); return; }
         if (Date.now() - start > 10000) { reject(new Error('Timed out loading Firebase SDK')); return; }
-        setTimeout(poll, 100);
+        setTimeout(poll, 200);
       })();
     });
     const load = src => new Promise((res, rej) => {
