@@ -51,7 +51,7 @@ admin.initializeApp({
 
 const db     = admin.firestore();
 const bucket = admin.storage().bucket();
-const MAX_CLUSTER_ITEMS = 12; // keep popup lists readable while still showing representative nearby points
+const MAX_CLUSTER_ITEMS = 50; // keep popup lists readable while still showing representative nearby points
 const SERVER_CLUSTER_MIN_ZOOM = 3;
 const SERVER_CLUSTER_MAX_ZOOM = 8;
 const SERVER_CLUSTER_DISABLE_ZOOM = 9; // above this zoom render raw points for full detail
