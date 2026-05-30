@@ -3633,12 +3633,13 @@ const GearManagerAdmin = (function () {
 
   function getSelectedMapCountry() {
     const select = document.getElementById('mapdata-country-select');
-    const value = select && typeof select.value === 'string' ? select.value.trim() : '';
+    if (!select) return '';
+    const value = select.value.trim();
     if (value) return value;
-    const fallback = select && select.options && select.options[0] && select.options[0].value
+    const fallback = select.options && select.options[0] && select.options[0].value
       ? String(select.options[0].value).trim()
       : '';
-    return fallback || 'Japan';
+    return fallback;
   }
 
   function parseCSV(csvText) {
