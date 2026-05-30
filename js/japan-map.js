@@ -970,7 +970,7 @@
 
   let _pointsLoadStarted = false;
   const POINTS_BATCH_SIZE = 1000;
-  const SERVER_CLUSTER_DISABLE_ZOOM = 9;
+  let serverClusterDisableZoom = 9;
   let snapshotRawPoints = null;
   let serverClusterLevels = null;
   let serverClusterLevelKeys = [];
@@ -991,7 +991,7 @@
 
   function normalizeServerClusterPoint(d) {
     const pointData = normalizeSnapshotPoint(d);
-    const count = Number(d && d.count);
+    const count = Number((d && d.count) || (d && d.metadata && d.metadata.__cluster && d.metadata.__cluster.count));
     if (count > 1 && (!pointData.metadata || !pointData.metadata.__cluster)) {
       pointData.metadata = Object.assign({}, pointData.metadata, {
         __cluster: {
@@ -1004,7 +1004,7 @@
   }
 
   function getServerClusterLevelKeyForZoom(zoom) {
-    if (!serverClusterLevelKeys.length || zoom >= SERVER_CLUSTER_DISABLE_ZOOM) return null;
+    if (!serverClusterLevelKeys.length || zoom >= serverClusterDisableZoom) return null;
     let selected = serverClusterLevelKeys[0];
     for (let i = 0; i < serverClusterLevelKeys.length; i++) {
       const key = serverClusterLevelKeys[i];
@@ -1062,6 +1062,8 @@
           } else if (data && Array.isArray(data.points)) {
             generatedAt = data.generatedAt || null;
             snapPoints = data.points;
+            const disableZoom = Number(data.clusterZoomRange && data.clusterZoomRange.disableClusteringAtZoom);
+            serverClusterDisableZoom = Number.isFinite(disableZoom) ? disableZoom : 9;
             if (data.clustersByZoom && typeof data.clustersByZoom === 'object') {
               serverClusterLevels = data.clustersByZoom;
               serverClusterLevelKeys = Object.keys(serverClusterLevels)
@@ -1074,6 +1076,7 @@
             } else {
               serverClusterLevels = null;
               serverClusterLevelKeys = [];
+              serverClusterDisableZoom = 9;
             }
           } else {
             throw new Error('unrecognised snapshot format');
