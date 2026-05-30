@@ -55,7 +55,7 @@ const MAX_CLUSTER_ITEMS = 50; // keep popup lists readable while still showing r
 const SERVER_CLUSTER_MIN_ZOOM = 3;
 const SERVER_CLUSTER_MAX_ZOOM = 8;
 const SERVER_CLUSTER_DISABLE_ZOOM = 9; // above this zoom render raw points for full detail
-const BASE_CLUSTER_CELL_SIZE = 2.0; // degrees at min zoom; cell size halves each zoom level for dynamic dissolve
+const BASE_CLUSTER_CELL_SIZE = 6.0; // degrees at min zoom; cell size halves each zoom level for dynamic dissolve
 
 function normalizePointType(rawType) {
   const type = rawType ? String(rawType).trim() : '';
