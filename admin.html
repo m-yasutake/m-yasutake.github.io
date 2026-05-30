@@ -3812,7 +3812,7 @@ const GearManagerAdmin = (function () {
     const storagePath = 'gpx/' + Date.now() + '_' + file.name;
     const country = getSelectedMapCountry();
     const metadata = sourceUrl ? { sourceUrl } : {};
-    await _mapStorage.ref(storagePath).put(file);
+    await _mapStorage.ref(storagePath).put(file, { contentType: 'application/gpx+xml' });
     await _mapDb.collection('routes').add({
       fileName: file.name, storagePath,
       country, metadata, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
