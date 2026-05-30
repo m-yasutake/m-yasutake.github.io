@@ -2,11 +2,10 @@
 #
 # Workflow: Generate Points Snapshot
 #
-# Exports all point documents from the Firestore 'points' collection to a
-# single JSON file (points/points.json) in Firebase Storage. The planning.html
-# map page fetches this file on load instead of paginating through Firestore,
-# replacing 10+ sequential network round-trips with a single cached HTTP
-# request and dramatically reducing initial page load time.
+# Exports all point documents from the Firestore 'points' collection plus
+# server-side clustered map markers to a single JSON file (points/points.json)
+# in Firebase Storage. The planning map page fetches this file on load instead
+# of paginating through Firestore and clustering on-device.
 #
 # Required secrets (Settings > Secrets and variables > Actions):
 #   FIREBASE_SERVICE_ACCOUNT: JSON string of a Firebase service account key
