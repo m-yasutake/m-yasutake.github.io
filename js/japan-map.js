@@ -185,10 +185,11 @@
 
   L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
+  const MAX_CLUSTER_RADIUS = 80;
+  const CLUSTER_RADIUS_ZOOM_FACTOR = 4;
   const markerClusterGroup = L.markerClusterGroup({
     maxClusterRadius: function(zoom) {
-      if (zoom >= 9) return 0;
-      return Math.max(0, 80 - (zoom * 4));
+      return Math.max(0, MAX_CLUSTER_RADIUS - (zoom * CLUSTER_RADIUS_ZOOM_FACTOR));
     },
     disableClusteringAtZoom: 9,
     spiderfyOnMaxZoom: true,
