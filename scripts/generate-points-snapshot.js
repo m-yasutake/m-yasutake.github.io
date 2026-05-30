@@ -76,8 +76,8 @@ function buildServerClusters(points) {
     if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
     const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
     const type = normalizePointType(rawType);
-    const latKey = Math.floor(p.lat / CLUSTER_CELL_SIZE);
-    const lonKey = Math.floor(p.lon / CLUSTER_CELL_SIZE);
+    const latKey = Math.round(p.lat / CLUSTER_CELL_SIZE);
+    const lonKey = Math.round(p.lon / CLUSTER_CELL_SIZE);
     const key = `${type}:${latKey}:${lonKey}`;
     if (!buckets.has(key)) {
       buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [] });

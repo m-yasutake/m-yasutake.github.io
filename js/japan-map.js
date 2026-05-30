@@ -1009,12 +1009,12 @@
               lon: d.lon,
               url: d.url || null,
               type: d.type || null,
-              metadata: Object.assign({}, d.metadata || {}, {
+              metadata: Object.assign({}, d.metadata || {}, (d.count && d.count > 1) ? {
                 __cluster: {
-                  count: d.count || 1,
+                  count: d.count,
                   items: d.items || null
                 }
-              })
+              } : {})
             },
             fileName: d.fileName || 'points.json',
             firebaseDocId: d.id || null
@@ -1036,6 +1036,9 @@
               })
               .catch(() => markLoaded('points'));
           } else {
+            if (usingServerClusters) {
+              console.info('Using server-side point clusters from snapshot; skipping Firestore delta query.');
+            }
             markLoaded('points');
           }
         })
