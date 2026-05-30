@@ -1,6 +1,6 @@
 // js/japan-map.js — Full interactive map for the Japan trip
 // Includes: PMTiles interceptor, Leaflet map + Firebase integration,
-// route/point loading, marker clustering, filter UI, fullscreen toggle.
+// route/point loading, server-side clustered points, filter UI, fullscreen toggle.
 
 // ── PMTiles protocol interceptor ────────────────────────────
 (function () {
@@ -43,11 +43,6 @@
   const routes = [];
   const points = [];
   let colorIdx = 0;
-
-  // ── Planned Routes deferred loading state ──────────────────
-  const _pendingPlanningRoutes = [];
-  let _planningRoutesReady = false;
-  let _planningRoutesApplied = false;
 
   const POINT_ICON_SIZE = [18, 18];
   const POINT_ICON_ANCHOR = [9, 9];
@@ -190,30 +185,7 @@
 
   L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
-  const markerClusterGroup = L.markerClusterGroup({
-    maxClusterRadius: function(zoom) {
-      if (zoom >= 9) return 0;
-      return Math.max(0, 80 - (zoom * 4));
-    },
-    disableClusteringAtZoom: 9,
-    spiderfyOnMaxZoom: true,
-    showCoverageOnHover: false,
-    zoomToBoundsOnClick: true,
-    chunkedLoading: true,
-    chunkInterval: 100,
-    chunkDelay: 20,
-    iconCreateFunction: function(cluster) {
-      const count = cluster.getChildCount();
-      let clusterClass = 'marker-cluster-small';
-      if (count > 100) clusterClass = 'marker-cluster-large';
-      else if (count > 10) clusterClass = 'marker-cluster-medium';
-      return L.divIcon({
-        html: '<div><span>' + count + '</span></div>',
-        className: 'marker-cluster ' + clusterClass,
-        iconSize: L.point(40, 40)
-      });
-    }
-  });
+  const markerClusterGroup = L.layerGroup();
   markerClusterGroup.addTo(map);
 
   // ── Route layer groups ─────────────────────────────────────
@@ -709,53 +681,6 @@
     statsDiv.innerHTML = html + '</table>';
   }
 
-  function loadBundledRoutes() {
-    fetch('assets/gpx/routes.json')
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(files => {
-        if (files.length === 0) { markLoaded('bundled'); return; }
-        let loaded = 0;
-        files.forEach(f => {
-          fetch('assets/gpx/' + f).then(r => r.text()).then(txt => { addRoute(txt, f); })
-            .finally(() => { loaded++; if (loaded >= files.length) markLoaded('bundled'); });
-        });
-      })
-      .catch(() => { markLoaded('bundled'); });
-  }
-
-  // ── CSV Point Logic ─────────────────────────────────────────
-  function parseCSV(csvText) {
-    const lines = csvText.trim().split('\n');
-    if (lines.length < 2) return [];
-    function parseCSVLine(line) {
-      const result = []; let current = '', inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else inQuotes = !inQuotes; }
-        else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
-        else current += char;
-      }
-      result.push(current.trim()); return result;
-    }
-    const headers = parseCSVLine(lines[0]);
-    const nameIdx = headers.findIndex(h => h.toLowerCase() === 'name');
-    const latIdx = headers.findIndex(h => h.toLowerCase() === 'latitude' || h.toLowerCase() === 'lat');
-    const lonIdx = headers.findIndex(h => h.toLowerCase() === 'longitude' || h.toLowerCase() === 'lon' || h.toLowerCase() === 'lng');
-    const urlIdx = headers.findIndex(h => { const k = h.toLowerCase().trim(); return k==='url'||k==='link'||k==='page'||k==='website'; });
-    if (latIdx === -1 || lonIdx === -1) { alert('CSV must have latitude and longitude columns'); return []; }
-    const parsedPoints = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]);
-      if (values.length < 2) continue;
-      const lat = parseFloat(values[latIdx]), lon = parseFloat(values[lonIdx]);
-      if (isNaN(lat) || isNaN(lon)) continue;
-      const metadata = {};
-      headers.forEach((header, idx) => { if (idx!==latIdx&&idx!==lonIdx&&idx!==nameIdx&&idx!==urlIdx&&values[idx]) metadata[header]=values[idx]; });
-      parsedPoints.push({ name: nameIdx!==-1&&values[nameIdx]?values[nameIdx]:'Point '+i, lat, lon, url: urlIdx!==-1&&values[urlIdx]?values[urlIdx]:null, metadata });
-    }
-    return parsedPoints;
-  }
-
   function resolvePointUrl(data, metadata) {
     const fromData = data && (data.url||data.URL||data.link||data.Link||data.website||data.Website||data.page||data.Page);
     if (fromData) return String(fromData).trim();
@@ -785,6 +710,33 @@
   }
 
   function createPointMarker(pointData) {
+    const clusterMeta = pointData && pointData.metadata && pointData.metadata.__cluster;
+    const clusterCount = Number(clusterMeta && clusterMeta.count) || 0;
+    if (clusterCount > 1) {
+      const clusterClass = clusterCount > 100 ? 'marker-cluster-large' : (clusterCount > 10 ? 'marker-cluster-medium' : 'marker-cluster-small');
+      const marker = L.marker([pointData.lat, pointData.lon], {
+        icon: L.divIcon({
+          html: '<div><span>' + clusterCount + '</span></div>',
+          className: 'marker-cluster ' + clusterClass,
+          iconSize: L.point(40, 40)
+        })
+      });
+      marker.bindPopup(function() {
+        const items = (clusterMeta && clusterMeta.items) || [];
+        let html = '<b>' + escapeHtml(pointData.name || 'Cluster') + '</b><br><span style="font-size:0.9em;color:#6c757d;">' + clusterCount + ' points</span>';
+        if (items.length > 0) {
+          html += '<ul style="margin:0.4em 0 0 1.1em;padding:0;max-height:180px;overflow:auto">';
+          items.forEach(function(item) {
+            const itemName = item && item.name ? item.name : 'Point';
+            const itemUrl = item && item.url ? String(item.url) : '';
+            html += '<li>' + (itemUrl ? '<a href="' + escapeAttr(itemUrl) + '" target="_blank" rel="noopener">' + escapeHtml(itemName) + '</a>' : escapeHtml(itemName)) + '</li>';
+          });
+          html += '</ul>';
+        }
+        return html;
+      });
+      return marker;
+    }
     const pointType = getPointType(pointData);
     const marker = L.marker([pointData.lat, pointData.lon], { icon: getPointIcon(pointType) });
     marker.bindPopup(function() {
@@ -814,21 +766,14 @@
   }
 
   function addPointsBatch(pointDataArray) {
-    const markers = [];
     for (let i = 0; i < pointDataArray.length; i++) {
       const { pointData, fileName, firebaseDocId } = pointDataArray[i];
       const marker = createPointMarker(pointData);
-      markers.push(marker);
+      // LayerGroup has addLayer/removeLayer but no addLayers batch API.
+      markerClusterGroup.addLayer(marker);
       points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
     }
-    markerClusterGroup.addLayers(markers);
     scheduleRenderPointToggles();
-  }
-
-  function addPointsFromCSV(csvText, fileName, docIdMap) {
-    const parsedPoints = parseCSV(csvText);
-    if (!parsedPoints.length) { alert('No valid points found in ' + fileName); return; }
-    addPointsBatch(parsedPoints.map((p, idx) => ({ pointData: p, fileName, firebaseDocId: docIdMap ? docIdMap[idx] : null })));
   }
 
   function removePointFromMap(idx) { markerClusterGroup.removeLayer(points[idx].marker); points.splice(idx, 1); renderPointToggles(); }
@@ -880,7 +825,7 @@
   const loadedFirebasePointIds = new Set();
   let metaPointIdx = null;
 
-  const _loadTasks = { routes: false, bundled: false };
+  const _loadTasks = { routes: false };
   let _onPointsLoaded = null;
   function markLoaded(task) {
     if (task === 'points') {
@@ -1012,39 +957,14 @@
     if (!firebaseReady) return;
     db.collection('routes').orderBy('uploadedAt', 'desc').get()
       .then(snapshot => {
-        snapshot.forEach(doc => {
-          if (loadedFirebaseIds.has(doc.id)) return;
-          loadedFirebaseIds.add(doc.id);
-          const data = doc.data();
-          const meta = data.metadata || {};
-          const isOwner = !!(data.isOwner || data.source === 'strava');
-          const cachedGpx = data.storagePath ? null : (data.gpxContent || null);
-          if (isOwner) {
-            addRoute(null, data.fileName, doc.id, meta, data.storagePath, cachedGpx, isOwner);
-          } else {
-            _pendingPlanningRoutes.push({ fileName: data.fileName, docId: doc.id, meta, storagePath: data.storagePath || null, gpxContent: cachedGpx });
-          }
-        });
+        snapshot.forEach(doc => { loadedFirebaseIds.add(doc.id); });
         updateMapTripStats(snapshot);
-        _planningRoutesReady = true;
-        applyPlanningRoutes();
         markLoaded('routes');
       })
       .catch(err => {
         console.error('Firestore read error:', err);
-        _planningRoutesReady = true;
-        applyPlanningRoutes();
         markLoaded('routes');
       });
-  }
-
-  function applyPlanningRoutes() {
-    if (_planningRoutesApplied) return;
-    _planningRoutesApplied = true;
-    _pendingPlanningRoutes.forEach(function(r) {
-      addRoute(null, r.fileName, r.docId, r.meta, r.storagePath, r.gpxContent, false);
-    });
-    _pendingPlanningRoutes.length = 0;
   }
 
   const POINTS_SNAPSHOT_URL = 'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/points%2Fpoints.json?alt=media';
@@ -1065,23 +985,43 @@
           return res.json();
         })
         .then(data => {
-          let snapPoints, generatedAt;
+          let snapPoints, generatedAt, usingServerClusters = false;
           if (Array.isArray(data)) {
             snapPoints = data; generatedAt = null;
           } else if (data && Array.isArray(data.points)) {
-            snapPoints = data.points; generatedAt = data.generatedAt || null;
+            generatedAt = data.generatedAt || null;
+            if (Array.isArray(data.clusters) && data.clusters.length > 0) {
+              usingServerClusters = true;
+              snapPoints = data.clusters;
+            } else {
+              snapPoints = data.points;
+            }
           } else {
             throw new Error('unrecognised snapshot format');
           }
           if (snapPoints.length === 0) throw new Error('empty snapshot');
-          snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
+          if (!usingServerClusters) {
+            snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
+          }
           const batch = snapPoints.map(d => ({
-            pointData: { name: d.name, lat: d.lat, lon: d.lon, url: d.url || null, metadata: d.metadata || {} },
+            pointData: {
+              name: d.name || 'Point',
+              lat: d.lat,
+              lon: d.lon,
+              url: d.url || null,
+              type: d.type || null,
+              metadata: Object.assign({}, d.metadata || {}, (d.count && d.count > 1) ? {
+                __cluster: {
+                  count: d.count,
+                  items: d.items || null
+                }
+              } : {})
+            },
             fileName: d.fileName || 'points.json',
             firebaseDocId: d.id || null
           }));
           addPointsBatch(batch);
-          if (generatedAt && db) {
+          if (!usingServerClusters && generatedAt && db) {
             const since = firebase.firestore.Timestamp.fromDate(new Date(generatedAt));
             db.collection('points').where('uploadedAt', '>', since).get()
               .then(snap => {
@@ -1097,6 +1037,9 @@
               })
               .catch(() => markLoaded('points'));
           } else {
+            if (usingServerClusters) {
+              console.info('Using server-side point clusters from snapshot; skipping Firestore delta query.');
+            }
             markLoaded('points');
           }
         })
@@ -1145,27 +1088,6 @@
     db.collection('routes').doc(route.firebaseDocId).get()
       .then(doc => { const data = doc.data(); return storage.ref(data.storagePath).delete().then(() => db.collection('routes').doc(route.firebaseDocId).delete()); })
       .then(() => { removeRouteFromMap(routeIdx); })
-      .catch(err => { console.error('Delete error:', err); alert('Delete failed: ' + err.message); });
-  }
-
-  function deleteFirebasePoints(fileName) {
-    if (!isAdmin()) return;
-    if (!confirm('Delete all points from "' + fileName + '" from Firebase?')) return;
-    const toDelete = points.filter(p => p.fileName === fileName && p.firebaseDocId);
-    if (!toDelete.length) return;
-    db.collection('points').doc(toDelete[0].firebaseDocId).get()
-      .then(doc => {
-        const storagePath = doc.data().storagePath;
-        const batch = db.batch();
-        toDelete.forEach(p => batch.delete(db.collection('points').doc(p.firebaseDocId)));
-        return batch.commit().then(() => storagePath);
-      })
-      .then(storagePath => { if (storagePath) return storage.ref(storagePath).delete(); })
-      .then(() => {
-        const idxs = [];
-        points.forEach((p, i) => { if (p.fileName === fileName) idxs.push(i); });
-        idxs.reverse().forEach(i => removePointFromMap(i));
-      })
       .catch(err => { console.error('Delete error:', err); alert('Delete failed: ' + err.message); });
   }
 
@@ -1234,7 +1156,6 @@
   }, 30000);
 
   // ── Initialise ─────────────────────────────────────────────
-  loadBundledRoutes();
   initFirebase();
   initPMTilesLayer();
 })();

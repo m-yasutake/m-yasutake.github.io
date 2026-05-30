@@ -4,10 +4,9 @@
  * generate-points-snapshot.js
  *
  * Downloads all point documents from the Firestore 'points' collection and
- * writes them as a single JSON array to Firebase Storage at
- * points/points.json. The planning.html map page fetches this file on load
- * instead of paginating through Firestore, reducing initial load time from
- * 10+ network round-trips to a single cached HTTP request.
+ * writes a points snapshot plus pre-clustered map markers to Firebase Storage
+ * at points/points.json. The planning map page fetches this file on load
+ * instead of paginating through Firestore and clustering on-device.
  *
  * Usage:
  *   FIREBASE_SERVICE_ACCOUNT='<json>' node generate-points-snapshot.js
@@ -52,6 +51,58 @@ admin.initializeApp({
 
 const db     = admin.firestore();
 const bucket = admin.storage().bucket();
+const CLUSTER_CELL_SIZE = 0.08; // degrees; ~8-9km at ~36°N (Japan), tuned for overview zooms
+const MAX_CLUSTER_ITEMS = 12; // keep popup lists readable while still showing representative nearby points
+
+function normalizePointType(rawType) {
+  const type = rawType ? String(rawType).trim() : '';
+  if (!type) return 'Other';
+  if (/foot\s*bath/i.test(type)) return 'Foot Bath';
+  if (/hotel\s*onsen|onsen.*hotel|Hotel\/Ryokan Onsen/i.test(type)) return 'Hotel Onsen';
+  if (/super\s*sento/i.test(type)) return 'Super Sento';
+  if (/onsen|community\s*center/i.test(type)) return 'Onsen';
+  if (/camp/i.test(type)) return 'Campsite';
+  if (/roadside\s*station/i.test(type)) return 'Roadside Station';
+  if (/must\s*see/i.test(type)) return 'Must See';
+  if (/hotel/i.test(type)) return 'Hotel';
+  if (/other/i.test(type)) return 'Other';
+  return type;
+}
+
+function buildServerClusters(points) {
+  const buckets = new Map();
+
+  for (const p of points) {
+    if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
+    const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
+    const type = normalizePointType(rawType);
+    const latKey = Math.round(p.lat / CLUSTER_CELL_SIZE);
+    const lonKey = Math.round(p.lon / CLUSTER_CELL_SIZE);
+    const key = `${type}:${latKey}:${lonKey}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [] });
+    }
+    const bucket = buckets.get(key);
+    bucket.latSum += p.lat;
+    bucket.lonSum += p.lon;
+    bucket.count += 1;
+    if (bucket.items.length < MAX_CLUSTER_ITEMS) {
+      bucket.items.push({ name: p.name || 'Point', url: p.url || null });
+    }
+  }
+
+  return Array.from(buckets.values()).map((bucket) => {
+    const count = bucket.count;
+    return {
+      name: count > 1 ? `${bucket.type} (${count})` : (bucket.items[0] && bucket.items[0].name) || bucket.type,
+      lat: bucket.latSum / count,
+      lon: bucket.lonSum / count,
+      type: bucket.type,
+      count,
+      items: bucket.items
+    };
+  });
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
@@ -121,11 +172,14 @@ async function main() {
   );
   console.log('  ✓ stats/japan onsensCount updated.');
 
+  const clusters = buildServerClusters(points);
+  console.log(`Server clusters: ${clusters.length}`);
+
   // Serialise to JSON — wrap in an envelope so the client can detect the
   // generation time and query Firestore for only the delta (new points added
   // since the snapshot was taken).
   const generatedAt = new Date().toISOString();
-  const json   = JSON.stringify({ generatedAt, points });
+  const json   = JSON.stringify({ generatedAt, points, clusters });
   const buffer = Buffer.from(json, 'utf8');
   console.log(`Snapshot size: ${(buffer.length / 1024).toFixed(1)} KB`);
 
