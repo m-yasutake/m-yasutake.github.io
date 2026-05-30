@@ -2901,7 +2901,9 @@ async function adminBlogPreview() {
     previewWindow.location.href = previewUrl;
     return;
   }
-  window.location.href = previewUrl;
+  if (!window.open(previewUrl, '_blank')) {
+    TomikaBikes.showToast('Popup blocked. Please allow popups to preview.', 'info');
+  }
 }
 
 // Set default date on new post on page load
