@@ -3621,15 +3621,26 @@ const GearManagerAdmin = (function () {
   function loadMapSdks() {
     if (_mapSdkLoaded) return Promise.resolve();
     const already = src => [...document.scripts].some(s => (s.getAttribute('src') || '').includes(src));
+    const waitFor = ready => new Promise((resolve, reject) => {
+      if (ready()) { resolve(); return; }
+      const start = Date.now();
+      (function poll() {
+        if (ready()) { resolve(); return; }
+        if (Date.now() - start > 10000) { reject(new Error('Timed out loading Firebase SDK')); return; }
+        setTimeout(poll, 50);
+      })();
+    });
     const load = src => new Promise((res, rej) => {
       if (already(src)) { res(); return; }
       const s = document.createElement('script');
       s.src = src; s.onload = res; s.onerror = rej;
       document.head.appendChild(s);
     });
-    return load('firebase-auth-compat').then(() =>
-      load('firebase-storage-compat').then(() => { _mapSdkLoaded = true; })
-    );
+    return load('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js')
+      .then(() => waitFor(() => typeof firebase.auth === 'function'))
+      .then(() => load('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js'))
+      .then(() => waitFor(() => typeof firebase.storage === 'function'))
+      .then(() => { _mapSdkLoaded = true; });
   }
 
   async function ensureMapReady() {
