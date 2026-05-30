@@ -144,7 +144,7 @@
       const visibleLayers = [];
       if (map.hasLayer(ourTrackGroup) && ourTrackGroup.getLayers().length > 0) visibleLayers.push(ourTrackGroup);
       if (map.hasLayer(planningRoutesGroup) && planningRoutesGroup.getLayers().length > 0) visibleLayers.push(planningRoutesGroup);
-      if (markerClusterGroup && markerClusterGroup.getLayers().length > 0) visibleLayers.push(markerClusterGroup);
+      if (pointLayerGroup && pointLayerGroup.getLayers().length > 0) visibleLayers.push(pointLayerGroup);
       if (visibleLayers.length > 0) map.fitBounds(L.featureGroup(visibleLayers).getBounds(), { padding: [30, 30] });
     }, 600);
   }
@@ -185,8 +185,7 @@
 
   L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
-  const markerClusterGroup = L.layerGroup();
-  markerClusterGroup.addTo(map);
+  const pointLayerGroup = L.layerGroup().addTo(map);
 
   // ── Route layer groups ─────────────────────────────────────
   const ourTrackGroup = L.featureGroup();         // isOwner (Strava) routes; kept off map — displayed via PMTiles tiles
@@ -704,8 +703,8 @@
   function applyPointTypeFilters() {
     points.forEach(p => {
       const type = p.type||'Other';
-      if (p.visible !== false && pointTypeFilters.has(type)) markerClusterGroup.addLayer(p.marker);
-      else markerClusterGroup.removeLayer(p.marker);
+      if (p.visible !== false && pointTypeFilters.has(type)) pointLayerGroup.addLayer(p.marker);
+      else pointLayerGroup.removeLayer(p.marker);
     });
   }
 
@@ -760,7 +759,7 @@
 
   function addPoint(pointData, fileName, firebaseDocId) {
     const marker = createPointMarker(pointData);
-    markerClusterGroup.addLayer(marker);
+    pointLayerGroup.addLayer(marker);
     points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
     scheduleRenderPointToggles();
   }
@@ -770,13 +769,13 @@
       const { pointData, fileName, firebaseDocId } = pointDataArray[i];
       const marker = createPointMarker(pointData);
       // LayerGroup has addLayer/removeLayer but no addLayers batch API.
-      markerClusterGroup.addLayer(marker);
+      pointLayerGroup.addLayer(marker);
       points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
     }
     scheduleRenderPointToggles();
   }
 
-  function removePointFromMap(idx) { markerClusterGroup.removeLayer(points[idx].marker); points.splice(idx, 1); renderPointToggles(); }
+  function removePointFromMap(idx) { pointLayerGroup.removeLayer(points[idx].marker); points.splice(idx, 1); renderPointToggles(); }
 
   function renderPointToggles() {
     const container = document.getElementById('type-filters');
@@ -971,6 +970,79 @@
 
   let _pointsLoadStarted = false;
   const POINTS_BATCH_SIZE = 1000;
+  let serverClusterDisableZoom = 9;
+  let snapshotRawPoints = null;
+  let serverClusterLevels = null;
+  let serverClusterLevelKeys = [];
+  let serverClusterLevelActiveKey = null;
+  let snapshotZoomListener = null;
+
+  function normalizeSnapshotPoint(d) {
+    return {
+      name: d.name || 'Point',
+      lat: d.lat,
+      lon: d.lon,
+      url: d.url || null,
+      type: d.type || null,
+      metadata: d.metadata || {},
+      fileName: d.fileName || 'points.json',
+      id: d.id || null
+    };
+  }
+
+  function normalizeServerClusterPoint(d) {
+    const pointData = normalizeSnapshotPoint(d);
+    const count = Number(d?.count ?? d?.metadata?.__cluster?.count ?? 0);
+    if (count > 1 && (!pointData.metadata || !pointData.metadata.__cluster)) {
+      pointData.metadata = Object.assign({}, pointData.metadata, {
+        __cluster: {
+          count,
+          items: Array.isArray(d.items) ? d.items : []
+        }
+      });
+    }
+    return pointData;
+  }
+
+  function getServerClusterLevelKeyForZoom(zoom) {
+    if (!serverClusterLevelKeys.length || zoom >= serverClusterDisableZoom) return null;
+    let selected = serverClusterLevelKeys[0];
+    for (let i = 0; i < serverClusterLevelKeys.length; i++) {
+      const key = serverClusterLevelKeys[i];
+      if (key <= zoom) selected = key;
+      else break;
+    }
+    return String(selected);
+  }
+
+  function getSnapshotDisplayPointsForZoom(zoom) {
+    const levelKey = getServerClusterLevelKeyForZoom(zoom);
+    if (levelKey && serverClusterLevels && Array.isArray(serverClusterLevels[levelKey])) {
+      return {
+        levelKey,
+        points: serverClusterLevels[levelKey].map(normalizeServerClusterPoint)
+      };
+    }
+    return {
+      levelKey: null,
+      points: (snapshotRawPoints || []).map(normalizeSnapshotPoint)
+    };
+  }
+
+  function applySnapshotDisplayForZoom(zoom, force) {
+    if (!snapshotRawPoints) return;
+    const display = getSnapshotDisplayPointsForZoom(zoom);
+    if (!force && serverClusterLevelActiveKey === display.levelKey) return;
+    serverClusterLevelActiveKey = display.levelKey;
+    pointLayerGroup.clearLayers();
+    points.length = 0;
+    const batch = display.points.map(d => ({
+      pointData: d,
+      fileName: d.fileName || 'points.json',
+      firebaseDocId: d.id || null
+    }));
+    addPointsBatch(batch);
+  }
 
   function loadFirebasePoints(lastDoc) {
     if (!firebaseReady) return;
@@ -985,43 +1057,46 @@
           return res.json();
         })
         .then(data => {
-          let snapPoints, generatedAt, usingServerClusters = false;
+          let snapPoints, generatedAt;
           if (Array.isArray(data)) {
             snapPoints = data; generatedAt = null;
           } else if (data && Array.isArray(data.points)) {
             generatedAt = data.generatedAt || null;
-            if (Array.isArray(data.clusters) && data.clusters.length > 0) {
-              usingServerClusters = true;
-              snapPoints = data.clusters;
+            snapPoints = data.points;
+            const disableZoomRaw = data.clusterZoomRange?.disableClusteringAtZoom;
+            const disableZoom = Number(disableZoomRaw);
+            serverClusterDisableZoom = Number.isFinite(disableZoom) ? disableZoom : 9;
+            if (data.clustersByZoom && typeof data.clustersByZoom === 'object') {
+              serverClusterLevels = data.clustersByZoom;
+              serverClusterLevelKeys = Object.keys(serverClusterLevels)
+                .map(k => Number(k))
+                .filter(Number.isFinite)
+                .sort((a, b) => a - b);
+            } else if (Array.isArray(data.clusters)) {
+              serverClusterLevels = { '0': data.clusters };
+              serverClusterLevelKeys = [0];
             } else {
-              snapPoints = data.points;
+              serverClusterLevels = null;
+              serverClusterLevelKeys = [];
+              serverClusterDisableZoom = 9;
             }
           } else {
             throw new Error('unrecognised snapshot format');
           }
           if (snapPoints.length === 0) throw new Error('empty snapshot');
-          if (!usingServerClusters) {
-            snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
+          snapshotRawPoints = snapPoints;
+          serverClusterLevelActiveKey = null;
+          snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
+          applySnapshotDisplayForZoom(map.getZoom(), true);
+          if (serverClusterLevelKeys.length > 0) {
+            if (snapshotZoomListener) map.off('zoomend', snapshotZoomListener);
+            snapshotZoomListener = function() { applySnapshotDisplayForZoom(map.getZoom(), false); };
+            map.on('zoomend', snapshotZoomListener);
+          } else if (snapshotZoomListener) {
+            map.off('zoomend', snapshotZoomListener);
+            snapshotZoomListener = null;
           }
-          const batch = snapPoints.map(d => ({
-            pointData: {
-              name: d.name || 'Point',
-              lat: d.lat,
-              lon: d.lon,
-              url: d.url || null,
-              type: d.type || null,
-              metadata: Object.assign({}, d.metadata || {}, (d.count && d.count > 1) ? {
-                __cluster: {
-                  count: d.count,
-                  items: d.items || null
-                }
-              } : {})
-            },
-            fileName: d.fileName || 'points.json',
-            firebaseDocId: d.id || null
-          }));
-          addPointsBatch(batch);
-          if (!usingServerClusters && generatedAt && db) {
+          if (generatedAt && db) {
             const since = firebase.firestore.Timestamp.fromDate(new Date(generatedAt));
             db.collection('points').where('uploadedAt', '>', since).get()
               .then(snap => {
@@ -1037,9 +1112,6 @@
               })
               .catch(() => markLoaded('points'));
           } else {
-            if (usingServerClusters) {
-              console.info('Using server-side point clusters from snapshot; skipping Firestore delta query.');
-            }
             markLoaded('points');
           }
         })

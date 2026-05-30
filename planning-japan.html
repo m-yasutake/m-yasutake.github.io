@@ -203,6 +203,22 @@
   #map-loading .progress-fill { height: 100%; width: 0%; background: var(--color-accent); border-radius: 2px; transition: width 0.3s ease; }
   #map-wrapper { position: relative; }
 
+  .marker-cluster {
+    background-clip: padding-box;
+    border-radius: 20px;
+  }
+  .marker-cluster div {
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    margin-top: 5px;
+    border-radius: 15px;
+    text-align: center;
+    font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+    color: #fff;
+    font-weight: 700;
+  }
+  .marker-cluster span { line-height: 30px; }
   .marker-cluster-small { background-color: rgba(42, 157, 143, 0.55); }
   .marker-cluster-small div { background-color: rgba(42, 157, 143, 0.8); }
   .marker-cluster-medium { background-color: rgba(233, 196, 106, 0.6); }
