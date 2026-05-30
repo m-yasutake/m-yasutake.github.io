@@ -84,6 +84,46 @@
     color: var(--color-white);
     border-color: var(--color-primary);
   }
+
+  /* ── Fullscreen map toggle ──────────────────────────────── */
+  #home-map-fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  #home-map-fullscreen-btn:hover { background: #f4f4f4; }
+
+  #home-map-wrapper.map-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    z-index: 9998 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  @supports not (height: 100dvh) {
+    #home-map-wrapper.map-fullscreen { height: -webkit-fill-available !important; }
+  }
+  #home-map-wrapper.map-fullscreen #home-map {
+    height: 100% !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+  }
   </style>
 </head>
 <body>
@@ -246,6 +286,16 @@
     <div id="map-stats-row">
       <div class="map-col">
         <div id="home-map-wrapper">
+          <button id="home-map-fullscreen-btn" title="Toggle fullscreen map" aria-label="Toggle fullscreen map">
+            <svg id="home-fs-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+            <svg id="home-fs-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+              <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+              <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+            </svg>
+          </button>
           <div id="home-map-loading">
             <span style="color:var(--color-gray-500)">⏳ Loading route…</span>
           </div>
@@ -485,6 +535,9 @@
     if (_homeMap && views[trip]) {
       _homeMap.flyTo(views[trip].center, views[trip].zoom, { duration: 1.5 });
     }
+
+    // Update start/end markers
+    if (typeof window._addTripMarkers === 'function') window._addTripMarkers(trip);
   }
 
   // ── Eagerly fetch stats for all trips ─────────────────────
@@ -518,6 +571,68 @@
       var el = document.getElementById('home-map-loading');
       if (el) el.classList.add('hidden');
     }, 2000);
+
+    // ── Start / End markers for Japan route ─────────────────
+    var TRIP_MARKERS = {
+      japan: {
+        start: { latlng: [30.999, 130.658], label: '🚩 Start – Cape Sata' },
+        end:   { latlng: [45.520, 141.934], label: '🏁 Finish – Cape Soya' }
+      },
+      norway: {
+        start: { latlng: [58.460, 5.846], label: '🚩 Start – Egersund' },
+        end:   { latlng: [70.662, 23.682], label: '🏁 Finish – Tromsø' }
+      }
+    };
+
+    function makeStartIcon() {
+      var html = '<div style="position:relative;width:32px;height:40px">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
+          '<path d="M16 2C9.4 2 4 7.4 4 14c0 9.3 12 24 12 24S28 23.3 28 14C28 7.4 22.6 2 16 2z" fill="#27ae60" stroke="#fff" stroke-width="2"/>' +
+          '<circle cx="16" cy="14" r="6" fill="#fff"/>' +
+          '<text x="16" y="18" text-anchor="middle" font-size="9" font-family="sans-serif">▶</text>' +
+        '</svg>' +
+      '</div>';
+      return L.divIcon({ html: html, className: '', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -42] });
+    }
+
+    function makeEndIcon() {
+      var html = '<div style="position:relative;width:32px;height:40px">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
+          '<path d="M16 2C9.4 2 4 7.4 4 14c0 9.3 12 24 12 24S28 23.3 28 14C28 7.4 22.6 2 16 2z" fill="#e74c3c" stroke="#fff" stroke-width="2"/>' +
+          '<circle cx="16" cy="14" r="6" fill="#fff"/>' +
+          '<text x="16" y="18" text-anchor="middle" font-size="9" font-family="sans-serif">■</text>' +
+        '</svg>' +
+      '</div>';
+      return L.divIcon({ html: html, className: '', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -42] });
+    }
+
+    var _tripMarkerObjects = {};
+
+    function addTripMarkers(trip) {
+      // Remove existing trip markers
+      Object.keys(_tripMarkerObjects).forEach(function (t) {
+        var m = _tripMarkerObjects[t];
+        if (m.start) _homeMap.removeLayer(m.start);
+        if (m.end)   _homeMap.removeLayer(m.end);
+      });
+      _tripMarkerObjects = {};
+
+      var info = TRIP_MARKERS[trip];
+      if (!info || !_homeMap) return;
+      _tripMarkerObjects[trip] = {};
+      _tripMarkerObjects[trip].start = L.marker(info.start.latlng, { icon: makeStartIcon(), zIndexOffset: 500 })
+        .bindPopup('<strong style="color:#27ae60">' + info.start.label + '</strong>')
+        .addTo(_homeMap);
+      _tripMarkerObjects[trip].end = L.marker(info.end.latlng, { icon: makeEndIcon(), zIndexOffset: 500 })
+        .bindPopup('<strong style="color:#e74c3c">' + info.end.label + '</strong>')
+        .addTo(_homeMap);
+    }
+
+    // Add Japan markers on load
+    addTripMarkers('japan');
+
+    // Expose so switchTrip can update markers
+    window._addTripMarkers = addTripMarkers;
   })();
 
   // ── Days on the road (computed from TRIP_DATES) ───────────
@@ -573,6 +688,37 @@
         .catch(function () {});
     } catch (e) {}
   })();
+
+  // ── Fullscreen map toggle ───────────────────────────────────
+  (function () {
+    var fsBtn = document.getElementById('home-map-fullscreen-btn');
+    var fsExpandIcon = document.getElementById('home-fs-expand-icon');
+    var fsCollapseIcon = document.getElementById('home-fs-collapse-icon');
+    var mapWrapper = document.getElementById('home-map-wrapper');
+    if (!fsBtn) return;
+
+    fsBtn.addEventListener('click', function () {
+      var isFullscreen = mapWrapper.classList.toggle('map-fullscreen');
+      fsExpandIcon.style.display = isFullscreen ? 'none' : '';
+      fsCollapseIcon.style.display = isFullscreen ? '' : 'none';
+      document.body.style.overflow = isFullscreen ? 'hidden' : '';
+      setTimeout(function () {
+        if (_homeMap) _homeMap.invalidateSize();
+      }, 200);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && mapWrapper.classList.contains('map-fullscreen')) {
+        mapWrapper.classList.remove('map-fullscreen');
+        fsExpandIcon.style.display = '';
+        fsCollapseIcon.style.display = 'none';
+        document.body.style.overflow = '';
+        setTimeout(function () {
+          if (_homeMap) _homeMap.invalidateSize();
+        }, 200);
+      }
+    });
+  }());
 </script>
 </body>
 </html>

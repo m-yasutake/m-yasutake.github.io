@@ -43,14 +43,11 @@
   const routes = [];
   const points = [];
   let colorIdx = 0;
-  let _currentLocationMarker = null;
-  let _currentLocationPinAdded = false;
 
   // ── Planned Routes deferred loading state ──────────────────
   const _pendingPlanningRoutes = [];
   let _planningRoutesReady = false;
   let _planningRoutesApplied = false;
-  let _onPlanningRoutesLoaded = null;
 
   const POINT_ICON_SIZE = [18, 18];
   const POINT_ICON_ANCHOR = [9, 9];
@@ -153,7 +150,6 @@
       if (map.hasLayer(ourTrackGroup) && ourTrackGroup.getLayers().length > 0) visibleLayers.push(ourTrackGroup);
       if (map.hasLayer(planningRoutesGroup) && planningRoutesGroup.getLayers().length > 0) visibleLayers.push(planningRoutesGroup);
       if (markerClusterGroup && markerClusterGroup.getLayers().length > 0) visibleLayers.push(markerClusterGroup);
-      if (_currentLocationMarker) visibleLayers.push(_currentLocationMarker);
       if (visibleLayers.length > 0) map.fitBounds(L.featureGroup(visibleLayers).getBounds(), { padding: [30, 30] });
     }, 600);
   }
@@ -499,10 +495,6 @@
       if (r.visible) {
         routeLayerGroup(r).addLayer(r.polyline);
       }
-      if (r.isOwner && !_currentLocationPinAdded) {
-        _currentLocationPinAdded = true;
-        addCurrentLocationPin(result.latlngs[result.latlngs.length - 1], r.routeName);
-      }
       renderToggles();
       renderStats();
     }
@@ -524,23 +516,6 @@
         fetchAndParse(gpxText);
       })
       .catch(err => { console.error('Error loading route ' + r.routeName + ':', err); r._loading = false; });
-  }
-
-  // ── "You are here" pin at the end of the most recent Strava track ──────
-  function addCurrentLocationPin(latlng, routeName) {
-    if (_currentLocationMarker) { map.removeLayer(_currentLocationMarker); }
-    const iconHtml =
-      '<div style="position:relative;width:36px;height:44px">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">' +
-          '<path d="M18 2C10.3 2 4 8.3 4 16c0 10.5 14 26 14 26S32 26.5 32 16C32 8.3 25.7 2 18 2z" fill="#E76F51" stroke="#fff" stroke-width="2"/>' +
-          '<circle cx="18" cy="16" r="7" fill="#fff"/>' +
-          '<text x="18" y="20" text-anchor="middle" font-size="10" font-family="sans-serif">🚴</text>' +
-        '</svg>' +
-      '</div>';
-    const icon = L.divIcon({ html: iconHtml, className: 'current-location-icon', iconSize: [36, 44], iconAnchor: [18, 44], popupAnchor: [0, -46] });
-    _currentLocationMarker = L.marker(latlng, { icon, zIndexOffset: 1000 })
-      .bindPopup('<strong style="color:#E76F51">📍 We are here!</strong><br><span style="font-size:0.9em;color:#555">' + escapeHtml(routeName) + '</span>')
-      .addTo(map);
   }
 
   map.on('zoomend', function() {
@@ -895,63 +870,6 @@
 
   function togglePointType(type, isChecked) { if (isChecked) pointTypeFilters.add(type); else pointTypeFilters.delete(type); applyPointTypeFilters(); }
 
-  // ── Visited Onsens (auto-loaded, always visible) ───────────
-  const ONSEN_TYPES = new Set(['Onsen', 'Foot Bath', 'Hotel Onsen', 'Super Sento']);
-  const visitedOnsenLayer = L.layerGroup().addTo(map);
-  layerControl.addOverlay(visitedOnsenLayer, '♨️ Visited Onsens');
-  const _visitedOnsenMarkers = new Map();
-
-  const VISITED_ONSEN_ICON_SVG = [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28">',
-    '<circle cx="14" cy="14" r="12" fill="#2a9d8f" stroke="#fff" stroke-width="1.5"/>',
-    '<path d="M10 15.5c0-2.2 1.8-4 4-4s4 1.8 4 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>',
-    '<path d="M11.5 10c0.3-1 0.7-1.5 0.5-2.5M14 9c0.3-1 0.7-1.5 0.5-2.5M16.5 10c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>',
-    '<circle cx="21" cy="21" r="6" fill="#e9c46a" stroke="#fff" stroke-width="1.2"/>',
-    '<path d="M18.5 21l1.5 1.5L23 18.5" fill="none" stroke="#264653" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>',
-    '</svg>'
-  ].join('');
-
-  const visitedOnsenIcon = L.divIcon({
-    html: VISITED_ONSEN_ICON_SVG,
-    className: 'point-type-icon',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -16]
-  });
-
-  let _visitedOnsensLoaded = false;
-  function loadVisitedOnsens() {
-    if (!db || _visitedOnsensLoaded) return;
-    _visitedOnsensLoaded = true;
-    db.collection('points').where('visited', '==', true).get()
-      .then(snapshot => {
-        snapshot.forEach(doc => {
-          if (_visitedOnsenMarkers.has(doc.id)) return;
-          const d = doc.data();
-          const rawType = d.metadata && (d.metadata.Type || d.metadata.type) || d.type || '';
-          const normType = normalizePointType(rawType);
-          if (normType === '_default' || !ONSEN_TYPES.has(normType)) return;
-          _addVisitedOnsenMarker(doc.id, d);
-        });
-      })
-      .catch(err => console.warn('Visited onsens load error:', err));
-  }
-
-  function _addVisitedOnsenMarker(docId, d) {
-    const marker = L.marker([d.lat, d.lon], { icon: visitedOnsenIcon });
-    const name = escapeHtml(d.name || 'Onsen');
-    const rawType = (d.metadata && (d.metadata.Type || d.metadata.type)) || d.type || 'Onsen';
-    const url = d.url;
-    let popupHtml = '<div style="min-width:160px"><strong style="color:var(--color-primary)">' + name + '</strong>';
-    popupHtml += '<div style="font-size:.8em;color:#2a9d8f;margin:.2em 0">♨️ ' + escapeHtml(rawType) + ' · visited</div>';
-    if (url) popupHtml += '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener" style="font-size:.82em;color:#5B8C6B">🔗 View</a>';
-    popupHtml += '</div>';
-    marker.bindPopup(popupHtml, { maxWidth: 240 });
-    visitedOnsenLayer.addLayer(marker);
-    _visitedOnsenMarkers.set(docId, marker);
-    return marker;
-  }
-
   // ── Firebase Integration ───────────────────────────────────
   let currentUser = null;
   let _isAdmin = false;
@@ -1034,7 +952,7 @@
         }
         firebaseReady = true;
         loadFirebaseRoutes();
-        loadVisitedOnsens();
+        loadFirebasePoints();
         loadAuthAndStorage()
           .then(() => {
             routes.forEach((r, idx) => {
@@ -1107,25 +1025,15 @@
             _pendingPlanningRoutes.push({ fileName: data.fileName, docId: doc.id, meta, storagePath: data.storagePath || null, gpxContent: cachedGpx });
           }
         });
-        if (!_currentLocationPinAdded) {
-          snapshot.forEach(doc => {
-            if (_currentLocationPinAdded) return;
-            const data = doc.data();
-            if ((data.isOwner || data.source === 'strava') && data.endLatLng) {
-              _currentLocationPinAdded = true;
-              addCurrentLocationPin(data.endLatLng, (data.metadata && data.metadata.name) || data.fileName || 'Latest ride');
-            }
-          });
-        }
         updateMapTripStats(snapshot);
         _planningRoutesReady = true;
-        if (_onPlanningRoutesLoaded) applyPlanningRoutes();
+        applyPlanningRoutes();
         markLoaded('routes');
       })
       .catch(err => {
         console.error('Firestore read error:', err);
         _planningRoutesReady = true;
-        if (_onPlanningRoutesLoaded) applyPlanningRoutes();
+        applyPlanningRoutes();
         markLoaded('routes');
       });
   }
@@ -1137,7 +1045,6 @@
       addRoute(null, r.fileName, r.docId, r.meta, r.storagePath, r.gpxContent, false);
     });
     _pendingPlanningRoutes.length = 0;
-    if (_onPlanningRoutesLoaded) { var cb = _onPlanningRoutesLoaded; _onPlanningRoutesLoaded = null; cb(); }
   }
 
   const POINTS_SNAPSHOT_URL = 'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/points%2Fpoints.json?alt=media';
@@ -1319,63 +1226,6 @@
     if (el) el.textContent = checked + ' of ' + items.length + ' items packed';
   }
   updatePackProgress();
-
-  // ── Load Planned Routes button ────────────────────────────
-  (function () {
-    const btn = document.getElementById('load-routes-btn');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      btn.disabled = true;
-      btn.textContent = '⏳ Loading routes…';
-      _onPlanningRoutesLoaded = function () {
-        btn.textContent = '✓ Routes loaded';
-      };
-      if (_planningRoutesReady) {
-        applyPlanningRoutes();
-      } else if (firebaseReady) {
-        // Routes query still in flight — applyPlanningRoutes() fires from loadFirebaseRoutes()
-      } else {
-        let pollAttempts = 0;
-        const poll = setInterval(function () {
-          pollAttempts++;
-          if (_planningRoutesReady) { clearInterval(poll); applyPlanningRoutes(); }
-          else if (pollAttempts >= 100) {
-            clearInterval(poll);
-            btn.textContent = '⚠️ Map not ready';
-            btn.disabled = false;
-          }
-        }, 100);
-      }
-    });
-  }());
-
-  // ── Load Points button ─────────────────────────────────────
-  (function () {
-    const btn = document.getElementById('load-points-btn');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      btn.disabled = true;
-      btn.textContent = '⏳ Loading points…';
-      _onPointsLoaded = function () {
-        btn.textContent = '✓ Points loaded';
-      };
-      _pointsLoadStarted = false;
-      if (firebaseReady) {
-        loadFirebasePoints();
-      } else {
-        let pollAttempts = 0;
-        const poll = setInterval(function () {
-          pollAttempts++;
-          if (firebaseReady) { clearInterval(poll); loadFirebasePoints(); }
-          else if (pollAttempts >= 100) {
-            clearInterval(poll);
-            btn.textContent = '⚠️ Map not ready';
-            btn.disabled = false;
-          }
-        }, 100);
-      }
-    });
-  }());
 
   // ── Safety timeout: dismiss loading overlay after 30 s ──────
   const _loadingTimeoutId = setTimeout(function() {
