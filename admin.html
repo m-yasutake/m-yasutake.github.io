@@ -3645,9 +3645,9 @@ const GearManagerAdmin = (function () {
       document.head.appendChild(s);
     });
     return load(FIREBASE_AUTH_COMPAT_URL)
-      .then(() => waitFor(() => typeof firebase.auth === 'function', 'Auth'))
+      .then(() => waitFor(() => typeof firebase !== 'undefined' && typeof firebase.auth === 'function', 'Auth'))
       .then(() => load(FIREBASE_STORAGE_COMPAT_URL))
-      .then(() => waitFor(() => typeof firebase.storage === 'function', 'Storage'))
+      .then(() => waitFor(() => typeof firebase !== 'undefined' && typeof firebase.storage === 'function', 'Storage'))
       .then(() => { _mapSdkLoaded = true; });
   }
 
