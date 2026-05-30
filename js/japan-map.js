@@ -393,13 +393,16 @@
   }
 
   // ── Route line weight – scales down as you zoom in so roads stay visible ──
+  // Weights at low zoom levels (zoomed out) are kept small to speed up
+  // Canvas rendering on mobile devices.
   function getRouteWeight(zoom) {
     if (zoom >= 17) return 0.5;
     if (zoom >= 15) return 0.75;
     if (zoom >= 13) return 1.2;
     if (zoom >= 11) return 1.8;
-    if (zoom >= 9) return 2.2;
-    return 3;
+    if (zoom >= 9)  return 2.2;
+    if (zoom >= 7)  return 2;
+    return 1.5;
   }
 
   // ── addRoute: supports preview (gpxText=null) and full mode ───────────
@@ -489,12 +492,24 @@
       .catch(err => { console.error('Error loading route ' + r.routeName + ':', err); r._loading = false; });
   }
 
-  map.on('zoomend', function() {
-    const w = getRouteWeight(map.getZoom());
-    routes.forEach(function(r) {
-      if (r.polyline && r.visible) r.polyline.setStyle({ weight: r.isOwner ? 5 : w });
-    });
-  });
+  // Debounced zoom handler: batch polyline-weight updates and cluster-level
+  // switches into a single callback fired 150 ms after the last zoomend event,
+  // so rapid zoom steps (e.g. double-tap on mobile) do not trigger many redraws.
+  let _zoomEndTimer = null;
+  function _onZoomEnd() {
+    if (_zoomEndTimer) clearTimeout(_zoomEndTimer);
+    _zoomEndTimer = setTimeout(function() {
+      _zoomEndTimer = null;
+      const zoom = map.getZoom();
+      const w = getRouteWeight(zoom);
+      routes.forEach(function(r) {
+        if (r.polyline && r.visible) r.polyline.setStyle({ weight: r.isOwner ? 5 : w });
+      });
+      // Delegate cluster-level switching to the snapshot listener if active
+      if (_onZoomEndSnapshot) _onZoomEndSnapshot(zoom);
+    }, 150);
+  }
+  map.on('zoomend', _onZoomEnd);
 
   // ── PMTiles route layers ────────────────────────────────────
   function initPMTilesLayer() {
@@ -738,20 +753,29 @@
     }
     const pointType = getPointType(pointData);
     const marker = L.marker([pointData.lat, pointData.lon], { icon: getPointIcon(pointType) });
+    // Popup: show only the essential info upfront; extra details (description,
+    // price, hours, notes) are deferred inside a <details> element so they are
+    // not rendered until the user explicitly expands them.
     marker.bindPopup(function() {
       const pointUrl = resolvePointUrl(pointData, pointData.metadata);
       let content = '<b>' + escapeHtml(pointData.name) + '</b>';
-      if (pointData.metadata) {
-        const desc = pointData.metadata.description||pointData.metadata.Description||'';
-        if (desc) content += '<br><span style="color:#6c757d;font-size:0.92em;">' + escapeHtml(desc) + '</span>';
-        const price = pointData.metadata.price||pointData.metadata.Price||'';
-        if (price) content += '<br><span style="font-size:0.9em;">💴 ' + escapeHtml(price) + '</span>';
-        const hours = pointData.metadata.hours||pointData.metadata.Hours||'';
-        if (hours) content += '<br><span style="font-size:0.9em;">🕐 ' + escapeHtml(hours) + '</span>';
-        const notes = pointData.metadata.notes||pointData.metadata.Notes||'';
-        if (notes) content += '<br><span style="color:#6c757d;font-size:0.88em;font-style:italic;">' + escapeHtml(notes) + '</span>';
-      }
+      if (pointType !== '_default') content += '<br><span style="font-size:0.85em;color:#6c757d;">' + escapeHtml(pointType) + '</span>';
       if (pointUrl) content += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';
+      if (pointData.metadata) {
+        const meta = pointData.metadata;
+        const desc  = meta.description || meta.Description || '';
+        const price = meta.price || meta.Price || '';
+        const hours = meta.hours || meta.Hours || '';
+        const notes = meta.notes || meta.Notes || '';
+        if (desc || price || hours || notes) {
+          content += '<details style="margin-top:0.4em"><summary style="cursor:pointer;font-size:0.85em;color:#6c757d;">More details</summary><div style="margin-top:0.3em">';
+          if (desc)  content += '<span style="color:#6c757d;font-size:0.92em;display:block;">' + escapeHtml(desc) + '</span>';
+          if (price) content += '<span style="font-size:0.9em;display:block;">💴 ' + escapeHtml(price) + '</span>';
+          if (hours) content += '<span style="font-size:0.9em;display:block;">🕐 ' + escapeHtml(hours) + '</span>';
+          if (notes) content += '<span style="color:#6c757d;font-size:0.88em;font-style:italic;display:block;">' + escapeHtml(notes) + '</span>';
+          content += '</div></details>';
+        }
+      }
       return content;
     });
     return marker;
@@ -970,12 +994,18 @@
 
   let _pointsLoadStarted = false;
   const POINTS_BATCH_SIZE = 1000;
-  let serverClusterDisableZoom = 9;
+  // Keep clustering active until zoom 13 by default so that mobile users see
+  // fewer individual markers at moderate zoom levels; the snapshot can override
+  // this via `clusterZoomRange.disableClusteringAtZoom`.
+  let serverClusterDisableZoom = 13;
   let snapshotRawPoints = null;
   let serverClusterLevels = null;
   let serverClusterLevelKeys = [];
   let serverClusterLevelActiveKey = null;
   let snapshotZoomListener = null;
+  // Called by the debounced _onZoomEnd handler; set when the snapshot has
+  // cluster levels so zoom transitions update the displayed cluster layer.
+  let _onZoomEndSnapshot = null;
 
   function normalizeSnapshotPoint(d) {
     return {
@@ -1078,7 +1108,7 @@
             } else {
               serverClusterLevels = null;
               serverClusterLevelKeys = [];
-              serverClusterDisableZoom = 9;
+              serverClusterDisableZoom = 13;
             }
           } else {
             throw new Error('unrecognised snapshot format');
@@ -1089,12 +1119,13 @@
           snapPoints.forEach(d => { if (d.id) loadedFirebasePointIds.add(d.id); });
           applySnapshotDisplayForZoom(map.getZoom(), true);
           if (serverClusterLevelKeys.length > 0) {
-            if (snapshotZoomListener) map.off('zoomend', snapshotZoomListener);
-            snapshotZoomListener = function() { applySnapshotDisplayForZoom(map.getZoom(), false); };
-            map.on('zoomend', snapshotZoomListener);
-          } else if (snapshotZoomListener) {
-            map.off('zoomend', snapshotZoomListener);
-            snapshotZoomListener = null;
+            // Route the cluster-level switch through the shared debounced
+            // _onZoomEnd handler instead of registering a separate listener.
+            _onZoomEndSnapshot = function(zoom) { applySnapshotDisplayForZoom(zoom, false); };
+            if (snapshotZoomListener) { map.off('zoomend', snapshotZoomListener); snapshotZoomListener = null; }
+          } else {
+            _onZoomEndSnapshot = null;
+            if (snapshotZoomListener) { map.off('zoomend', snapshotZoomListener); snapshotZoomListener = null; }
           }
           if (generatedAt && db) {
             const since = firebase.firestore.Timestamp.fromDate(new Date(generatedAt));
@@ -1229,7 +1260,14 @@
 
   // ── Initialise ─────────────────────────────────────────────
   initFirebase();
-  initPMTilesLayer();
+  // PMTiles overlay layers are non-essential for the initial view; defer their
+  // loading until the browser is idle (or after 2 s on unsupported browsers)
+  // so essential Firebase data and the base map render first.
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(initPMTilesLayer, { timeout: 1000 });
+  } else {
+    setTimeout(initPMTilesLayer, 1000);
+  }
 })();
 
 function toggleCheck(el) {
