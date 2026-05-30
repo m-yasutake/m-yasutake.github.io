@@ -51,8 +51,8 @@ admin.initializeApp({
 
 const db     = admin.firestore();
 const bucket = admin.storage().bucket();
-const CLUSTER_CELL_SIZE = 0.08; // ~8-9km at Japan latitudes for overview clustering
-const MAX_CLUSTER_ITEMS = 12;
+const CLUSTER_CELL_SIZE = 0.08; // degrees; ~8-9km at ~36°N (Japan), tuned for overview zooms
+const MAX_CLUSTER_ITEMS = 12; // keep popup lists readable while still showing representative nearby points
 
 function normalizePointType(rawType) {
   const type = rawType ? String(rawType).trim() : '';

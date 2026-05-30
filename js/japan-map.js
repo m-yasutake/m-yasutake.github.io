@@ -769,6 +769,7 @@
     for (let i = 0; i < pointDataArray.length; i++) {
       const { pointData, fileName, firebaseDocId } = pointDataArray[i];
       const marker = createPointMarker(pointData);
+      // LayerGroup has addLayer/removeLayer but no addLayers batch API.
       markerClusterGroup.addLayer(marker);
       points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
     }
