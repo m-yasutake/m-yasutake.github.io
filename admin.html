@@ -2888,13 +2888,20 @@ async function adminBlogDelete() {
 async function adminBlogPreview() {
   const title = document.getElementById('blog-title').value.trim();
   if (!title) { TomikaBikes.showToast('Please enter a post title before previewing', 'error'); return; }
+  const previewWindow = window.open('', '_blank');
   await adminBlogSave(false);
   const id = document.getElementById('blog-post-id').value;
   if (!id) {
+    if (previewWindow) previewWindow.close();
     TomikaBikes.showToast('Save the post first before previewing', 'info');
     return;
   }
-  window.open('post?id=' + encodeURIComponent(id), '_blank');
+  const previewUrl = 'post?id=' + encodeURIComponent(id);
+  if (previewWindow) {
+    previewWindow.location.href = previewUrl;
+    return;
+  }
+  window.location.href = previewUrl;
 }
 
 // Set default date on new post on page load
