@@ -506,7 +506,7 @@
     });
     html += '</tbody>';
     if (editMode) {
-      const colSpan = 2 + (editMode ? 1 : 0);
+      const colSpan = editMode ? 3 : 2;
       html += '<tfoot><tr><td colspan="' + colSpan + '"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
     }
     html += '</table></div>';
