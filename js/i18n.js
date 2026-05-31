@@ -133,8 +133,8 @@ const TRANSLATIONS = {
     'gear.panniers':    'panniers',
     'gear.days':        'days on road',
     'gear.photo.soon':  'Photo coming soon',
-    'gear.mika.bike':   "Mika's Bike",
-    'gear.tom.bike':    "Tom's Bike",
+    'gear.mika.bike':   "Mika's Rig",
+    'gear.tom.bike':    "Tom's Rig",
     'gear.loading':     'Loading gear list…',
 
     /* ── Japan page ── */
@@ -336,8 +336,8 @@ const TRANSLATIONS = {
     'gear.panniers':    'パニア',
     'gear.days':        '日間',
     'gear.photo.soon':  '写真近日公開',
-    'gear.mika.bike':   'ミカのバイク',
-    'gear.tom.bike':    'トムのバイク',
+    'gear.mika.bike':   'ミカのリグ',
+    'gear.tom.bike':    'トムのリグ',
     'gear.loading':     'ギアリストを読み込み中…',
 
     /* ── Japan page ── */
@@ -539,8 +539,8 @@ const TRANSLATIONS = {
     'gear.panniers':    'sykkelposer',
     'gear.days':        'dager på veien',
     'gear.photo.soon':  'Bilde kommer snart',
-    'gear.mika.bike':   'Mikas sykkel',
-    'gear.tom.bike':    'Toms sykkel',
+    'gear.mika.bike':   'Mikas rigg',
+    'gear.tom.bike':    'Toms rigg',
     'gear.loading':     'Laster utstyrsliste…',
 
     /* ── Japan page ── */
