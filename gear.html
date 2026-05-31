@@ -13,13 +13,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
 
   <style>
-    .gear-grid {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 2rem;
-      align-items: start;
-    }
-    @media (max-width: 900px) { .gear-grid { grid-template-columns: 1fr; } }
+    .gear-grid { display: block; }
 
     .gear-category {
       background: var(--color-white);
@@ -69,30 +63,11 @@
     .gear-table tr:last-child td { border-bottom: none; }
     .gear-table tr:hover td { background: rgba(91,140,107,0.05); }
 
-    .gear-weight {
-      color: var(--color-gray-600);
-      font-size: 0.82rem;
-      white-space: nowrap;
-    }
-
     .gear-notes {
       color: var(--color-gray-600);
       font-size: 0.82rem;
       font-style: italic;
     }
-
-    .gear-tag {
-      display: inline-block;
-      padding: 0.15rem 0.6rem;
-      border-radius: 0;
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .gear-tag.mika { background: rgba(180,100,140,0.12); color: #9a3068; }
-    .gear-tag.tom  { background: rgba(66,133,244,0.12);  color: #1a56a3; }
-    .gear-tag.both { background: rgba(91,140,107,0.12);  color: var(--color-secondary); }
 
     /* ── Mobile-responsive gear tables ──────────────────── */
     @media (max-width: 600px) {
@@ -125,17 +100,6 @@
       }
       .gear-table tbody td:not([data-label]) { display: none; }
     }
-
-    .weight-summary {
-      background: linear-gradient(135deg, var(--color-primary), #2a7a6e);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.5rem;
-      color: var(--color-white);
-      margin-bottom: 1.5rem;
-    }
-    .weight-summary h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; margin-bottom: 0.5rem; }
-    .weight-big { font-size: 2.5rem; font-weight: 700; font-family: var(--font-heading); }
-    .weight-sub { font-size: 0.85rem; opacity: 0.75; }
 
     /* ── Admin editing ───────────────────────────────── */
     .gear-admin-bar {
@@ -183,14 +147,6 @@
       border-radius: 3px;
       padding: 0 3px;
       cursor: text;
-    }
-    .gear-status-select {
-      border: 1px solid var(--color-gray-300);
-      border-radius: var(--radius-sm);
-      padding: 0.2rem 0.4rem;
-      font-size: 0.8rem;
-      background: #fff;
-      cursor: pointer;
     }
     .gear-row-delete {
       background: none;
@@ -265,21 +221,7 @@
       color: var(--color-primary);
       font-family: var(--font-heading);
     }
-
-    /* ── Split weight summary ────────────────────────────── */
-    .weight-split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
-    }
-    .weight-person-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      opacity: 0.8;
-      margin-bottom: 0.15rem;
-    }
+    .bike-setup-rig { margin: 0 1rem 1rem; text-align: left; }
   </style>
 </head>
 <body>
@@ -388,19 +330,21 @@
 
         <!-- Bike Setup Photos -->
         <div class="bike-setups">
-          <div class="bike-setup-card">
+          <div class="bike-setup-card" data-rig="mika">
             <div class="bike-setup-img" id="bike-setup-img-mika">
               <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
               <span class="placeholder-text" data-i18n="gear.photo.soon">Photo coming soon</span>
             </div>
-            <div class="bike-setup-label" data-i18n="gear.mika.bike">Mika's Bike</div>
+            <div class="bike-setup-label">Mika's Rig</div>
+            <div class="bike-setup-rig" id="rigMika"></div>
           </div>
-          <div class="bike-setup-card">
+          <div class="bike-setup-card" data-rig="tom">
             <div class="bike-setup-img" id="bike-setup-img-tom">
               <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
               <span class="placeholder-text" data-i18n="gear.photo.soon">Photo coming soon</span>
             </div>
-            <div class="bike-setup-label" data-i18n="gear.tom.bike">Tom's Bike</div>
+            <div class="bike-setup-label">Tom's Rig</div>
+            <div class="bike-setup-rig" id="rigTom"></div>
           </div>
         </div>
 
@@ -415,52 +359,6 @@
         <!-- Gear tables injected here by GearManager.init() -->
         <div id="gearContent">
           <p style="padding:2rem;color:var(--color-gray-600)" data-i18n="gear.loading">Loading gear list…</p>
-        </div>
-
-      </div>
-
-      <!-- Right: Sidebar -->
-      <div>
-
-        <!-- Weight Summary -->
-        <div class="weight-summary">
-          <h4 data-i18n="gear.weight.estimate">Estimated Pack Weight</h4>
-          <div class="weight-split">
-            <div>
-              <div class="weight-person-label">Mika</div>
-              <div class="weight-big" id="weightMika">—</div>
-              <div class="weight-sub">kg (loaded)</div>
-            </div>
-            <div>
-              <div class="weight-person-label">Tom</div>
-              <div class="weight-big" id="weightTom">—</div>
-              <div class="weight-sub">kg (loaded)</div>
-            </div>
-          </div>
-          <div class="weight-sub" style="margin-top:0.5rem">Target: &lt;25 kg per bike</div>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="sidebar-widget" style="margin-top:1.5rem">
-          <h3 data-i18n="gear.numbers">By the Numbers</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">~22</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)" data-i18n="gear.kg.bike">kg per bike</div>
-            </div>
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-accent);font-family:var(--font-heading)">40+</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)" data-i18n="gear.items">items each</div>
-            </div>
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-secondary);font-family:var(--font-heading)">4</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)" data-i18n="gear.panniers">panniers</div>
-            </div>
-            <div style="text-align:center;background:var(--color-gray-100);border-radius:var(--radius-md);padding:1rem">
-              <div style="font-size:1.75rem;font-weight:700;color:var(--color-warm);font-family:var(--font-heading)">180</div>
-              <div style="font-size:.8rem;color:var(--color-gray-600)" data-i18n="gear.days">days on road</div>
-            </div>
-          </div>
         </div>
 
       </div>
@@ -520,50 +418,31 @@
 
   // ── Default / seed data ──────────────────────────────────
   const GEAR_DEFAULT = [
-    { id: 'bikes-bags', icon: '🚲', name: 'Bikes & Bags', order: 0, items: [
-      { id: 'bb1', name: 'Touring bike (each)',   weight: '10.5 kg', who: 'Both', notes: 'Steel frame, 700c wheels' },
-      { id: 'bb2', name: 'Rear panniers (pair)',  weight: '1.4 kg',  who: 'Both', notes: 'Ortlieb Back-Roller Classic' },
-      { id: 'bb3', name: 'Front panniers (pair)', weight: '1.1 kg',  who: 'Both', notes: 'Ortlieb Front-Roller' },
-      { id: 'bb4', name: 'Handlebar bag',         weight: '0.4 kg',  who: 'Both', notes: 'Quick access for snacks & map' },
-      { id: 'bb5', name: 'Frame bag',             weight: '0.2 kg',  who: 'Both', notes: 'Tools & spares' },
+    { id: 'mika-rig', icon: '🚲', name: "Mika's Rig", order: 0, items: [
+      { id: 'mr1', name: 'Touring bike', notes: 'Steel frame, 700c wheels' },
+      { id: 'mr2', name: 'Rear panniers (pair)', notes: 'Ortlieb Back-Roller Classic' },
+      { id: 'mr3', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller' },
+      { id: 'mr4', name: 'Handlebar bag', notes: 'Quick access for camera and snacks' },
+      { id: 'mr5', name: 'Frame bag', notes: 'Tools and spares' },
     ]},
-    { id: 'shelter-sleep', icon: '⛺', name: 'Shelter & Sleep', order: 1, items: [
-      { id: 'ss1', name: 'Tent (2-person)',       weight: '1.6 kg',  who: 'Tom',  notes: 'MSR Hubba Hubba NX' },
-      { id: 'ss2', name: 'Sleeping bag (each)',   weight: '0.9 kg',  who: 'Both', notes: 'Down, comfort to 5°C' },
-      { id: 'ss3', name: 'Sleeping mat (each)',   weight: '0.5 kg',  who: 'Both', notes: 'Thermarest NeoAir' },
-      { id: 'ss4', name: 'Camping pillow (each)', weight: '0.1 kg',  who: 'Both', notes: 'Inflatable' },
+    { id: 'tom-rig', icon: '🚲', name: "Tom's Rig", order: 1, items: [
+      { id: 'tr1', name: 'Touring bike', notes: 'Steel frame, 700c wheels' },
+      { id: 'tr2', name: 'Rear panniers (pair)', notes: 'Ortlieb Back-Roller Classic' },
+      { id: 'tr3', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller' },
+      { id: 'tr4', name: 'Handlebar bag', notes: 'Route notes and quick-access gear' },
+      { id: 'tr5', name: 'Frame bag', notes: 'Pump and repair essentials' },
     ]},
-    { id: 'nav-tech', icon: '📡', name: 'Navigation & Tech', order: 2, items: [
-      { id: 'nt1', name: 'GPS device',           weight: '0.1 kg',  who: 'Both', notes: 'Garmin Edge 530' },
-      { id: 'nt2', name: 'Smartphone (each)',    weight: '0.2 kg',  who: 'Both', notes: 'Offline maps downloaded' },
-      { id: 'nt3', name: 'Solar charging panel', weight: '0.3 kg',  who: 'Tom',  notes: 'BigBlue 28W' },
-      { id: 'nt4', name: 'Power bank (each)',    weight: '0.2 kg',  who: 'Both', notes: '20,000 mAh' },
-      { id: 'nt5', name: 'Camera + lenses',      weight: '1.2 kg',  who: 'Mika', notes: 'Sony A6400 + 16-50 kit' },
-      { id: 'nt6', name: 'Laptop (shared)',      weight: '1.3 kg',  who: 'Mika', notes: 'For blog & work on the road' },
+    { id: 'necessary-items', icon: '⛺', name: 'Necessary Items', order: 2, items: [
+      { id: 'ni1', name: 'Tent (2-person)', notes: 'Main shelter' },
+      { id: 'ni2', name: 'Sleeping bags', notes: 'Down bags for cool nights' },
+      { id: 'ni3', name: 'Sleeping mats', notes: 'Compact inflatable mats' },
+      { id: 'ni4', name: 'Cooking stove + fuel', notes: 'Primary cooking setup' },
+      { id: 'ni5', name: 'Cook pot + pan', notes: 'Simple camp cooking set' },
+      { id: 'ni6', name: 'Mugs, bowls and utensils', notes: 'Shared meal kit' },
     ]},
-    { id: 'bike-maintenance', icon: '🔧', name: 'Bike Maintenance', order: 3, items: [
-      { id: 'bm1', name: 'Repair kit & multi-tool', weight: '0.4 kg', who: 'Both', notes: 'Leatherman + Park Tool' },
-      { id: 'bm2', name: 'Spare tubes (×4)',         weight: '0.4 kg', who: 'Both', notes: '700×35c' },
-      { id: 'bm3', name: 'Tyre levers + patches',    weight: '0.1 kg', who: 'Both', notes: '—' },
-      { id: 'bm4', name: 'Mini pump',                weight: '0.2 kg', who: 'Both', notes: 'Topeak Road Morph G' },
-      { id: 'bm5', name: 'Chain lube & cleaner',     weight: '0.2 kg', who: 'Both', notes: '—' },
-    ]},
-    { id: 'clothing', icon: '👕', name: 'Clothing (per person)', order: 4, items: [
-      { id: 'cl1', name: 'Cycling jerseys (×3)',      weight: '0.4 kg', who: 'Both', notes: 'Merino wool preferred' },
-      { id: 'cl2', name: 'Bib shorts (×2)',           weight: '0.3 kg', who: 'Both', notes: 'Padded' },
-      { id: 'cl3', name: 'Rain jacket',               weight: '0.4 kg', who: 'Both', notes: 'Lightweight packable' },
-      { id: 'cl4', name: 'Thermal base layers',       weight: '0.3 kg', who: 'Both', notes: 'For cold mornings' },
-      { id: 'cl5', name: 'Casual clothes (×2 sets)',  weight: '0.8 kg', who: 'Both', notes: 'Off-bike wear' },
-      { id: 'cl6', name: 'Cycling shoes (each)',      weight: '0.6 kg', who: 'Both', notes: 'SPD compatible' },
-      { id: 'cl7', name: 'Sandals/flip-flops',        weight: '0.3 kg', who: 'Both', notes: 'Camp & casual' },
-    ]},
-    { id: 'safety-health', icon: '🩺', name: 'Safety & Health', order: 5, items: [
-      { id: 'sh1', name: 'Helmets (each)',              weight: '0.3 kg', who: 'Both', notes: 'MIPS rated' },
-      { id: 'sh2', name: 'Lights front + rear (each)', weight: '0.2 kg', who: 'Both', notes: 'Rechargeable' },
-      { id: 'sh3', name: 'High-vis vest',               weight: '0.1 kg', who: 'Both', notes: 'Some countries require by law' },
-      { id: 'sh4', name: 'First aid kit',               weight: '0.4 kg', who: 'Mika', notes: 'Compact travel kit' },
-      { id: 'sh5', name: 'Sun cream + lip balm',        weight: '0.2 kg', who: 'Both', notes: 'SPF 50+' },
-      { id: 'sh6', name: 'Travel insurance docs',       weight: '—',       who: 'Both', notes: 'Covering bike touring' },
+    { id: 'unnecessary-items', icon: '🎁', name: 'Unnecessary Items', order: 3, items: [
+      { id: 'ui1', name: 'Tom', notes: 'Coffee dripper' },
+      { id: 'ui2', name: 'Mika', notes: 'Small sketchbook' },
     ]},
   ];
 
@@ -606,93 +485,75 @@
   }
 
   // ── Rendering ─────────────────────────────────────────────
-  function whoTag(who, editable) {
-    if (editable) {
-      return '<select class="gear-status-select" data-field="who">' +
-        ['Both', 'Mika', 'Tom'].map(v =>
-          '<option value="' + v + '"' + (who === v ? ' selected' : '') + '>' + v + '</option>'
-        ).join('') + '</select>';
-    }
-    const cls = (who || 'both').toLowerCase();
-    return '<span class="gear-tag ' + cls + '">' + (who || 'Both') + '</span>';
-  }
-
-  function parseWeight(w) {
-    const m = (w || '').match(/([\d.]+)\s*kg/i);
-    return m ? parseFloat(m[1]) : 0;
-  }
-
-  function updateWeightSummary(data) {
-    let mika = 0, tom = 0;
-    data.forEach(cat => {
-      cat.items.forEach(item => {
-        const w = parseWeight(item.weight);
-        const who = (item.who || 'Both').toLowerCase();
-        if (who === 'mika' || who === 'both') mika += w;
-        if (who === 'tom'  || who === 'both') tom  += w;
-      });
-    });
-    const elMika = document.getElementById('weightMika');
-    const elTom  = document.getElementById('weightTom');
-    if (elMika) elMika.textContent = mika.toFixed(1);
-    if (elTom)  elTom.textContent  = tom.toFixed(1);
-  }
-
-  function renderGear(data, editMode) {
-    const content = document.getElementById('gearContent');
-    if (!content) return;
-    let html = '';
-    data.forEach(cat => {
-      const cid = cat.id;
-      html += '<div class="gear-category"' + (editMode ? ' data-editing="1"' : '') + ' data-cat-id="' + cid + '">';
+  function renderCategory(cat, editMode, includeHeader = true) {
+    const cid = cat.id;
+    let html = '<div class="gear-category"' + (editMode ? ' data-editing="1"' : '') + ' data-cat-id="' + cid + '">';
+    if (includeHeader) {
       html += '<div class="gear-category-header">';
       html += '<span class="gear-category-icon"' + (editMode ? ' contenteditable="true" data-field="icon"' : '') + '>' + cat.icon + '</span>';
       html += '<h3' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + cat.name + '</h3>';
       if (editMode) html += '<button class="gear-cat-delete" onclick="GearManager.deleteCategory(\'' + cid + '\')" title="Remove category">✕ Remove</button>';
       html += '</div>';
-      html += '<table class="gear-table"><thead><tr><th>Item</th><th>Weight</th><th>Who</th><th>Notes</th>' + (editMode ? '<th></th>' : '') + '</tr></thead><tbody>';
-      cat.items.forEach(item => {
-        const iid = item.id;
-        html += '<tr data-item-id="' + iid + '">';
-        html += '<td data-label="Item"' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + item.name + '</td>';
-        html += '<td data-label="Weight" class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + item.weight + '</td>';
-        html += '<td data-label="Who">' + whoTag(item.who || 'Both', editMode) + '</td>';
-        html += '<td data-label="Notes" class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + item.notes + '</td>';
-        if (editMode) html += '<td data-label=""><button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
-        html += '</tr>';
-      });
-      html += '</tbody>';
-      if (editMode) {
-        html += '<tfoot><tr><td colspan="5"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
-      }
-      html += '</table></div>';
+    }
+    html += '<table class="gear-table"><thead><tr><th>Item</th><th>Notes</th>' + (editMode ? '<th></th>' : '') + '</tr></thead><tbody>';
+    cat.items.forEach(item => {
+      const iid = item.id;
+      html += '<tr data-item-id="' + iid + '">';
+      html += '<td data-label="Item"' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + (item.name || '') + '</td>';
+      html += '<td data-label="Notes" class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + (item.notes || '') + '</td>';
+      if (editMode) html += '<td data-label=""><button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
+      html += '</tr>';
     });
+    html += '</tbody>';
+    if (editMode) {
+      html += '<tfoot><tr><td colspan="3"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
+    }
+    html += '</table></div>';
+    return html;
+  }
+
+  function renderGear(data, editMode) {
+    const content = document.getElementById('gearContent');
+    const rigMika = document.getElementById('rigMika');
+    const rigTom  = document.getElementById('rigTom');
+    if (!content || !rigMika || !rigTom) return;
+
+    const mikaCat = data.find(cat => cat.id === 'mika-rig');
+    const tomCat  = data.find(cat => cat.id === 'tom-rig');
+    const rest    = data.filter(cat => cat.id !== 'mika-rig' && cat.id !== 'tom-rig');
+
+    rigMika.innerHTML = mikaCat ? renderCategory(mikaCat, editMode, editMode) : '';
+    rigTom.innerHTML  = tomCat  ? renderCategory(tomCat,  editMode, editMode) : '';
+
+    let html = '';
+    rest.forEach(cat => { html += renderCategory(cat, editMode, true); });
     if (editMode) {
       html += '<button class="gear-add-cat-btn" onclick="GearManager.addCategory()">＋ Add category</button>';
     }
     content.innerHTML = html;
-    updateWeightSummary(data);
   }
 
   function collectFromDOM() {
     const cats = [];
-    document.querySelectorAll('#gearContent .gear-category').forEach(catEl => {
+    const catEls = [
+      ...document.querySelectorAll('#rigMika .gear-category'),
+      ...document.querySelectorAll('#rigTom .gear-category'),
+      ...document.querySelectorAll('#gearContent .gear-category'),
+    ];
+    catEls.forEach(catEl => {
       const catId  = catEl.dataset.catId;
       const header = catEl.querySelector('.gear-category-header');
-      const icon   = (header.querySelector('[data-field="icon"]') || {}).textContent || '';
-      const name   = (header.querySelector('[data-field="name"]') || {}).textContent || '';
+      const current = _gearData.find(c => c.id === catId) || {};
+      const icon   = header ? (header.querySelector('[data-field="icon"]') || {}).textContent || '' : (current.icon || '📦');
+      const name   = header ? (header.querySelector('[data-field="name"]') || {}).textContent || '' : (current.name || 'New Category');
       const items  = [];
       catEl.querySelectorAll('tbody tr').forEach(row => {
         const nameEl   = row.querySelector('[data-field="name"]');
-        const weightEl = row.querySelector('[data-field="weight"]');
-        const whoEl    = row.querySelector('[data-field="who"]');
         const notesEl  = row.querySelector('[data-field="notes"]');
         if (!nameEl) return;
         items.push({
           id:     row.dataset.itemId || uid(),
           name:   nameEl.textContent.trim(),
-          weight: weightEl ? weightEl.textContent.trim() : '',
-          who:    whoEl    ? whoEl.value                 : 'Both',
           notes:  notesEl  ? notesEl.textContent.trim()  : '',
         });
       });
@@ -717,7 +578,7 @@
     addItem(catId) {
       _gearData = collectFromDOM();
       const cat = _gearData.find(c => c.id === catId);
-      if (cat) cat.items.push({ id: uid(), name: 'New item', weight: '0.0 kg', who: 'Both', notes: '' });
+      if (cat) cat.items.push({ id: uid(), name: 'New item', notes: '' });
       renderGear(_gearData, true);
     },
     addCategory() {
@@ -785,13 +646,18 @@
   }
 
   // ── Init ──────────────────────────────────────────────────
+  function isRevampedShape(data) {
+    const ids = new Set((data || []).map(cat => cat.id));
+    return ids.has('mika-rig') && ids.has('tom-rig') && ids.has('necessary-items') && ids.has('unnecessary-items');
+  }
+
   async function init() {
     try {
       await window.TomikaBikes.ensureFirebaseAuth();
       await ensureFirestore();
       const data = await fetchFromFirestore();
-      _gearData = data || GEAR_DEFAULT;
-      if (!data) await saveToFirestore(_gearData); // seed Firestore on first visit
+      _gearData = (data && isRevampedShape(data)) ? data : GEAR_DEFAULT;
+      if (!data || !isRevampedShape(data)) await saveToFirestore(_gearData);
     } catch (e) {
       console.warn('Firestore unavailable, using built-in gear data:', e);
       _gearData = GEAR_DEFAULT;
@@ -808,14 +674,13 @@
       if (!doc.exists) return;
       const d = doc.data();
       const bikeConfig = {
-        "Mika's Bike": { url: d.mikaBikeUrl, photo: d.mikaBikePhoto, imgId: 'bike-setup-img-mika' },
-        "Tom's Bike":  { url: d.tomBikeUrl,  photo: d.tomBikePhoto,  imgId: 'bike-setup-img-tom' },
+        mika: { label: "Mika's Rig", url: d.mikaBikeUrl, photo: d.mikaBikePhoto, imgId: 'bike-setup-img-mika' },
+        tom:  { label: "Tom's Rig",  url: d.tomBikeUrl,  photo: d.tomBikePhoto,  imgId: 'bike-setup-img-tom' },
       };
       document.querySelectorAll('.bike-setup-card').forEach(card => {
         const label = card.querySelector('.bike-setup-label');
         if (!label) return;
-        const name   = label.textContent.trim();
-        const config = bikeConfig[name];
+        const config = bikeConfig[card.dataset.rig];
         if (!config) return;
         // Apply photo if available
         if (config.photo && /^https?:\/\//.test(config.photo)) {
@@ -824,7 +689,7 @@
             imgEl.innerHTML = '';
             const img = document.createElement('img');
             img.src   = config.photo;
-            img.alt   = name;
+            img.alt   = config.label;
             img.style.cssText = 'width:100%;height:100%;object-fit:cover';
             imgEl.appendChild(img);
           }
@@ -837,7 +702,7 @@
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
           a.style.cssText = 'color:var(--color-primary);text-decoration:none';
-          a.textContent = name;
+          a.textContent = config.label;
           const icon = document.createElement('span');
           icon.style.cssText = 'font-size:.75em;vertical-align:middle;margin-left:.25em';
           icon.textContent = '🔗';
