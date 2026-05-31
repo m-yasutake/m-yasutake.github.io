@@ -55,6 +55,7 @@ const TRANSLATIONS = {
     /* ── Index: Latest posts ── */
     'index.posts.eyebrow': 'From the Blog',
     'index.posts.title':   'Latest Adventures',
+    'index.posts.seemore': 'See More →',
 
     /* ── Index: CTA ── */
     'index.cta.title':  'Ready to follow the journey?',
@@ -258,6 +259,7 @@ const TRANSLATIONS = {
     /* ── Index: Latest posts ── */
     'index.posts.eyebrow': 'ブログより',
     'index.posts.title':   '最新の冒険',
+    'index.posts.seemore': 'もっと見る →',
 
     /* ── Index: CTA ── */
     'index.cta.title':  '旅についていく準備はできましたか？',
@@ -461,6 +463,7 @@ const TRANSLATIONS = {
     /* ── Index: Latest posts ── */
     'index.posts.eyebrow': 'Fra bloggen',
     'index.posts.title':   'Siste eventyr',
+    'index.posts.seemore': 'Se mer →',
 
     /* ── Index: CTA ── */
     'index.cta.title':  'Klar til å følge reisen?',
