@@ -335,7 +335,7 @@
               <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
               <span class="placeholder-text" data-i18n="gear.photo.soon">Photo coming soon</span>
             </div>
-            <div class="bike-setup-label">Mika's Rig</div>
+            <div class="bike-setup-label" data-i18n="gear.mika.bike">Mika's Rig</div>
             <div class="bike-setup-rig" id="rigMika"></div>
           </div>
           <div class="bike-setup-card" data-rig="tom">
@@ -343,7 +343,7 @@
               <span class="placeholder-icon" role="img" aria-label="Bicycle">🚲</span>
               <span class="placeholder-text" data-i18n="gear.photo.soon">Photo coming soon</span>
             </div>
-            <div class="bike-setup-label">Tom's Rig</div>
+            <div class="bike-setup-label" data-i18n="gear.tom.bike">Tom's Rig</div>
             <div class="bike-setup-rig" id="rigTom"></div>
           </div>
         </div>
@@ -441,8 +441,8 @@
       { id: 'ni6', name: 'Mugs, bowls and utensils', notes: 'Shared meal kit' },
     ]},
     { id: 'unnecessary-items', icon: '🎁', name: 'Unnecessary Items', order: 3, items: [
-      { id: 'ui1', name: 'Tom', notes: 'Coffee dripper' },
-      { id: 'ui2', name: 'Mika', notes: 'Small sketchbook' },
+      { id: 'ui1', name: 'Coffee dripper', notes: 'Tom' },
+      { id: 'ui2', name: 'Small sketchbook', notes: 'Mika' },
     ]},
   ];
 
@@ -506,7 +506,8 @@
     });
     html += '</tbody>';
     if (editMode) {
-      html += '<tfoot><tr><td colspan="3"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
+      const colSpan = 2 + (editMode ? 1 : 0);
+      html += '<tfoot><tr><td colspan="' + colSpan + '"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
     }
     html += '</table></div>';
     return html;
