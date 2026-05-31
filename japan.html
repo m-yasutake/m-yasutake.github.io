@@ -435,16 +435,12 @@
         <div class="map-legend-item">
           <svg class="map-legend-pin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40">
             <path d="M16 2C9.4 2 4 7.4 4 14c0 9.3 12 24 12 24S28 23.3 28 14C28 7.4 22.6 2 16 2z" fill="#27ae60" stroke="#fff" stroke-width="2"/>
-            <circle cx="16" cy="14" r="6" fill="#fff"/>
-            <text x="16" y="18" text-anchor="middle" font-size="9" font-family="sans-serif">▶</text>
           </svg>
           <span>Start – Cape Sata</span>
         </div>
         <div class="map-legend-item">
           <svg class="map-legend-pin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40">
             <path d="M16 2C9.4 2 4 7.4 4 14c0 9.3 12 24 12 24S28 23.3 28 14C28 7.4 22.6 2 16 2z" fill="#e74c3c" stroke="#fff" stroke-width="2"/>
-            <circle cx="16" cy="14" r="6" fill="#fff"/>
-            <text x="16" y="18" text-anchor="middle" font-size="9" font-family="sans-serif">■</text>
           </svg>
           <span>Finish – Cape Soya</span>
         </div>
@@ -621,7 +617,7 @@
         </div>
       </div>
       <div class="footer-col"><h4 data-i18n="footer.explore">Explore</h4><a href="index.html" data-i18n="nav.home">Home</a><a href="japan.html" data-i18n="nav.japan">Japan</a><a href="norway.html" data-i18n="nav.norway">Norway</a><a href="gear.html" data-i18n="nav.gear">Gear</a></div>
-      <div class="footer-col"><h4 data-i18n="footer.info">Info</h4><a href="about.html" data-i18n="footer.about">About Us</a><a href="#" data-i18n="footer.contact">Contact</a></div>
+      <div class="footer-col"><h4 data-i18n="footer.info">Info</h4><a href="about.html" data-i18n="footer.about">About Us</a></div>
       <div class="footer-col"><h4 data-i18n="footer.admin">Admin</h4><a href="#" data-auth data-i18n="footer.login">Login</a><a href="admin.html" class="admin-only-link" style="display:none" data-i18n="footer.dashboard">Dashboard</a></div>
     </div>
     <div class="footer-bottom">
@@ -663,8 +659,6 @@
     var html = '<div style="position:relative;width:32px;height:40px">' +
       '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
         '<path d="M16 2C9.4 2 4 7.4 4 14c0 9.3 12 24 12 24S28 23.3 28 14C28 7.4 22.6 2 16 2z" fill="#27ae60" stroke="#fff" stroke-width="2"/>' +
-        '<circle cx="16" cy="14" r="6" fill="#fff"/>' +
-        '<text x="16" y="18" text-anchor="middle" font-size="9" font-family="sans-serif">▶</text>' +
       '</svg>' +
     '</div>';
     return L.divIcon({ html: html, className: '', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -42] });
@@ -674,8 +668,6 @@
     var html = '<div style="position:relative;width:32px;height:40px">' +
       '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
         '<path d="M16 2C9.4 2 4 7.4 4 14c0 9.3 12 24 12 24S28 23.3 28 14C28 7.4 22.6 2 16 2z" fill="#e74c3c" stroke="#fff" stroke-width="2"/>' +
-        '<circle cx="16" cy="14" r="6" fill="#fff"/>' +
-        '<text x="16" y="18" text-anchor="middle" font-size="9" font-family="sans-serif">■</text>' +
       '</svg>' +
     '</div>';
     return L.divIcon({ html: html, className: '', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -42] });
