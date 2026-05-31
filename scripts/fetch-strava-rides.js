@@ -742,6 +742,7 @@ async function updateStatsDocument() {
     categoryRouteIds.set('japan', new Set(fallbackJapan.map(r => r.id)));
   }
 
+  const staticStats = {};
   for (const [category, ids] of categoryRouteIds.entries()) {
     const categoryRoutes = routes.filter(r => ids.has(r.id));
     const stats = computeStatsForRoutes(categoryRoutes);
@@ -751,7 +752,27 @@ async function updateStatsDocument() {
     if (stats.currentPosition) {
       console.log(`  ✓ stats/${category} currentPosition    = [${stats.currentPosition}] (${stats.currentRouteName})`);
     }
+    // Collect serialisable fields for the static file (exclude Firestore sentinels)
+    staticStats[category] = {
+      totalDistanceKm:    stats.totalDistanceKm,
+      totalElevationGain: stats.totalElevationGain,
+      rideCount:          stats.rideCount,
+      ...(stats.currentPosition ? {
+        currentPosition:  stats.currentPosition,
+        currentRouteName: stats.currentRouteName
+      } : {})
+    };
   }
+
+  // Write a static stats file to the repo so the map page can read trip totals
+  // without making a live Firestore query on every page load.
+  const statsFilePath = path.join(__dirname, '..', 'assets', 'stats.json');
+  fs.writeFileSync(
+    statsFilePath,
+    JSON.stringify({ ...staticStats, generatedAt: new Date().toISOString() }, null, 2),
+    'utf8'
+  );
+  console.log(`  ✓ Static stats written to ${statsFilePath}`);
 }
 
 /** Write job outputs for downstream GitHub Actions steps. */

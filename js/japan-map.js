@@ -898,14 +898,14 @@
         _isAdmin = false;
       }
       updateAuthUI();
-      loadFirebaseRoutes();
     });
   }
 
   function initFirebase() {
+    loadFirebaseRoutes(); // Fetch static stats — no Firebase needed
     if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
       console.log('Map: Firebase not configured — running in local-only mode.');
-      markLoaded('routes'); markLoaded('points'); return;
+      markLoaded('points'); return;
     }
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
@@ -919,7 +919,6 @@
           try { db.settings(firestoreSettings); } catch(e) { /* already set — ignore */ }
         }
         firebaseReady = true;
-        loadFirebaseRoutes();
         loadFirebasePoints();
         loadAuthAndStorage()
           .then(() => {
@@ -954,19 +953,10 @@
     renderToggles();
   }
 
-  // ── Update Trip Overview sidebar stats from Strava routes ──
-  function updateMapTripStats(snapshot) {
-    let totalKm = 0;
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (data.source !== 'strava') return;
-      if (typeof data.distanceKm === 'number') {
-        totalKm += data.distanceKm;
-      } else if (data.metadata && data.metadata.description) {
-        const m = data.metadata.description.match(/Distance:\s*([\d.]+)\s*km/i);
-        if (m) totalKm += parseFloat(m[1]);
-      }
-    });
+  // ── Update Trip Overview sidebar stats from static assets/stats.json ──
+  function updateMapTripStats(statsData) {
+    const japan = statsData && statsData.japan;
+    const totalKm = japan && typeof japan.totalDistanceKm === 'number' ? japan.totalDistanceKm : 0;
     const kmEl = document.getElementById('map-stat-km');
     if (kmEl) kmEl.textContent = totalKm > 0 ? Math.round(totalKm).toLocaleString() : '0';
 
@@ -977,20 +967,22 @@
   }
 
   function loadFirebaseRoutes() {
-    if (!firebaseReady) return;
-    db.collection('routes').orderBy('uploadedAt', 'desc').get()
-      .then(snapshot => {
-        snapshot.forEach(doc => { loadedFirebaseIds.add(doc.id); });
-        updateMapTripStats(snapshot);
+    fetch('assets/stats.json', { cache: 'default' })
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        updateMapTripStats(data);
         markLoaded('routes');
       })
-      .catch(err => {
-        console.error('Firestore read error:', err);
+      .catch(function(err) {
+        console.warn('Could not load stats.json:', err);
         markLoaded('routes');
       });
   }
 
-  const POINTS_SNAPSHOT_URL = 'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/points%2Fpoints.json?alt=media';
+  const POINTS_SNAPSHOT_URL = 'assets/points.json';
 
   let _pointsLoadStarted = false;
   const POINTS_BATCH_SIZE = 1000;

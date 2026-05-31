@@ -225,6 +225,12 @@ async function main() {
   const buffer = Buffer.from(json, 'utf8');
   console.log(`Snapshot size: ${(buffer.length / 1024).toFixed(1)} KB`);
 
+  // Write a local copy to the repo so GitHub Pages serves it as a static asset.
+  // This avoids a round-trip to Firebase Storage on every page load.
+  const localPath = path.join(__dirname, '..', 'assets', 'points.json');
+  fs.writeFileSync(localPath, json, 'utf8');
+  console.log(`Local snapshot written to ${localPath}`);
+
   // Upload to Firebase Storage
   console.log('Uploading points/points.json to Firebase Storage...');
   const file = bucket.file('points/points.json');

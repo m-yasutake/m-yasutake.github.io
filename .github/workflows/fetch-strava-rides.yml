@@ -39,7 +39,7 @@ jobs:
   fetch-rides:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     outputs:
       new_rides:     ${{ steps.fetch.outputs.new_rides }}
@@ -71,6 +71,14 @@ jobs:
           JAPAN_TRIP_TO:        ${{ vars.JAPAN_TRIP_TO }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node fetch-strava-rides.js
+
+      - name: Commit updated stats snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/stats.json
+          git diff --cached --quiet || git commit -m "chore: update assets/stats.json [skip ci]"
+          git push
 
   # ── Job 2: regenerate PMTiles so new rides appear on the map ────────────────
   regenerate-tiles:
