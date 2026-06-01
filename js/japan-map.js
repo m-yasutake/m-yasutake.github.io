@@ -490,29 +490,22 @@
     }
     const pointType = getPointType(pointData);
     const marker = L.marker([pointData.lat, pointData.lon], { icon: getPointIcon(pointType) });
-    // Popup: show only the essential info upfront; extra details (description,
-    // price, hours, notes) are deferred inside a <details> element so they are
-    // not rendered until the user explicitly expands them.
     marker.bindPopup(function() {
       const pointUrl = resolvePointUrl(pointData, pointData.metadata);
       let content = '<b>' + escapeHtml(pointData.name) + '</b>';
       if (pointType !== '_default') content += '<br><span style="font-size:0.85em;color:#6c757d;">' + escapeHtml(pointType) + '</span>';
-      if (pointUrl) content += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';
       if (pointData.metadata) {
         const meta = pointData.metadata;
         const desc  = meta.description || meta.Description || '';
         const price = meta.price || meta.Price || '';
         const hours = meta.hours || meta.Hours || '';
         const notes = meta.notes || meta.Notes || '';
-        if (desc || price || hours || notes) {
-          content += '<details style="margin-top:0.4em"><summary style="cursor:pointer;font-size:0.85em;color:#6c757d;">More details</summary><div style="margin-top:0.3em">';
-          if (desc)  content += '<span style="color:#6c757d;font-size:0.92em;display:block;">' + escapeHtml(desc) + '</span>';
-          if (price) content += '<span style="font-size:0.9em;display:block;">💴 ' + escapeHtml(price) + '</span>';
-          if (hours) content += '<span style="font-size:0.9em;display:block;">🕐 ' + escapeHtml(hours) + '</span>';
-          if (notes) content += '<span style="color:#6c757d;font-size:0.88em;font-style:italic;display:block;">' + escapeHtml(notes) + '</span>';
-          content += '</div></details>';
-        }
+        if (desc)  content += '<span style="color:#6c757d;font-size:0.92em;display:block;margin-top:0.3em;">' + escapeHtml(desc) + '</span>';
+        if (price) content += '<span style="font-size:0.9em;display:block;">💴 ' + escapeHtml(price) + '</span>';
+        if (hours) content += '<span style="font-size:0.9em;display:block;">🕐 ' + escapeHtml(hours) + '</span>';
+        if (notes) content += '<span style="color:#6c757d;font-size:0.88em;font-style:italic;display:block;">' + escapeHtml(notes) + '</span>';
       }
+      if (pointUrl) content += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';
       return content;
     });
     return marker;
