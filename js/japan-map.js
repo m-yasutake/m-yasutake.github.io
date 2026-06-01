@@ -23,14 +23,13 @@
       }
       return Promise.reject(new TypeError('pmtiles:// – no instance registered for: ' + u));
     }
-    if (options && options.cache &&
-        (options.cache === 'reload' || options.cache === 'no-store' || options.cache === 'no-cache')) {
-      var safeOptions = Object.assign({}, options, { cache: 'default' });
-      return _orig.call(window, resource, safeOptions).catch(function(err) {
-        var bare = Object.assign({}, options);
-        delete bare.cache;
-        return _orig.call(window, resource, bare);
-      });
+    // Chrome throws ERR_CACHE_OPERATION_NOT_SUPPORTED for cache:'no-store' on
+    // range requests served over HTTP (not HTTPS). Strip the cache option for
+    // .pmtiles requests so byte-range fetches succeed locally and on GitHub Pages.
+    if (u && u.endsWith('.pmtiles') && options && options.cache) {
+      var stripped = Object.assign({}, options);
+      delete stripped.cache;
+      return _orig.call(window, resource, stripped);
     }
     return _orig.call(window, resource, options);
   };
@@ -306,7 +305,9 @@
     if (typeof pmtiles === 'undefined' || typeof L.vectorGrid === 'undefined') return;
 
     function buildLayer(pmtilesUrl, instanceKey) {
-      const p = new pmtiles.PMTiles(pmtilesUrl);
+      // Use absolute URL so PMTiles resolves internal range requests correctly.
+      const absUrl = new URL(pmtilesUrl, location.href).href;
+      const p = new pmtiles.PMTiles(absUrl);
       if (window.__pmtilesInstances) window.__pmtilesInstances[instanceKey] = p;
       // getHeader() does an HTTP range request to read the PMTiles file header.
       // If the server doesn't support byte-serving at this moment (e.g. local
