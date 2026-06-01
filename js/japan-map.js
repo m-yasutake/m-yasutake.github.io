@@ -150,25 +150,17 @@
   }
 
   const baseLayers = {
-    'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19
-    }),
-    'OpenTopoMap': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
-      maxZoom: 17
-    }),
     'CyclOSM (Cycling)': L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://www.cyclosm.org">CyclOSM</a>',
-      maxZoom: 20
+      maxZoom: 20,
+      updateWhenIdle: true,    // only load tiles after pan stops, not continuously during
+      keepBuffer: 1,           // default is 2; reduces tiles loaded beyond the viewport
     }),
     'ESRI Topo': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
       attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
-      maxZoom: 19
-    }),
-    'ESRI Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
-      maxZoom: 19
+      maxZoom: 19,
+      updateWhenIdle: true,    // only load tiles after pan stops, not continuously during
+      keepBuffer: 1,           // default is 2; reduces tiles loaded beyond the viewport
     })
   };
 
@@ -511,6 +503,17 @@
   }
   map.on('zoomend', _onZoomEnd);
 
+  // ── Viewport culling on pan ─────────────────────────────────
+  // After a pan ends, add markers that scrolled into view and remove those
+  // that scrolled out. Keeping the layerGroup small is the key fix for pan
+  // INP: Leaflet repositions every DOM marker on moveend, so fewer markers
+  // means less work per pan.
+  let _moveEndTimer = null;
+  map.on('moveend', function() {
+    if (_moveEndTimer) clearTimeout(_moveEndTimer);
+    _moveEndTimer = setTimeout(applyPointTypeFilters, 150);
+  });
+
   // ── PMTiles route layers ────────────────────────────────────
   function initPMTilesLayer() {
     if (typeof pmtiles === 'undefined' || typeof L.vectorGrid === 'undefined') return;
@@ -533,7 +536,11 @@
           interactive: true,
           getFeatureId: function(f) { return f.properties.name || f.properties.filename; },
           maxNativeZoom: header.maxZoom || 14,
-          minNativeZoom: header.minZoom || 2
+          minNativeZoom: header.minZoom || 2,
+          // Don't re-render tiles on every zoom step — wait until zoom settles.
+          updateWhenZooming: false,
+          // Keep more tiles in the buffer so panning doesn't trigger re-fetches.
+          keepBuffer: 4
         });
         layer.on('click', function(e) {
           const props = e.layer.properties;
@@ -564,18 +571,17 @@
       });
     }
 
-    function tryLoadTile(storageName, instanceKey, overlayLabel, directUrl, addToMap) {
+    function tryLoadTile(storageName, instanceKey, overlayLabel, storageUrl, addToMap) {
       function tryLoad(url) {
         return buildLayer(url, instanceKey).then(function(layer) {
           layerControl.addOverlay(layer, overlayLabel);
           if (addToMap) layer.addTo(map);
         });
       }
-      const storagePromise = storage
-        ? storage.ref('tiles/' + storageName).getDownloadURL().then(tryLoad)
-        : Promise.reject(new Error('storage not ready'));
-      storagePromise.catch(function() {
-        tryLoad(directUrl).catch(function(err) {
+      // Try the local static asset first (served by GitHub Pages CDN — fastest).
+      // Fall back to Firebase Storage if the file isn't committed to the repo.
+      tryLoad('assets/tiles/' + storageName).catch(function() {
+        tryLoad(storageUrl).catch(function(err) {
           console.warn('PMTiles layer "' + overlayLabel + '" unavailable:', err && err.message || err);
         });
       });
@@ -716,9 +722,12 @@
   }
 
   function applyPointTypeFilters() {
+    // Compute bounds once for the whole pass — avoids repeated getBounds() calls.
+    const bounds = map.getBounds().pad(0.6);
     points.forEach(p => {
-      const type = p.type||'Other';
-      if (p.visible !== false && pointTypeFilters.has(type)) pointLayerGroup.addLayer(p.marker);
+      const type = p.type || 'Other';
+      const show = p.visible !== false && pointTypeFilters.has(type) && bounds.contains([p.lat, p.lon]);
+      if (show) pointLayerGroup.addLayer(p.marker);
       else pointLayerGroup.removeLayer(p.marker);
     });
   }
@@ -783,20 +792,54 @@
 
   function addPoint(pointData, fileName, firebaseDocId) {
     const marker = createPointMarker(pointData);
-    pointLayerGroup.addLayer(marker);
-    points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
+    const pointType = getPointType(pointData);
+    points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: pointType, metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
+    if (pointTypeFilters.has(pointType) && map.getBounds().pad(0.6).contains([pointData.lat, pointData.lon])) {
+      pointLayerGroup.addLayer(marker);
+    }
     scheduleRenderPointToggles();
   }
 
+  // Number of markers added to the DOM per animation frame. Keeping this small
+  // ensures each chunk finishes well within one 16 ms frame budget so the
+  // browser can paint and handle pointer events between chunks.
+  const BATCH_CHUNK_SIZE = 20;
+
   function addPointsBatch(pointDataArray) {
-    for (let i = 0; i < pointDataArray.length; i++) {
-      const { pointData, fileName, firebaseDocId } = pointDataArray[i];
-      const marker = createPointMarker(pointData);
-      // LayerGroup has addLayer/removeLayer but no addLayers batch API.
-      pointLayerGroup.addLayer(marker);
-      points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: getPointType(pointData), metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
+    const generation = ++_batchGeneration;
+    let i = 0;
+
+    function processChunk() {
+      // A newer batch has started (e.g. the user zoomed again); stop here.
+      if (generation !== _batchGeneration) return;
+
+      // Compute viewport bounds once per chunk, not per marker.
+      const bounds = map.getBounds().pad(0.6);
+      const end = Math.min(i + BATCH_CHUNK_SIZE, pointDataArray.length);
+      for (; i < end; i++) {
+        const { pointData, fileName, firebaseDocId } = pointDataArray[i];
+        const marker = createPointMarker(pointData);
+        const pointType = getPointType(pointData);
+        points.push({ name: pointData.name, lat: pointData.lat, lon: pointData.lon, url: resolvePointUrl(pointData, pointData.metadata), type: pointType, metadata: pointData.metadata, marker, visible: true, fileName, firebaseDocId: firebaseDocId||null });
+        // Only insert a DOM element for markers inside the current viewport.
+        // Out-of-viewport markers are added lazily when the user pans to them
+        // via the moveend → applyPointTypeFilters path.
+        if (pointTypeFilters.has(pointType) && bounds.contains([pointData.lat, pointData.lon])) {
+          pointLayerGroup.addLayer(marker);
+        }
+      }
+
+      if (i < pointDataArray.length) {
+        // requestAnimationFrame guarantees the browser paints and can process
+        // pointer input before the next chunk runs, unlike setTimeout(0) which
+        // queues macrotasks back-to-back without a paint opportunity.
+        requestAnimationFrame(processChunk);
+      } else {
+        scheduleRenderPointToggles();
+      }
     }
-    scheduleRenderPointToggles();
+
+    processChunk();
   }
 
   function removePointFromMap(idx) { pointLayerGroup.removeLayer(points[idx].marker); points.splice(idx, 1); renderPointToggles(); }
@@ -806,9 +849,14 @@
     if (!container) return;
     container.innerHTML = '';
     const availableTypes = getAvailablePointTypes();
-    availableTypes.forEach(t => { if (!_seenPointTypes.has(t)) { _seenPointTypes.add(t); } });
+    // Auto-enable any point type seen for the first time so markers are visible
+    // by default. _seenPointTypes prevents re-enabling after the user turns a
+    // type off via the filter panel.
+    availableTypes.forEach(t => { if (!_seenPointTypes.has(t)) { _seenPointTypes.add(t); pointTypeFilters.add(t); } });
+    const typeCounts = Object.create(null);
+    points.forEach(p => { const t = p.type || 'Other'; typeCounts[t] = (typeCounts[t] || 0) + 1; });
     availableTypes.forEach(type => {
-      const count = points.filter(p => (p.type||'Other') === type).length;
+      const count = typeCounts[type] || 0;
       const iconDef = POINT_TYPE_ICONS[type] || POINT_TYPE_ICONS['_default'];
       const lbl = document.createElement('label');
       const cb = document.createElement('input');
@@ -998,6 +1046,9 @@
   // Called by the debounced _onZoomEnd handler; set when the snapshot has
   // cluster levels so zoom transitions update the displayed cluster layer.
   let _onZoomEndSnapshot = null;
+  // Incremented each time addPointsBatch starts; in-flight chunks compare
+  // against this and abort early if a newer batch has superseded them.
+  let _batchGeneration = 0;
 
   function normalizeSnapshotPoint(d) {
     return {
@@ -1232,7 +1283,7 @@
       .catch(err => { console.error('Metadata save error:', err); metaSaveBtn.textContent = 'Save'; metaSaveBtn.disabled = false; alert('Failed to save metadata: ' + err.message); });
   }
 
-  function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+  function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }  
   function escapeAttr(str) { return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   // ── Packing checklist ───────────────────────────────────────
