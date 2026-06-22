@@ -8,41 +8,239 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://server.arcgisonline.com" />
+  <link rel="preconnect" href="https://www.gstatic.com" />
+  <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
 
   <style>
-    .coming-soon-wrap {
-      min-height: 60vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 4rem 1.5rem;
-    }
+  #map {
+    height: 70vh;
+    width: 100%;
+    border-radius: 6px;
+    margin-bottom: 1em;
+    z-index: 1;
+  }
 
-    .coming-soon-icon {
-      font-size: 5rem;
-      margin-bottom: 1.5rem;
-      line-height: 1;
-    }
+  .point-type-icon {
+    background: none !important;
+    border: none !important;
+  }
 
-    .coming-soon-wrap h2 {
-      font-size: clamp(1.75rem, 4vw, 2.75rem);
-      font-weight: 400;
-      margin-bottom: 1rem;
-      color: var(--color-primary);
-    }
+  .roots-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+    align-items: center;
+  }
 
-    .coming-soon-wrap p {
-      font-size: 1.05rem;
-      color: var(--color-gray-600);
-      max-width: 560px;
-      line-height: 1.75;
-      margin-bottom: 2rem;
-    }
+  .roots-controls label {
+    padding: 0.4em 0.8em;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    color: var(--color-dark);
+  }
+
+  .roots-controls label:hover { border-color: var(--color-secondary); }
+  .roots-controls input[type="checkbox"] { accent-color: var(--color-secondary); }
+
+  .roots-btn {
+    padding: 0.4em 0.8em;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 4px;
+    color: var(--color-dark);
+    cursor: pointer;
+    font-size: 0.85em;
+    font-family: var(--font-body);
+    transition: all var(--transition);
+  }
+
+  .roots-btn:hover { border-color: var(--color-secondary); color: var(--color-secondary); }
+  .roots-btn.active { border-color: var(--color-secondary); background: var(--color-secondary); color: var(--color-white); }
+
+  /* Filter popup */
+  .filter-wrapper { position: relative; display: inline-block; }
+  .filter-popup {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    padding: 0.75rem;
+    z-index: 9001;
+    min-width: 220px;
+    max-height: 320px;
+    overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    color: var(--color-dark);
+  }
+  .filter-popup.open { display: block; }
+  .filter-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+  .filter-popup-header strong { font-size: 0.85em; color: var(--color-primary); }
+  .filter-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-gray-600);
+    font-size: 0.9em;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+  .filter-close-btn:hover { color: var(--color-dark); }
+  #filter-popup #type-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  #filter-popup #type-filters label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.35em 0.5em;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: var(--color-dark);
+    background: transparent;
+    border: none;
+  }
+  #filter-popup #type-filters .filter-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  .filter-popup-footer {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--color-gray-200);
+  }
+  #filter-active-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-secondary);
+    color: white;
+    border-radius: 999px;
+    font-size: 0.7em;
+    padding: 0.1em 0.45em;
+    margin-left: 0.3em;
+    min-width: 1.4em;
+    line-height: 1.4;
+  }
+
+  /* Loading overlay */
+  #map-loading {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(38, 70, 83, 0.75);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: opacity 0.4s ease;
+  }
+  #map-loading.fade-out { opacity: 0; pointer-events: none; }
+  #map-loading .loading-text { color: rgba(255,255,255,0.85); font-size: 0.9em; }
+  #map-wrapper { position: relative; }
+
+  /* Fullscreen */
+  #fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  #fullscreen-btn:hover { background: #f4f4f4; }
+
+  #map-wrapper.map-fullscreen {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100dvh !important;
+    z-index: 9998 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  @supports not (height: 100dvh) {
+    #map-wrapper.map-fullscreen { height: -webkit-fill-available !important; }
+  }
+  #map-wrapper.map-fullscreen #map {
+    height: 100% !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Cluster markers */
+  .marker-cluster { background-clip: padding-box; border-radius: 20px; }
+  .marker-cluster div { width: 30px; height: 30px; margin-left: 5px; margin-top: 5px; border-radius: 15px; text-align: center; font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif; color: #fff; font-weight: 700; }
+  .marker-cluster span { line-height: 30px; }
+  .marker-cluster-small { background-color: rgba(42, 157, 143, 0.55); }
+  .marker-cluster-small div { background-color: rgba(42, 157, 143, 0.8); }
+  .marker-cluster-medium { background-color: rgba(233, 196, 106, 0.6); }
+  .marker-cluster-medium div { background-color: rgba(233, 196, 106, 0.85); }
+  .marker-cluster-large { background-color: rgba(231, 111, 81, 0.6); }
+  .marker-cluster-large div { background-color: rgba(231, 111, 81, 0.8); }
+
+  /* Section headers */
+  .norway-section-header {
+    background: var(--color-gray-100);
+    border-bottom: 1px solid var(--color-gray-200);
+    padding: 1.25rem 0;
+  }
+  .norway-section-header .container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .norway-section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-primary);
+  }
+  .norway-section-header .section-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
   </style>
 </head>
 <body>
@@ -131,17 +329,61 @@
   </div>
 </div>
 
-<!-- Coming Soon Content -->
-<section class="section">
-  <div class="container">
-    <div class="coming-soon-wrap">
-      <div class="coming-soon-icon">🇳🇴</div>
-      <h2>Norway Planning – Coming Soon</h2>
-      <p>This page will cover our planning for the Norway leg of the trip — routes, gear prep, logistics, and everything in between.</p>
-      <a href="norway.html" class="btn btn-primary">🇳🇴 See the Norway Trip</a>
+<!-- ══════════════════════════════════════════
+     MAP SECTION
+════════════════════════════════════════════ -->
+<div id="map-section">
+  <div class="norway-section-header">
+    <div class="container">
+      <span class="section-icon">🗺️</span>
+      <h2>Route Map</h2>
     </div>
   </div>
-</section>
+
+  <section class="section" style="padding-top:2rem">
+    <div class="container">
+
+      <!-- Filter controls -->
+      <div class="roots-controls">
+        <div class="filter-wrapper">
+          <button class="roots-btn" id="filter-btn" aria-label="Open point filters">
+            🔍 Filters<span id="filter-active-badge" style="display:none"></span>
+          </button>
+          <div class="filter-popup" id="filter-popup">
+            <div class="filter-popup-header">
+              <strong>Filter Points</strong>
+              <button class="filter-close-btn" id="filter-close-btn" aria-label="Close filters">✕</button>
+            </div>
+            <div id="type-filters"></div>
+            <div class="filter-popup-footer">
+              <button class="roots-btn" id="filter-select-all" style="font-size:0.8em;padding:0.25em 0.6em">All</button>
+              <button class="roots-btn" id="filter-clear-all" style="font-size:0.8em;padding:0.25em 0.6em">None</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div id="map-wrapper">
+        <button id="fullscreen-btn" title="Toggle fullscreen map" aria-label="Toggle fullscreen map">
+          <svg id="fs-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+            <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+          </svg>
+          <svg id="fs-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+            <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+          </svg>
+        </button>
+        <div id="map-loading">
+          <div class="loading-text">Loading map data…</div>
+        </div>
+        <div id="map"></div>
+      </div>
+
+    </div>
+  </section>
+</div>
 
 <!-- Footer -->
 <footer class="footer">
@@ -163,5 +405,19 @@
 </footer>
 
 <script src="js/main.js"></script>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+
+<!-- Leaflet + PMTiles + VectorGrid -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+
+<script src="js/i18n.js"></script>
+<script src="js/norway-map.js"></script>
 </body>
 </html>
