@@ -64,9 +64,29 @@
       color: '#e74c3c',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#fff" stroke-width="1.5"/><path d="M8 13c0-2.2 1.8-4 4-4s4 1.8 4 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M9.5 8.5c0.3-1 0.7-1.5 0.5-2.5M12 7.5c0.3-1 0.7-1.5 0.5-2.5M14.5 8.5c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
     },
-    'Hut': {
-      color: '#e67e22',
-      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e67e22" stroke="#fff" stroke-width="1.5"/><path d="M12 5L5 12h3v6h8v-6h3L12 5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><rect x="10" y="14" width="4" height="4" fill="#fff"/></svg>'
+    'Open Shelter': {
+      color: '#d35400',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#d35400" stroke="#fff" stroke-width="1.5"/><path d="M7 17V9l10 4v4H7z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>'
+    },
+    'DNT Hut': {
+      color: '#c0392b',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#c0392b" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L5.5 11h2v6h9V11h2L12 5.5z" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><circle cx="12" cy="13" r="1.8" fill="#fff"/><rect x="11" y="14.5" width="2" height="2.5" fill="#fff"/></svg>'
+    },
+    'Day Hut': {
+      color: '#f39c12',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#f39c12" stroke="#fff" stroke-width="1.5"/><path d="M12 8L7.5 12h1.5v5h6v-5H17L12 8z" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><circle cx="12" cy="6" r="1.5" fill="#fff"/></svg>'
+    },
+    'Cave': {
+      color: '#2c3e50',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#2c3e50" stroke="#fff" stroke-width="1.5"/><polygon points="12,5 4,18 20,18" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M9.5 18 A2.5 3 0 0 1 14.5 18" fill="none" stroke="#fff" stroke-width="1.4"/></svg>'
+    },
+    'DNT Code Hut': {
+      color: '#7d3c98',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#7d3c98" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L5.5 11h2v6h9V11h2L12 5.5z" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><rect x="10" y="14" width="4" height="3" rx="0.5" fill="none" stroke="#fff" stroke-width="1"/><path d="M11 14V12a1 1 0 0 1 2 0v2" fill="none" stroke="#fff" stroke-width="1"/></svg>'
+    },
+    'Rental': {
+      color: '#1abc9c',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#1abc9c" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L5.5 11h2v6h9V11h2L12 5.5z" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><rect x="8" y="13.5" width="8" height="3" rx="0.5" fill="none" stroke="#fff" stroke-width="1"/><rect x="8.5" y="13" width="2.5" height="1.5" rx="0.3" fill="#fff"/></svg>'
     },
     'Other': {
       color: '#95a5a6',
@@ -102,7 +122,12 @@
     if (/must\s*see/i.test(raw))      return 'Must See';
     if (/hotel/i.test(raw))           return 'Hotel';
     if (/onsen/i.test(raw))           return 'Onsen';
-    if (/hut|shelter|koie|hytte/i.test(raw)) return 'Hut';
+    if (/dnt.+special|dnt.+code|frilufts/i.test(raw))           return 'DNT Code Hut';
+    if (/dnt/i.test(raw))                                        return 'DNT Hut';
+    if (/cave|rock.?shelter/i.test(raw))                         return 'Cave';
+    if (/municipal|day.?trip/i.test(raw))                        return 'Day Hut';
+    if (/rental/i.test(raw))                                     return 'Rental';
+    if (/open.?shelter|lean.?to|shelter|hut|koie|hytte/i.test(raw)) return 'Open Shelter';
     if (/other/i.test(raw))           return 'Other';
     return POINT_TYPE_ICONS[raw] ? raw : 'Other';
   }
