@@ -181,6 +181,7 @@
         <button class="filter-btn active" data-cat="all" data-i18n="blog.filter.all">All</button>
         <button class="filter-btn" data-cat="japan" data-i18n="nav.japan">Japan</button>
         <button class="filter-btn" data-cat="norway" data-i18n="nav.norway">Norway</button>
+        <button class="filter-btn" data-cat="denmark" data-i18n="nav.denmark">Denmark</button>
         <button class="filter-btn" data-cat="gear" data-i18n="nav.gear">Gear</button>
       </div>
     </div>
@@ -279,7 +280,7 @@
 // ── Load all published posts from Firestore ─────────────────
 (function () {
   var CAT_LABELS = {
-    japan: 'Japan', norway: 'Norway', gear: '🎒 Gear',
+    japan: 'Japan', norway: 'Norway', denmark: 'Denmark', gear: '🎒 Gear',
     planning: '📋 Planning', stories: '✍️ Stories', food: '🍼 Food', tips: '💡 Tips'
   };
   var _blogDocs = [];

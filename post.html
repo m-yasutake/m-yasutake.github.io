@@ -506,11 +506,13 @@
       '</div>';
 
     // Back link
-    var backPage  = data.category === 'japan'  ? 'japan.html#blog-section'
-                  : data.category === 'norway' ? 'norway.html#blog-section'
+    var backPage  = data.category === 'japan'   ? 'japan.html#blog-section'
+                  : data.category === 'norway'  ? 'norway.html#blog-section'
+                  : data.category === 'denmark' ? 'denmark.html#blog-section'
                   : 'blog.html';
-    var backKey   = data.category === 'japan'  ? 'post.back.japan'
-                  : data.category === 'norway' ? 'post.back.norway'
+    var backKey   = data.category === 'japan'   ? 'post.back.japan'
+                  : data.category === 'norway'  ? 'post.back.norway'
+                  : data.category === 'denmark' ? 'post.back.denmark'
                   : 'post.back.blog';
     var backLabel = I18n.t(backKey);
 
@@ -647,7 +649,9 @@
       window._postRouteMapInstance = null;
     }
 
-    var defaultCenter = category === 'norway' ? [62.0, 10.0] : [36.5, 138.0];
+    var defaultCenter = category === 'norway'  ? [62.0, 10.0]
+                      : category === 'denmark' ? [56.0, 10.5]
+                      : [36.5, 138.0];
     var map = L.map('post-route-map', { zoomControl: true }).setView(defaultCenter, 6);
     window._postRouteMapInstance = map;
 
