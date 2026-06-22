@@ -69,6 +69,10 @@ jobs:
           STRAVA_BEFORE_DATE:   ${{ vars.STRAVA_BEFORE_DATE }}
           JAPAN_TRIP_FROM:      ${{ vars.JAPAN_TRIP_FROM }}
           JAPAN_TRIP_TO:        ${{ vars.JAPAN_TRIP_TO }}
+          DENMARK_TRIP_FROM:    ${{ vars.DENMARK_TRIP_FROM }}
+          DENMARK_TRIP_TO:      ${{ vars.DENMARK_TRIP_TO }}
+          NORWAY_TRIP_FROM:     ${{ vars.NORWAY_TRIP_FROM }}
+          NORWAY_TRIP_TO:       ${{ vars.NORWAY_TRIP_TO }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node fetch-strava-rides.js
 

@@ -729,6 +729,34 @@ async function updateStatsDocument() {
     categoryRouteIds.set('japan', new Set(japanRoutes.map(r => r.id)));
   }
 
+  // If DENMARK_TRIP_FROM is set, override the denmark category total with a direct
+  // date-window query. Set DENMARK_TRIP_TO to cap the window (defaults to now).
+  if (process.env.DENMARK_TRIP_FROM) {
+    const tripFromMs = new Date(process.env.DENMARK_TRIP_FROM).getTime();
+    const tripToMs   = process.env.DENMARK_TRIP_TO
+      ? new Date(process.env.DENMARK_TRIP_TO).getTime()
+      : Date.now();
+    const denmarkRoutes = routes.filter(r =>
+      r.activityMs !== null && r.activityMs >= tripFromMs && r.activityMs <= tripToMs
+    );
+    console.log(`  Using DENMARK_TRIP_FROM window: ${denmarkRoutes.length} route(s) between ${process.env.DENMARK_TRIP_FROM} and ${process.env.DENMARK_TRIP_TO || 'now'}`);
+    categoryRouteIds.set('denmark', new Set(denmarkRoutes.map(r => r.id)));
+  }
+
+  // If NORWAY_TRIP_FROM is set, override the norway category total with a direct
+  // date-window query. Set NORWAY_TRIP_TO to cap the window (defaults to now).
+  if (process.env.NORWAY_TRIP_FROM) {
+    const tripFromMs = new Date(process.env.NORWAY_TRIP_FROM).getTime();
+    const tripToMs   = process.env.NORWAY_TRIP_TO
+      ? new Date(process.env.NORWAY_TRIP_TO).getTime()
+      : Date.now();
+    const norwayRoutes = routes.filter(r =>
+      r.activityMs !== null && r.activityMs >= tripFromMs && r.activityMs <= tripToMs
+    );
+    console.log(`  Using NORWAY_TRIP_FROM window: ${norwayRoutes.length} route(s) between ${process.env.NORWAY_TRIP_FROM} and ${process.env.NORWAY_TRIP_TO || 'now'}`);
+    categoryRouteIds.set('norway', new Set(norwayRoutes.map(r => r.id)));
+  }
+
   // Fallback to env date window for Japan when no category routes were inferred.
   else if (!categoryRouteIds.has('japan') || categoryRouteIds.get('japan').size === 0) {
     const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
