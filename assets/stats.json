@@ -9,5 +9,15 @@
     ],
     "currentRouteName": "Mooving on"
   },
-  "generatedAt": "2026-06-22T03:08:16.878Z"
+  "denmark": {
+    "totalDistanceKm": 136.1,
+    "totalElevationGain": 906,
+    "rideCount": 2,
+    "currentPosition": [
+      56.184142,
+      10.161555
+    ],
+    "currentRouteName": "Morning Ride"
+  },
+  "generatedAt": "2026-06-22T13:26:47.418Z"
 }
