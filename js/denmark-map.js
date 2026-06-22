@@ -59,6 +59,30 @@
       color: '#9b59b6',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#9b59b6" stroke="#fff" stroke-width="1.5"/><rect x="7" y="8" width="10" height="9" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M7 11h10" stroke="#fff" stroke-width="1"/><rect x="9" y="13" width="2" height="3" fill="#fff"/><rect x="13" y="13" width="2" height="3" fill="#fff"/></svg>'
     },
+    'Shelter': {
+      color: '#d35400',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#d35400" stroke="#fff" stroke-width="1.5"/><path d="M7 17V9l10 4v4H7z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>'
+    },
+    'Canoe/Kayak Site': {
+      color: '#1565c0',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#1565c0" stroke="#fff" stroke-width="1.5"/><line x1="12" y1="6" x2="12" y2="18" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="12" cy="7.5" rx="3" ry="1.8" fill="none" stroke="#fff" stroke-width="1.3"/><ellipse cx="12" cy="16.5" rx="3" ry="1.8" fill="none" stroke="#fff" stroke-width="1.3"/></svg>'
+    },
+    'Tent Site': {
+      color: '#229954',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#229954" stroke="#fff" stroke-width="1.5"/><path d="M12 7L6 17h12L12 7z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M10.5 17v-3h3v3" fill="none" stroke="#fff" stroke-width="1"/></svg>'
+    },
+    'Wild Camping': {
+      color: '#16a085',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#16a085" stroke="#fff" stroke-width="1.5"/><path d="M12 9L6 17h12L12 9z" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M10.5 17v-2.5h3v2.5" fill="none" stroke="#fff" stroke-width="1"/><circle cx="12" cy="6.5" r="1.5" fill="#fff"/></svg>'
+    },
+    'Hammock Grove': {
+      color: '#6d4c41',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#6d4c41" stroke="#fff" stroke-width="1.5"/><line x1="7" y1="9" x2="7" y2="17" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="17" y1="9" x2="17" y2="17" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 12Q12 15.5 17 12" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M7 14Q12 17.5 17 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    },
+    'Fire Hut': {
+      color: '#e74c3c',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L6 11h1.5v6h9v-6H18L12 5.5z" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><line x1="10" y1="15.5" x2="14" y2="15.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><line x1="10.5" y1="15.5" x2="12" y2="12.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><line x1="13.5" y1="15.5" x2="12" y2="12.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>'
+    },
     'Other': {
       color: '#95a5a6',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#95a5a6" stroke="#fff" stroke-width="1.5"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
@@ -88,11 +112,17 @@
   function normalizePointType(type) {
     const raw = type ? String(type).trim() : '';
     if (!raw) return '_default';
-    if (/camp/i.test(raw))               return 'Campsite';
-    if (/roadside\s*station/i.test(raw)) return 'Roadside Station';
-    if (/must\s*see/i.test(raw))         return 'Must See';
-    if (/hotel/i.test(raw))              return 'Hotel';
-    if (/other/i.test(raw))              return 'Other';
+    if (/^3071$|fri.?telt|wild.?camp/i.test(raw))       return 'Wild Camping';
+    if (/camp/i.test(raw))                               return 'Campsite';
+    if (/roadside\s*station/i.test(raw))                 return 'Roadside Station';
+    if (/must\s*see/i.test(raw))                         return 'Must See';
+    if (/hotel/i.test(raw))                              return 'Hotel';
+    if (/^3012$|shelter/i.test(raw))                     return 'Shelter';
+    if (/^3022$|kano|kajak|canoe|kayak/i.test(raw))      return 'Canoe/Kayak Site';
+    if (/^3031$|teltplads|tent.?site/i.test(raw))        return 'Tent Site';
+    if (/^3081$|hæng|hammock/i.test(raw))                return 'Hammock Grove';
+    if (/^3091$|bålhytte|fire.?hut/i.test(raw))          return 'Fire Hut';
+    if (/other/i.test(raw))                              return 'Other';
     return POINT_TYPE_ICONS[raw] ? raw : 'Other';
   }
 
