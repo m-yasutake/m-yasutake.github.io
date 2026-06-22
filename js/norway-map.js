@@ -64,6 +64,10 @@
       color: '#e74c3c',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#fff" stroke-width="1.5"/><path d="M8 13c0-2.2 1.8-4 4-4s4 1.8 4 4" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M9.5 8.5c0.3-1 0.7-1.5 0.5-2.5M12 7.5c0.3-1 0.7-1.5 0.5-2.5M14.5 8.5c0.3-1 0.7-1.5 0.5-2.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg>'
     },
+    'Hut': {
+      color: '#e67e22',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#e67e22" stroke="#fff" stroke-width="1.5"/><path d="M12 5L5 12h3v6h8v-6h3L12 5z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><rect x="10" y="14" width="4" height="4" fill="#fff"/></svg>'
+    },
     'Other': {
       color: '#95a5a6',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#95a5a6" stroke="#fff" stroke-width="1.5"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
@@ -98,6 +102,7 @@
     if (/must\s*see/i.test(raw))      return 'Must See';
     if (/hotel/i.test(raw))           return 'Hotel';
     if (/onsen/i.test(raw))           return 'Onsen';
+    if (/hut|shelter|koie|hytte/i.test(raw)) return 'Hut';
     if (/other/i.test(raw))           return 'Other';
     return POINT_TYPE_ICONS[raw] ? raw : 'Other';
   }
@@ -262,11 +267,15 @@
         content += '<br><span style="font-size:0.85em;color:#6c757d;">' + escapeHtml(pointType) + '</span>';
       }
       if (pointData.metadata) {
-        const meta = pointData.metadata;
-        const desc  = meta.description || meta.Description || '';
-        const notes = meta.notes || meta.Notes || '';
-        if (desc)  content += '<span style="color:#6c757d;font-size:0.92em;display:block;margin-top:0.3em;">' + escapeHtml(desc) + '</span>';
-        if (notes) content += '<span style="color:#6c757d;font-size:0.88em;font-style:italic;display:block;">' + escapeHtml(notes) + '</span>';
+        const meta     = pointData.metadata;
+        const desc     = meta.description_text || meta.description || meta.Description || '';
+        const capacity = meta.capacity || meta.Capacity || '';
+        const amenities = meta.amenities || meta.Amenities || '';
+        const notes    = meta.notes || meta.Notes || '';
+        if (capacity)  content += '<span style="font-size:0.85em;display:block;margin-top:0.25em;"><b>Capacity:</b> ' + escapeHtml(capacity) + '</span>';
+        if (amenities) content += '<span style="font-size:0.85em;display:block;"><b>Amenities:</b> ' + escapeHtml(amenities) + '</span>';
+        if (desc)      content += '<span style="color:#6c757d;font-size:0.88em;display:block;margin-top:0.25em;">' + escapeHtml(desc) + '</span>';
+        if (notes)     content += '<span style="color:#6c757d;font-size:0.88em;font-style:italic;display:block;">' + escapeHtml(notes) + '</span>';
       }
       if (pointUrl) {
         content += '<br><a href="' + escapeAttr(pointUrl) + '" target="_blank" rel="noopener" aria-label="View details for ' + escapeAttr(pointData.name) + '">View Details</a>';

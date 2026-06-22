@@ -1334,7 +1334,7 @@
       <!-- CSV Points upload -->
       <div class="mapdata-upload-block">
         <h3>📋 Upload CSV Point(s)</h3>
-        <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Upload a <code>.csv</code> file with columns: <code>name</code>, <code>latitude</code>, <code>longitude</code>, and optionally <code>url</code> and <code>Type</code> (Onsen, Campsite, Roadside Station, Must See, Hotel, Other).</p>
+        <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Upload a <code>.csv</code> file with columns: <code>name</code>, <code>latitude</code>, <code>longitude</code>, and optionally <code>url</code>, <code>Type</code> (Hut, Campsite, Roadside Station, Must See, Hotel, Onsen, Other), <code>capacity</code>, <code>amenities</code>, and <code>description_text</code>.</p>
         <div class="upload-drop" id="csv-drop-zone">
           <input type="file" id="csv-file-input" accept=".csv" multiple style="display:none">
           <div style="font-size:2rem">📂</div>
@@ -1366,6 +1366,7 @@
           <label>Point Type</label>
           <select id="gmaps-admin-type" class="form-control">
             <option value="Campsite">Campsite</option>
+            <option value="Hut">Hut</option>
             <option value="Onsen">Onsen</option>
             <option value="Roadside Station">Roadside Station</option>
             <option value="Must See">Must See</option>
