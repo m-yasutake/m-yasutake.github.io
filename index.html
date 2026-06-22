@@ -151,6 +151,7 @@
         <a href="#" class="nav-dropdown-toggle"><span data-i18n="nav.trips">Trips</span> <span class="nav-arrow">▼</span></a>
         <ul class="nav-dropdown-menu">
           <li><a href="japan.html" data-i18n="nav.japan">Japan</a></li>
+          <li><a href="denmark.html" data-i18n="nav.denmark">Denmark</a></li>
           <li><a href="norway.html" data-i18n="nav.norway">Norway</a></li>
         </ul>
       </li>
@@ -158,6 +159,7 @@
         <a href="#" class="nav-dropdown-toggle"><span data-i18n="nav.planning">Planning</span> <span class="nav-arrow">▼</span></a>
         <ul class="nav-dropdown-menu">
           <li><a href="planning-japan.html" data-i18n="nav.japan">Japan</a></li>
+          <li><a href="planning-denmark.html" data-i18n="nav.denmark">Denmark</a></li>
           <li><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></li>
         </ul>
       </li>
@@ -190,11 +192,13 @@
   <div class="mobile-nav-group">
     <span class="mobile-nav-group-label" data-i18n="nav.trips">Trips</span>
     <a href="japan.html" data-i18n="mobile.japan">Japan</a>
+    <a href="denmark.html" data-i18n="mobile.denmark">Denmark</a>
     <a href="norway.html" data-i18n="mobile.norway">Norway</a>
   </div>
   <div class="mobile-nav-group">
     <span class="mobile-nav-group-label" data-i18n="nav.planning">Planning</span>
     <a href="planning-japan.html" data-i18n="mobile.japan">Japan</a>
+    <a href="planning-denmark.html" data-i18n="mobile.denmark">Denmark</a>
     <a href="planning-norway.html" data-i18n="mobile.norway">Norway</a>
   </div>
   <a href="blog.html" data-i18n="mobile.blog">✍️ Blog</a>
@@ -280,6 +284,7 @@
       <div class="divider"></div>
       <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1.25rem">
         <button class="btn btn-primary" data-trip-btn="japan" onclick="switchTrip('japan')" data-i18n="index.hero.btn1">Japan</button>
+        <button class="btn btn-outline" data-trip-btn="denmark" onclick="switchTrip('denmark')">Denmark</button>
         <button class="btn btn-outline" data-trip-btn="norway" onclick="switchTrip('norway')" data-i18n="index.hero.btn2">Norway</button>
       </div>
     </div>
@@ -423,8 +428,9 @@
   // end: null means ongoing (days count up from start to today).
   // start: null means trip hasn't begun yet (shows —).
   var TRIP_DATES = {
-    japan:  { start: '2026-03-14', end: '2026-05-24' },
-    norway: { start: null,         end: null          }
+    japan:   { start: '2026-03-14', end: '2026-05-24' },
+    denmark: { start: null,         end: null          },
+    norway:  { start: null,         end: null          }
   };
 
   function updateDaysDisplay(trip) {
@@ -522,7 +528,11 @@
 
     // Update onsens/hytte label
     var onsensLabel = document.getElementById('stat-onsens-label');
-    if (onsensLabel) onsensLabel.textContent = trip === 'norway' ? 'Hytte 🏠' : 'Onsens ♨️';
+    if (onsensLabel) {
+      if (trip === 'norway') onsensLabel.textContent = 'Hytte 🏠';
+      else if (trip === 'denmark') onsensLabel.textContent = 'Highlights 🌟';
+      else onsensLabel.textContent = 'Onsens ♨️';
+    }
 
     // Update stats, days, and marker
     updateStatsDisplay(_tripStats[trip] || null);
@@ -531,8 +541,9 @@
 
     // Fly map to trip region
     var views = {
-      japan:  { center: [38, 136], zoom: 4 },
-      norway: { center: [65, 16],  zoom: 4 }
+      japan:   { center: [38, 136],  zoom: 4 },
+      denmark: { center: [56, 10.5], zoom: 5 },
+      norway:  { center: [65, 16],   zoom: 4 }
     };
     if (_homeMap && views[trip]) {
       _homeMap.flyTo(views[trip].center, views[trip].zoom, { duration: 1.5 });
@@ -547,7 +558,7 @@
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       var db = firebase.firestore();
-      ['japan', 'norway'].forEach(function (trip) {
+      ['japan', 'denmark', 'norway'].forEach(function (trip) {
         db.collection('stats').doc(trip).get()
           .then(function (doc) {
             _tripStats[trip] = doc;
@@ -579,6 +590,10 @@
       japan: {
         start: { latlng: [30.999, 130.658], label: '🚩 Start – Cape Sata' },
         end:   { latlng: [45.520, 141.934], label: '🏁 Finish – Cape Soya' }
+      },
+      denmark: {
+        start: { latlng: [55.676, 12.568], label: '🚩 Start – Copenhagen' },
+        end:   { latlng: [57.048, 9.921],  label: '🏁 Finish – Aalborg' }
       },
       norway: {
         start: { latlng: [58.460, 5.846], label: '🚩 Start – Egersund' },

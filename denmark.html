@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tomika Bike – Denmark. Map, blog and photos from our cycling journey through Denmark." />
+  <title>Denmark – Tomika Bike</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
+
+  <style>
+  #home-map {
+    height: 50vh;
+    width: 100%;
+    border-radius: var(--radius-lg, 8px);
+    z-index: 1;
+  }
+  #home-map-wrapper {
+    position: relative;
+    border-radius: var(--radius-lg, 8px);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg, 0 4px 24px rgba(0,0,0,0.12));
+  }
+  #home-map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-gray-100, #f5f5f5);
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  #home-map-loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .current-location-icon {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+
+  /* ── Fullscreen map toggle ──────────────────────────────── */
+  #home-map-fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  #home-map-fullscreen-btn:hover { background: #f4f4f4; }
+
+  #home-map-wrapper.map-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    z-index: 9998 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  @supports not (height: 100dvh) {
+    #home-map-wrapper.map-fullscreen { height: -webkit-fill-available !important; }
+  }
+  #home-map-wrapper.map-fullscreen #home-map {
+    height: 100% !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* ── Section dividers ──────────────────── */
+  .denmark-section-divider {
+    border: none;
+    border-top: 2px solid var(--color-gray-200);
+    margin: 0;
+  }
+
+  .denmark-section-header {
+    background: var(--color-gray-100);
+    border-bottom: 1px solid var(--color-gray-200);
+    padding: 1.25rem 0;
+  }
+
+  .denmark-section-header .container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .denmark-section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-primary);
+  }
+
+  .denmark-section-header .section-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .blog-search-wrap {
+    background: var(--color-white);
+    border-radius: 0;
+    padding: 1.25rem 1.5rem;
+    box-shadow: none;
+    margin-bottom: 3rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid var(--color-gray-200);
+  }
+
+  .blog-search-wrap input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 0;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color var(--transition);
+    background: var(--color-white);
+  }
+
+  .blog-search-wrap input:focus {
+    border-color: var(--color-secondary);
+  }
+
+  .post-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .author-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-gray-600);
+  }
+
+  .author-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-white);
+  }
+
+  .post-date { font-size: 0.78rem; color: var(--color-gray-600); }
+
+  .photos-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .photos-stat {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: .875rem;
+    color: var(--color-gray-600);
+  }
+
+  .photos-stat strong { color: var(--color-primary); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="page-loader">
+  <div class="loader-inner">
+    <div class="loader-logo">tomika<span class="accent">.bike</span></div>
+    <div class="loader-dots"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
+    <ul class="nav-links">
+      <li><a href="index.html" data-i18n="nav.home">Home</a></li>
+      <li class="nav-dropdown-item">
+        <a href="#" class="nav-dropdown-toggle active"><span data-i18n="nav.trips">Trips</span> <span class="nav-arrow">▼</span></a>
+        <ul class="nav-dropdown-menu">
+          <li><a href="japan.html" data-i18n="nav.japan">Japan</a></li>
+          <li><a href="denmark.html" class="active" data-i18n="nav.denmark">Denmark</a></li>
+          <li><a href="norway.html" data-i18n="nav.norway">Norway</a></li>
+        </ul>
+      </li>
+      <li class="nav-dropdown-item">
+        <a href="#" class="nav-dropdown-toggle"><span data-i18n="nav.planning">Planning</span> <span class="nav-arrow">▼</span></a>
+        <ul class="nav-dropdown-menu">
+          <li><a href="planning-japan.html" data-i18n="nav.japan">Japan</a></li>
+          <li><a href="planning-denmark.html" data-i18n="nav.denmark">Denmark</a></li>
+          <li><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></li>
+        </ul>
+      </li>
+      <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
+      <li><a href="gear.html" data-i18n="nav.gear">Gear</a></li>
+      <li class="admin-only-link" style="display:none"><a href="admin.html" data-i18n="nav.admin">Admin</a></li>
+    </ul>
+    <div class="nav-actions">
+      <div class="lang-dropdown">
+        <button class="lang-toggle-btn"><span data-i18n="nav.lang">🌐 Language</span> <span class="lang-arrow">▼</span></button>
+        <div class="lang-menu">
+          <button class="lang-option" data-lang="en">English</button>
+          <button class="lang-option" data-lang="ja">日本語</button>
+          <button class="lang-option" data-lang="no">Norsk</button>
+        </div>
+      </div>
+      <button class="nav-subscribe-btn" onclick="openSubscribeModal()" data-i18n="nav.subscribe">🔔 Subscribe</button>
+    </div>
+    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu">
+  <a href="index.html" data-i18n="mobile.home">🏠 Home</a>
+  <div class="mobile-nav-group">
+    <span class="mobile-nav-group-label" data-i18n="nav.trips">Trips</span>
+    <a href="japan.html" data-i18n="mobile.japan">Japan</a>
+    <a href="denmark.html" class="active" data-i18n="mobile.denmark">Denmark</a>
+    <a href="norway.html" data-i18n="mobile.norway">Norway</a>
+  </div>
+  <div class="mobile-nav-group">
+    <span class="mobile-nav-group-label" data-i18n="nav.planning">Planning</span>
+    <a href="planning-japan.html" data-i18n="mobile.japan">Japan</a>
+    <a href="planning-denmark.html" data-i18n="mobile.denmark">Denmark</a>
+    <a href="planning-norway.html" data-i18n="mobile.norway">Norway</a>
+  </div>
+  <a href="blog.html" data-i18n="mobile.blog">✍️ Blog</a>
+  <a href="gear.html" data-i18n="mobile.gear">🎒 Gear</a>
+  <a href="admin.html" class="admin-only-link" style="display:none" data-i18n="mobile.admin">⚙️ Admin</a>
+  <div class="mobile-lang-row">
+    <button class="mobile-lang-btn" data-lang="en">English</button>
+    <button class="mobile-lang-btn" data-lang="ja">日本語</button>
+    <button class="mobile-lang-btn" data-lang="no">Norsk</button>
+  </div>
+  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()" data-i18n="mobile.subscribe">🔔 Subscribe to Updates</button>
+</div>
+
+<div class="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-close">✕</button>
+    <h2>Welcome back 👋</h2>
+    <p>Sign in to access admin tools</p>
+    <button class="google-btn">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <p class="auth-note">Firebase auth coming soon</p>
+  </div>
+</div>
+
+<!-- Page Hero -->
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:.75rem">🇩🇰 Denmark</div>
+    <h1>Denmark</h1>
+    <p>Cycling through Denmark – the map, the blog, and photos from the road.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAP SECTION
+════════════════════════════════════════════ -->
+<div id="map-section">
+  <div class="denmark-section-header">
+    <div class="container">
+      <span class="section-icon">🗺️</span>
+      <h2>Route Map</h2>
+    </div>
+  </div>
+
+  <section class="section" style="padding-top:2rem">
+    <div class="container">
+      <div id="home-map-wrapper">
+        <button id="home-map-fullscreen-btn" title="Toggle fullscreen map" aria-label="Toggle fullscreen map">
+          <svg id="home-fs-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+            <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+          </svg>
+          <svg id="home-fs-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+            <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+          </svg>
+        </button>
+        <div id="home-map-loading">
+          <span style="color:var(--color-gray-500)">⏳ Loading map…</span>
+        </div>
+        <div id="home-map"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<hr class="denmark-section-divider" />
+
+<!-- ══════════════════════════════════════════
+     BLOG SECTION
+════════════════════════════════════════════ -->
+<div id="blog-section">
+  <div class="denmark-section-header">
+    <div class="container">
+      <span class="section-icon">✍️</span>
+      <h2>Blog</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div id="postList"></div>
+
+      <div id="blog-show-more-wrap" style="text-align:center;margin-top:1.5rem;display:none">
+        <button id="blog-show-more-btn" class="btn btn-outline" onclick="blogShowMore()">Show More ↓</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<hr class="denmark-section-divider" />
+
+<!-- ══════════════════════════════════════════
+     PHOTOS SECTION
+════════════════════════════════════════════ -->
+<div id="photos-section">
+  <div class="denmark-section-header">
+    <div class="container">
+      <span class="section-icon">📷</span>
+      <h2>Photos</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="photos-stats">
+        <div class="photos-stat">📷 <strong id="photo-count">…</strong> photos</div>
+        <div class="photos-stat">🗺️ <strong id="album-count">…</strong> albums</div>
+      </div>
+
+      <div id="gallery-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
+        <p>Loading photos…</p>
+      </div>
+
+      <div class="gallery-grid" id="gallery" style="display:none"></div>
+
+      <div id="photos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
+        <button id="photos-show-more-btn" class="btn btn-primary" onclick="photosShowMore()">Show More ↓</button>
+      </div>
+
+      <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
+        <div style="font-size:4rem;margin-bottom:1rem">📷</div>
+        <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Photos coming soon!</h2>
+        <p style="font-size:.95rem;max-width:420px;margin:0 auto">No photos yet — check back soon for updates from the road.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-content">
+      <button class="lightbox-close" id="lightboxClose">✕</button>
+      <div id="lightboxBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     VIDEOS SECTION
+════════════════════════════════════════════ -->
+<div id="videos-section">
+  <div class="denmark-section-header">
+    <div class="container">
+      <span class="section-icon">🎬</span>
+      <h2>Videos</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="photos-stats">
+        <div class="photos-stat">🎬 <strong id="video-count">…</strong> videos</div>
+        <div class="photos-stat">🗺️ <strong id="video-album-count">…</strong> albums</div>
+      </div>
+
+      <div id="videos-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
+        <p>Loading videos…</p>
+      </div>
+
+      <div class="video-grid" id="video-grid" style="display:none"></div>
+
+      <div id="videos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
+        <button id="videos-show-more-btn" class="btn btn-primary" onclick="videosShowMore()">Show More ↓</button>
+      </div>
+
+      <div id="videos-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
+        <div style="font-size:4rem;margin-bottom:1rem">🎬</div>
+        <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Videos coming soon!</h2>
+        <p style="font-size:.95rem;max-width:420px;margin:0 auto">No videos yet — check back soon for updates from the road.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="lightbox" id="video-lightbox">
+    <div class="lightbox-content" style="max-width:95vw">
+      <button class="lightbox-close" id="videoLightboxClose">✕</button>
+      <div id="videoLightboxBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">🚴 tomika<span class="accent">.bike</span></div>
+        <p data-i18n="footer.brand">A cycling adventure blog documenting our journey through Japan and Norway.</p>
+        <div class="social-links">
+          <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.explore">Explore</h4>
+        <a href="index.html" data-i18n="nav.home">Home</a>
+        <a href="japan.html" data-i18n="nav.japan">Japan</a>
+        <a href="denmark.html" data-i18n="nav.denmark">Denmark</a>
+        <a href="norway.html" data-i18n="nav.norway">Norway</a>
+        <a href="gear.html" data-i18n="nav.gear">Gear</a>
+      </div>
+      <div class="footer-col"><h4 data-i18n="footer.info">Info</h4><a href="about.html" data-i18n="footer.about">About Us</a></div>
+      <div class="footer-col"><h4 data-i18n="footer.admin">Admin</h4><a href="#" data-auth data-i18n="footer.login">Login</a><a href="admin.html" class="admin-only-link" style="display:none" data-i18n="footer.dashboard">Dashboard</a></div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 tomika.bike</span>
+      <span data-i18n="footer.made">Made with ❤️ and 🚴</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+<script src="js/route-map.js"></script>
+
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+(function () {
+  if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
+  var map = RouteMap.init('home-map', { center: [56.0, 10.5], zoom: 6 });
+  window._denmarkMap = map;
+  map.once('load', function () {
+    var el = document.getElementById('home-map-loading');
+    if (el) el.classList.add('hidden');
+  });
+  setTimeout(function () {
+    var el = document.getElementById('home-map-loading');
+    if (el) el.classList.add('hidden');
+  }, 2000);
+})();
+</script>
+
+<script>
+(function () {
+  var fsBtn = document.getElementById('home-map-fullscreen-btn');
+  var fsExpandIcon = document.getElementById('home-fs-expand-icon');
+  var fsCollapseIcon = document.getElementById('home-fs-collapse-icon');
+  var mapWrapper = document.getElementById('home-map-wrapper');
+  if (!fsBtn) return;
+
+  fsBtn.addEventListener('click', function () {
+    var isFullscreen = mapWrapper.classList.toggle('map-fullscreen');
+    fsExpandIcon.style.display = isFullscreen ? 'none' : '';
+    fsCollapseIcon.style.display = isFullscreen ? '' : 'none';
+    document.body.style.overflow = isFullscreen ? 'hidden' : '';
+    setTimeout(function () {
+      if (window._denmarkMap) window._denmarkMap.invalidateSize();
+    }, 200);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && mapWrapper.classList.contains('map-fullscreen')) {
+      mapWrapper.classList.remove('map-fullscreen');
+      fsExpandIcon.style.display = '';
+      fsCollapseIcon.style.display = 'none';
+      document.body.style.overflow = '';
+      setTimeout(function () {
+        if (window._denmarkMap) window._denmarkMap.invalidateSize();
+      }, 200);
+    }
+  });
+}());
+</script>
+
+<script>
+  (function () {
+    const BLOG_PAGE = 2;
+    let shownCount = BLOG_PAGE;
+
+    function refreshBlogPosts() {
+      const posts = Array.from(document.querySelectorAll('#postList .blog-post-card'));
+      posts.forEach(function (post, i) {
+        post.style.display = i < shownCount ? '' : 'none';
+      });
+      const wrap = document.getElementById('blog-show-more-wrap');
+      if (wrap) wrap.style.display = shownCount < posts.length ? '' : 'none';
+    }
+
+    window.blogShowMore = function () {
+      shownCount += BLOG_PAGE;
+      refreshBlogPosts();
+    };
+
+    window.blogRefresh = refreshBlogPosts;
+    refreshBlogPosts();
+  })();
+</script>
+
+<script>
+(function () {
+  var _denmarkDocs = [];
+
+  function esc(str) {
+    var d = document.createElement('div');
+    d.textContent = String(str == null ? '' : str);
+    return d.innerHTML;
+  }
+  function fmtDate(s) {
+    if (!s) return '';
+    var d = new Date(s + 'T00:00:00');
+    return d.toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function pick(data, field) {
+    var lang = I18n.currentLang();
+    return (lang !== 'en' && data[field + '_' + lang]) || data[field] || '';
+  }
+
+  function renderDenmarkDocs() {
+    if (!_denmarkDocs.length) return;
+    var list = document.getElementById('postList');
+    list.innerHTML = '';
+    _denmarkDocs.forEach(function (p) {
+      var d = p.data;
+      var title   = pick(d, 'title');
+      var excerpt = pick(d, 'excerpt');
+      var card = document.createElement('article');
+      card.className = 'blog-post-card';
+      card.setAttribute('data-cat', 'denmark');
+      card.innerHTML =
+        '<div class="blog-post-img" style="height:200px;' + (d.coverImage ? 'background-image:url(' + d.coverImage.replace(/"/g,'%22') + ');background-size:cover;background-position:center;font-size:0' : 'background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem') + '">' +
+          (d.coverImage ? '' : '✍️') + '</div>' +
+        '<div class="blog-post-body" style="padding:1.5rem">' +
+          '<div class="post-meta-row">' +
+            '<div class="author-chip">' +
+              '<div class="author-avatar" style="background:var(--color-secondary)">' +
+                esc((d.author || 'M').charAt(0).toUpperCase()) +
+              '</div>' +
+              '<span>' + esc(d.author || '') + '</span>' +
+            '</div>' +
+            '<span class="post-date" data-i18n-date="' + esc(d.date || '') + '">' + esc(fmtDate(d.date)) + '</span>' +
+          '</div>' +
+          '<h2>' + esc(title) + '</h2>' +
+          (excerpt ? '<p>' + esc(excerpt) + '</p>' : '') +
+          '<a href="post?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
+        '</div>';
+      list.appendChild(card);
+    });
+    if (typeof window.blogRefresh === 'function') window.blogRefresh();
+  }
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    var _db = firebase.firestore();
+
+    _db.collection('blog_posts')
+      .where('status', '==', 'published')
+      .where('category', '==', 'denmark')
+      .orderBy('date', 'desc')
+      .get()
+      .then(function (snap) {
+        if (!snap || snap.empty) return;
+        var docs = [];
+        snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
+        _denmarkDocs = docs;
+        renderDenmarkDocs();
+      })
+      .catch(function (err) { console.warn('Blog posts load error:', err.message); });
+
+    document.addEventListener('langchange', renderDenmarkDocs);
+  } catch (e) {}
+})();
+</script>
+
+<script>
+(function () {
+  const lightbox     = document.getElementById('lightbox');
+  const lightboxBody = document.getElementById('lightboxBody');
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openLightbox(url, caption, location) {
+    lightboxBody.innerHTML =
+      '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + (caption || '').replace(/"/g, '&quot;') + '">' +
+      (location ? '<p style="color:rgba(255,255,255,.7);text-align:center;margin-top:.75rem;font-size:.8rem">📍 ' + escHtml(location) + '</p>' : '') +
+      (caption ? '<p style="color:#fff;text-align:center;margin-top:.25rem;font-size:.9rem">' + escHtml(caption) + '</p>' : '');
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxBody.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox(); });
+
+  const PHOTOS_PAGE = 20;
+  let allDocs = [];
+  let shownPhotos = 0;
+
+  function renderGallery(docs) {
+    const grid    = document.getElementById('gallery');
+    const loading = document.getElementById('gallery-loading');
+    const empty   = document.getElementById('gallery-empty');
+    const countEl = document.getElementById('photo-count');
+    const albumsEl = document.getElementById('album-count');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      empty.style.display = '';
+      countEl.textContent = '0';
+      albumsEl.textContent = '0';
+      return;
+    }
+
+    allDocs = docs.slice();
+    const albums = [...new Set(allDocs.map(d => d.album).filter(Boolean))].sort();
+    countEl.textContent  = allDocs.length;
+    albumsEl.textContent = albums.length;
+
+    grid.addEventListener('click', e => {
+      const item = e.target.closest('.gallery-item');
+      if (item) openLightbox(item.dataset.url, item.dataset.caption, item.dataset.location);
+    });
+
+    shownPhotos = 0;
+    appendPhotos(PHOTOS_PAGE);
+    grid.style.display = '';
+  }
+
+  function appendPhotos(count) {
+    const grid = document.getElementById('gallery');
+    const batch = allDocs.slice(shownPhotos, shownPhotos + count);
+    batch.forEach(doc => {
+      const caption  = doc.caption || doc.fileName || '';
+      const location = doc.location || '';
+      const fullUrl  = doc.url || '';
+      const thumbUrl = doc.thumbUrl || fullUrl;
+      const el = document.createElement('div');
+      el.className = 'gallery-item';
+      el.dataset.url      = fullUrl;
+      el.dataset.caption  = caption;
+      el.dataset.location = location;
+      el.innerHTML =
+        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
+        '<div class="gallery-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(caption) + '</p>' +
+        '</div>';
+      grid.appendChild(el);
+    });
+    shownPhotos += batch.length;
+    const wrap = document.getElementById('photos-show-more-wrap');
+    if (wrap) wrap.style.display = shownPhotos < allDocs.length ? '' : 'none';
+  }
+
+  window.photosShowMore = function () { appendPhotos(PHOTOS_PAGE); };
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.firestore().collection('photos')
+      .where('country', '==', 'denmark')
+      .orderBy('uploadedAt', 'desc')
+      .limit(PHOTOS_PAGE)
+      .get()
+      .then(snapshot => {
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc.data()));
+        renderGallery(docs);
+      })
+      .catch(() => {
+        document.getElementById('gallery-loading').style.display = 'none';
+        document.getElementById('gallery-empty').style.display = '';
+        document.getElementById('photo-count').textContent = '0';
+        document.getElementById('album-count').textContent = '0';
+      });
+  } catch (e) {
+    document.getElementById('gallery-loading').style.display = 'none';
+    document.getElementById('gallery-empty').style.display = '';
+    document.getElementById('photo-count').textContent = '0';
+    document.getElementById('album-count').textContent = '0';
+  }
+})();
+</script>
+
+<script>
+(function () {
+  const vlb     = document.getElementById('video-lightbox');
+  const vlbBody = document.getElementById('videoLightboxBody');
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openVideoLightbox(url, title, location) {
+    vlbBody.innerHTML =
+      '<video controls autoplay playsinline src="' + url.replace(/"/g, '&quot;') + '" ' +
+        'style="max-width:100%;max-height:75vh;border-radius:var(--radius-md);display:block"></video>' +
+      (title    ? '<p style="color:#fff;text-align:center;margin-top:.75rem;font-size:.9rem">'                    + escHtml(title)    + '</p>' : '') +
+      (location ? '<p style="color:rgba(255,255,255,.7);text-align:center;margin-top:.25rem;font-size:.8rem">📍 ' + escHtml(location) + '</p>' : '');
+    vlb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeVideoLightbox() {
+    vlb.classList.remove('open');
+    vlbBody.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('videoLightboxClose').addEventListener('click', closeVideoLightbox);
+  vlb.addEventListener('click', e => { if (e.target === vlb) closeVideoLightbox(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && vlb.classList.contains('open')) closeVideoLightbox();
+  });
+
+  const VIDEOS_PAGE = 12;
+  let allVideoDocs = [];
+  let shownVideos  = 0;
+
+  function renderVideoGrid(docs) {
+    const grid     = document.getElementById('video-grid');
+    const loading  = document.getElementById('videos-loading');
+    const empty    = document.getElementById('videos-empty');
+    const countEl  = document.getElementById('video-count');
+    const albumsEl = document.getElementById('video-album-count');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      empty.style.display  = '';
+      countEl.textContent  = '0';
+      albumsEl.textContent = '0';
+      return;
+    }
+
+    allVideoDocs = docs.slice();
+    const albums = [...new Set(allVideoDocs.map(d => d.album).filter(Boolean))];
+    countEl.textContent  = allVideoDocs.length;
+    albumsEl.textContent = albums.length;
+
+    grid.addEventListener('click', e => {
+      const item = e.target.closest('.video-item');
+      if (item) openVideoLightbox(item.dataset.url, item.dataset.title, item.dataset.location);
+    });
+
+    shownVideos = 0;
+    appendVideos(VIDEOS_PAGE);
+    grid.style.display = '';
+  }
+
+  function appendVideos(count) {
+    const grid  = document.getElementById('video-grid');
+    const batch = allVideoDocs.slice(shownVideos, shownVideos + count);
+    batch.forEach(doc => {
+      const title    = doc.title    || doc.fileName || '';
+      const location = doc.location || '';
+      const thumbUrl = doc.thumbUrl || '';
+      const el = document.createElement('div');
+      el.className        = 'video-item';
+      el.dataset.url      = doc.url   || '';
+      el.dataset.title    = title;
+      el.dataset.location = location;
+      el.innerHTML =
+        '<div class="video-item-thumb">' +
+          (thumbUrl
+            ? '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + title.replace(/"/g, '&quot;') + '" loading="lazy">'
+            : '<div class="video-item-placeholder">🎬</div>') +
+          '<div class="video-play-overlay"><span class="video-play-btn">▶</span></div>' +
+        '</div>' +
+        '<div class="video-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(title) + '</p>' +
+        '</div>';
+      grid.appendChild(el);
+    });
+    shownVideos += batch.length;
+    const wrap = document.getElementById('videos-show-more-wrap');
+    if (wrap) wrap.style.display = shownVideos < allVideoDocs.length ? '' : 'none';
+  }
+
+  window.videosShowMore = function () { appendVideos(VIDEOS_PAGE); };
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.firestore().collection('videos')
+      .where('country', '==', 'denmark')
+      .orderBy('uploadedAt', 'desc')
+      .limit(VIDEOS_PAGE)
+      .get()
+      .then(snapshot => {
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc.data()));
+        renderVideoGrid(docs);
+      })
+      .catch(() => {
+        document.getElementById('videos-loading').style.display = 'none';
+        document.getElementById('videos-empty').style.display = '';
+        document.getElementById('video-count').textContent = '0';
+        document.getElementById('video-album-count').textContent = '0';
+      });
+  } catch (e) {
+    document.getElementById('videos-loading').style.display = 'none';
+    document.getElementById('videos-empty').style.display = '';
+    document.getElementById('video-count').textContent = '0';
+    document.getElementById('video-album-count').textContent = '0';
+  }
+})();
+</script>
+
+</body>
+</html>
