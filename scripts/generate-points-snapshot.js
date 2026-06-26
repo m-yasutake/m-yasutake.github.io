@@ -72,6 +72,22 @@ function normalizePointType(rawType) {
   return type;
 }
 
+function normalizeDenmarkPointType(rawType) {
+  const type = rawType ? String(rawType).trim() : '';
+  if (!type) return 'Other';
+  if (/^3071$|fri.?telt|wild.?camp/i.test(type))       return 'Wild Camping';
+  if (/camp/i.test(type))                               return 'Campsite';
+  if (/roadside\s*station/i.test(type))                 return 'Roadside Station';
+  if (/must\s*see/i.test(type))                         return 'Must See';
+  if (/hotel/i.test(type))                              return 'Hotel';
+  if (/^3012$|shelter/i.test(type))                     return 'Shelter';
+  if (/^3022$|kano|kajak|canoe|kayak/i.test(type))      return 'Canoe/Kayak Site';
+  if (/^3031$|teltplads|tent.?site/i.test(type))        return 'Tent Site';
+  if (/^3081$|hæng|hammock/i.test(type))                return 'Hammock Grove';
+  if (/^3091$|bålhytte|fire.?hut/i.test(type))          return 'Fire Hut';
+  return 'Other';
+}
+
 function normalizeNorwayPointType(rawType) {
   const type = rawType ? String(rawType).trim() : '';
   if (!type) return 'Other';
@@ -323,6 +339,53 @@ async function main() {
     console.log(`Norway done. ${norwayPoints.length} point(s) written.`);
   } else {
     console.log('No Norway points found — norway-points.json not written.');
+  }
+
+  // ── Denmark snapshot ──────────────────────────────────────────
+  const denmarkPoints = points.filter(p => p.country === 'Denmark');
+  console.log(`\nDenmark points: ${denmarkPoints.length}`);
+
+  if (denmarkPoints.length > 0) {
+    const denmarkClustersByZoom = buildServerClusterLevels(denmarkPoints, normalizeDenmarkPointType);
+    Object.keys(denmarkClustersByZoom).forEach(zoom => {
+      console.log(`Denmark server clusters @ z${zoom}: ${denmarkClustersByZoom[zoom].length}`);
+    });
+
+    const denmarkJson = JSON.stringify({
+      generatedAt,
+      points: denmarkPoints,
+      clustersByZoom: denmarkClustersByZoom,
+      clusterZoomRange: {
+        min: SERVER_CLUSTER_MIN_ZOOM,
+        max: SERVER_CLUSTER_MAX_ZOOM,
+        disableClusteringAtZoom: SERVER_CLUSTER_DISABLE_ZOOM
+      }
+    });
+    const denmarkBuffer = Buffer.from(denmarkJson, 'utf8');
+    console.log(`Denmark snapshot size: ${(denmarkBuffer.length / 1024).toFixed(1)} KB`);
+
+    const denmarkLocalPath = path.join(__dirname, '..', 'assets', 'denmark-points.json');
+    fs.writeFileSync(denmarkLocalPath, denmarkJson, 'utf8');
+    console.log(`Denmark local snapshot written to ${denmarkLocalPath}`);
+
+    console.log('Uploading points/denmark-points.json to Firebase Storage...');
+    const denmarkFile = bucket.file('points/denmark-points.json');
+    await denmarkFile.save(denmarkBuffer, {
+      contentType: 'application/json',
+      metadata: { cacheControl: 'public, max-age=300' }
+    });
+    try {
+      await denmarkFile.makePublic();
+      console.log('Denmark file made publicly readable.');
+    } catch (err) {
+      console.warn(
+        'Could not set public ACL for Denmark file (fine if uniform bucket-level access is enabled):\n',
+        err.message
+      );
+    }
+    console.log(`Denmark done. ${denmarkPoints.length} point(s) written.`);
+  } else {
+    console.log('No Denmark points found — denmark-points.json not written.');
   }
 }
 
