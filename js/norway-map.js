@@ -1,6 +1,7 @@
 // js/norway-map.js — Interactive planning map for the Norway trip
-// Loads points directly from Firestore (country=Norway), shows PMTiles route
-// overlays, point-type filter UI, fullscreen toggle.
+// Loads points from a static JSON snapshot (assets/norway-points.json) with
+// server-side clustering at zoom levels 3–7; shows PMTiles route overlays,
+// point-type filter UI, fullscreen toggle.
 
 // ── PMTiles protocol interceptor ────────────────────────────
 // Idempotent: shared with route-map.js; only installed once per page load.
@@ -42,7 +43,7 @@
   const POINT_ICON_ANCHOR  = [9, 9];
   const POINT_POPUP_ANCHOR = [0, -10];
 
-  // Norwegian planning point types — superset of Japan types for forward-compat
+  // Norwegian planning point types
   const POINT_TYPE_ICONS = {
     'Campsite': {
       color: '#27ae60',
@@ -177,7 +178,6 @@
     )
   };
 
-  // CyclOSM is more useful for Norway route planning
   baseLayers['CyclOSM (Cycling)'].addTo(map);
 
   const overlayLayers = {
@@ -252,6 +252,17 @@
   const pointTypeFilters = new Set();
   const _seenPointTypes = new Set();
 
+  // ── Snapshot state ──────────────────────────────────────────
+  let _pointsLoadStarted = false;
+  const NORWAY_SNAPSHOT_URL = 'assets/norway-points.json';
+  let snapshotRawPoints = null;
+  let serverClusterLevels = null;
+  let serverClusterLevelKeys = [];
+  let serverClusterLevelActiveKey = null;
+  let serverClusterDisableZoom = 8;
+  let _onZoomEndSnapshot = null;
+  let _batchGeneration = 0;
+
   function getAvailablePointTypes() {
     const available = new Set();
     points.forEach(p => available.add(p.type || 'Other'));
@@ -266,6 +277,16 @@
   map.on('moveend', function () {
     if (_moveEndTimer) clearTimeout(_moveEndTimer);
     _moveEndTimer = setTimeout(applyPointTypeFilters, 150);
+  });
+
+  // ── Zoom-based cluster switching ────────────────────────────
+  let _zoomEndTimer = null;
+  map.on('zoomend', function () {
+    if (_zoomEndTimer) clearTimeout(_zoomEndTimer);
+    _zoomEndTimer = setTimeout(function () {
+      _zoomEndTimer = null;
+      if (_onZoomEndSnapshot) _onZoomEndSnapshot(map.getZoom());
+    }, 150);
   });
 
   function applyPointTypeFilters() {
@@ -283,6 +304,39 @@
   }
 
   function createPointMarker(pointData) {
+    // Render cluster node (pre-aggregated by the snapshot generator)
+    const clusterMeta = pointData && pointData.metadata && pointData.metadata.__cluster;
+    const clusterCount = Number(clusterMeta && clusterMeta.count) || 0;
+    if (clusterCount > 1) {
+      const clusterClass = clusterCount > 100 ? 'marker-cluster-large'
+                         : clusterCount > 10  ? 'marker-cluster-medium'
+                         : 'marker-cluster-small';
+      const marker = L.marker([pointData.lat, pointData.lon], {
+        icon: L.divIcon({
+          html: '<div><span>' + clusterCount + '</span></div>',
+          className: 'marker-cluster ' + clusterClass,
+          iconSize: L.point(40, 40)
+        })
+      });
+      marker.bindPopup(function () {
+        const items = (clusterMeta && clusterMeta.items) || [];
+        let html = '<b>' + escapeHtml(pointData.name || 'Cluster') + '</b><br>'
+                 + '<span style="font-size:0.9em;color:#6c757d;">' + clusterCount + ' points</span>';
+        if (items.length > 0) {
+          html += '<ul style="margin:0.4em 0 0 1.1em;padding:0;max-height:180px;overflow:auto">';
+          items.forEach(function (item) {
+            const n = item && item.name ? item.name : 'Point';
+            const u = item && item.url ? String(item.url) : '';
+            html += '<li>' + (u ? '<a href="' + escapeAttr(u) + '" target="_blank" rel="noopener">' + escapeHtml(n) + '</a>' : escapeHtml(n)) + '</li>';
+          });
+          html += '</ul>';
+        }
+        return html;
+      });
+      return marker;
+    }
+
+    // Individual point marker
     const pointType = getPointType(pointData);
     const marker = L.marker([pointData.lat, pointData.lon], { icon: getPointIcon(pointType) });
     marker.bindPopup(function () {
@@ -310,8 +364,60 @@
     return marker;
   }
 
-  function addPointsBatch(dataArray) {
-    dataArray.forEach(function (d) {
+  // ── Snapshot helpers ────────────────────────────────────────
+
+  function normalizeSnapshotPoint(d) {
+    return {
+      name: d.name || 'Point',
+      lat: d.lat,
+      lon: d.lon,
+      url: d.url || null,
+      type: d.type || null,
+      metadata: d.metadata || {},
+      fileName: d.fileName || 'norway-points.json',
+      id: d.id || null
+    };
+  }
+
+  function normalizeServerClusterPoint(d) {
+    const pd = normalizeSnapshotPoint(d);
+    const count = Number(d && d.metadata && d.metadata.__cluster && d.metadata.__cluster.count || 0);
+    if (count > 1 && (!pd.metadata || !pd.metadata.__cluster)) {
+      pd.metadata = Object.assign({}, pd.metadata, {
+        __cluster: { count, items: Array.isArray(d.items) ? d.items : [] }
+      });
+    }
+    return pd;
+  }
+
+  function getServerClusterLevelKeyForZoom(zoom) {
+    if (!serverClusterLevelKeys.length || zoom >= serverClusterDisableZoom) return null;
+    let selected = serverClusterLevelKeys[0];
+    for (let i = 0; i < serverClusterLevelKeys.length; i++) {
+      const key = serverClusterLevelKeys[i];
+      if (key <= zoom) selected = key;
+      else break;
+    }
+    return String(selected);
+  }
+
+  function getSnapshotDisplayPointsForZoom(zoom) {
+    const levelKey = getServerClusterLevelKeyForZoom(zoom);
+    if (levelKey && serverClusterLevels && Array.isArray(serverClusterLevels[levelKey])) {
+      return { levelKey, points: serverClusterLevels[levelKey].map(normalizeServerClusterPoint) };
+    }
+    return { levelKey: null, points: (snapshotRawPoints || []).map(normalizeSnapshotPoint) };
+  }
+
+  function applySnapshotDisplayForZoom(zoom, force) {
+    if (!snapshotRawPoints) return;
+    const display = getSnapshotDisplayPointsForZoom(zoom);
+    if (!force && serverClusterLevelActiveKey === display.levelKey) return;
+    serverClusterLevelActiveKey = display.levelKey;
+    pointLayerGroup.clearLayers();
+    points.length = 0;
+    ++_batchGeneration;
+    display.points.forEach(function (d) {
       const pointType = getPointType(d);
       points.push({
         name: d.name || 'Point',
@@ -323,8 +429,10 @@
         marker: null
       });
     });
-    renderPointToggles();
+    scheduleRenderPointToggles();
   }
+
+  // ── Point type toggles ──────────────────────────────────────
 
   let _toggleTimer = null;
   function scheduleRenderPointToggles() {
@@ -473,92 +581,65 @@
     }
   }
 
-  // Safety timeout: dismiss loading overlay after 30 s
   const _safetyTimeout = setTimeout(dismissLoadingOverlay, 30000);
 
-  // ── Firebase: load Norway points from Firestore ─────────────
-  let db = null;
+  // ── Load Norway points from static snapshot ─────────────────
+  function loadNorwaySnapshot() {
+    if (_pointsLoadStarted) return;
+    _pointsLoadStarted = true;
 
-  function loadNorwayPoints() {
-    if (!db) { dismissLoadingOverlay(); return; }
-    db.collection('points')
-      .where('country', '==', 'Norway')
-      .get()
-      .then(function (snapshot) {
-        const batch = [];
-        snapshot.forEach(function (doc) {
-          const d = doc.data();
-          if (typeof d.lat !== 'number' || typeof d.lon !== 'number') return;
-          batch.push({
-            name:     d.name || 'Point',
-            lat:      d.lat,
-            lon:      d.lon,
-            url:      d.url || d.URL || null,
-            type:     d.type || (d.metadata && (d.metadata.Type || d.metadata.type)) || null,
-            metadata: d.metadata || {}
-          });
-        });
-        if (batch.length > 0) {
-          addPointsBatch(batch);
-          // Fit map to points if they're not near the default Norway center
-          const fg = L.featureGroup(
-            batch.map(function (p) { return L.marker([p.lat, p.lon]); })
-          );
+    fetch(NORWAY_SNAPSHOT_URL, { cache: 'default' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.points)) throw new Error('unrecognised snapshot format');
+        if (data.points.length === 0) throw new Error('empty snapshot');
+
+        snapshotRawPoints = data.points;
+
+        const disableZoom = data.clusterZoomRange && Number(data.clusterZoomRange.disableClusteringAtZoom);
+        serverClusterDisableZoom = Number.isFinite(disableZoom) ? disableZoom : 8;
+
+        if (data.clustersByZoom && typeof data.clustersByZoom === 'object') {
+          serverClusterLevels = data.clustersByZoom;
+          serverClusterLevelKeys = Object.keys(serverClusterLevels)
+            .map(function (k) { return Number(k); })
+            .filter(Number.isFinite)
+            .sort(function (a, b) { return a - b; });
+        } else {
+          serverClusterLevels = null;
+          serverClusterLevelKeys = [];
+        }
+
+        serverClusterLevelActiveKey = null;
+        applySnapshotDisplayForZoom(map.getZoom(), true);
+
+        if (serverClusterLevelKeys.length > 0) {
+          _onZoomEndSnapshot = function (zoom) { applySnapshotDisplayForZoom(zoom, false); };
+        }
+
+        // Fit map to a sample of the raw points so the view isn't dominated by
+        // a handful of z3 cluster centroids spanning the whole country.
+        const sample = snapshotRawPoints.slice(0, 200);
+        if (sample.length > 0) {
+          const fg = L.featureGroup(sample.map(function (p) { return L.marker([p.lat, p.lon]); }));
           map.fitBounds(fg.getBounds(), { padding: [40, 40], maxZoom: 12 });
         }
+
         clearTimeout(_safetyTimeout);
         dismissLoadingOverlay();
       })
       .catch(function (err) {
-        console.warn('Norway: could not load points from Firestore:', err && err.message || err);
+        console.warn('Norway: could not load snapshot:', err && err.message || err);
         clearTimeout(_safetyTimeout);
         dismissLoadingOverlay();
       });
   }
 
-  // ── Firebase init ───────────────────────────────────────────
-  function initFirebase() {
-    if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
-      console.log('NorwayMap: Firebase not configured — running in local-only mode.');
-      clearTimeout(_safetyTimeout);
-      dismissLoadingOverlay();
-      return;
-    }
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      const _app = firebase.app();
-      const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
-                 || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-
-      function _finishInit(settings) {
-        db = firebase.firestore();
-        if (settings) {
-          try { db.settings(settings); } catch (e) { /* already set */ }
-        }
-        loadNorwayPoints();
-      }
-
-      if (!isIOS) {
-        import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
-          .then(function (mod) {
-            try {
-              mod.initializeFirestore(_app, { localCache: mod.memoryLocalCache() });
-            } catch (e) { /* already initialised */ }
-            _finishInit();
-          })
-          .catch(function () { _finishInit(); });
-      } else {
-        _finishInit({ experimentalForceLongPolling: true });
-      }
-    } catch (err) {
-      console.error('Firebase init error:', err);
-      clearTimeout(_safetyTimeout);
-      dismissLoadingOverlay();
-    }
-  }
-
   // ── Initialise ──────────────────────────────────────────────
-  initFirebase();
+  loadNorwaySnapshot();
 
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(initPMTilesLayer, { timeout: 1000 });

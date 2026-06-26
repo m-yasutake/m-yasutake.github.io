@@ -72,18 +72,36 @@ function normalizePointType(rawType) {
   return type;
 }
 
+function normalizeNorwayPointType(rawType) {
+  const type = rawType ? String(rawType).trim() : '';
+  if (!type) return 'Other';
+  if (/camp/i.test(type))                                           return 'Campsite';
+  if (/roadside\s*station/i.test(type))                             return 'Roadside Station';
+  if (/must\s*see/i.test(type))                                     return 'Must See';
+  if (/hotel/i.test(type))                                          return 'Hotel';
+  if (/onsen/i.test(type))                                          return 'Onsen';
+  if (/dnt.+special|dnt.+code|frilufts/i.test(type))               return 'DNT Code Hut';
+  if (/dnt/i.test(type))                                            return 'DNT Hut';
+  if (/cave|rock.?shelter/i.test(type))                             return 'Cave';
+  if (/municipal|day.?trip/i.test(type))                            return 'Day Hut';
+  if (/rental/i.test(type))                                         return 'Rental';
+  if (/open.?shelter|lean.?to|shelter|hut|koie|hytte/i.test(type)) return 'Open Shelter';
+  return 'Other';
+}
+
 function getClusterCellSizeForZoom(zoom) {
   return BASE_CLUSTER_CELL_SIZE / Math.pow(2, Math.max(0, zoom - SERVER_CLUSTER_MIN_ZOOM));
 }
 
-function buildServerClustersForZoom(points, zoom) {
+function buildServerClustersForZoom(points, zoom, normalizeFn) {
+  const normalize = normalizeFn || normalizePointType;
   const cellSize = getClusterCellSizeForZoom(zoom);
   const buckets = new Map();
 
   for (const p of points) {
     if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
     const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
-    const type = normalizePointType(rawType);
+    const type = normalize(rawType);
     const latKey = Math.round(p.lat / cellSize);
     const lonKey = Math.round(p.lon / cellSize);
     const key = `${type}:${latKey}:${lonKey}`;
@@ -131,10 +149,10 @@ function buildServerClustersForZoom(points, zoom) {
   });
 }
 
-function buildServerClusterLevels(points) {
+function buildServerClusterLevels(points, normalizeFn) {
   const levels = {};
   for (let zoom = SERVER_CLUSTER_MIN_ZOOM; zoom <= SERVER_CLUSTER_MAX_ZOOM; zoom++) {
-    levels[String(zoom)] = buildServerClustersForZoom(points, zoom);
+    levels[String(zoom)] = buildServerClustersForZoom(points, zoom, normalizeFn);
   }
   return levels;
 }
@@ -165,6 +183,7 @@ async function main() {
         fileName: d.fileName || null,
         visited:  d.visited  || false,
         type:     d.type     || null,
+        country:  d.country  || null,
         uploadedAt: d.uploadedAt ? d.uploadedAt.toMillis() : null,
       });
     });
@@ -258,6 +277,53 @@ async function main() {
   }
 
   console.log(`Done. ${points.length} point(s) written to points/points.json (generatedAt: ${generatedAt}).`);
+
+  // ── Norway snapshot ───────────────────────────────────────────────────────────
+  const norwayPoints = points.filter(p => p.country === 'Norway');
+  console.log(`\nNorway points: ${norwayPoints.length}`);
+
+  if (norwayPoints.length > 0) {
+    const norwayClustersByZoom = buildServerClusterLevels(norwayPoints, normalizeNorwayPointType);
+    Object.keys(norwayClustersByZoom).forEach(zoom => {
+      console.log(`Norway server clusters @ z${zoom}: ${norwayClustersByZoom[zoom].length}`);
+    });
+
+    const norwayJson = JSON.stringify({
+      generatedAt,
+      points: norwayPoints,
+      clustersByZoom: norwayClustersByZoom,
+      clusterZoomRange: {
+        min: SERVER_CLUSTER_MIN_ZOOM,
+        max: SERVER_CLUSTER_MAX_ZOOM,
+        disableClusteringAtZoom: SERVER_CLUSTER_DISABLE_ZOOM
+      }
+    });
+    const norwayBuffer = Buffer.from(norwayJson, 'utf8');
+    console.log(`Norway snapshot size: ${(norwayBuffer.length / 1024).toFixed(1)} KB`);
+
+    const norwayLocalPath = path.join(__dirname, '..', 'assets', 'norway-points.json');
+    fs.writeFileSync(norwayLocalPath, norwayJson, 'utf8');
+    console.log(`Norway local snapshot written to ${norwayLocalPath}`);
+
+    console.log('Uploading points/norway-points.json to Firebase Storage...');
+    const norwayFile = bucket.file('points/norway-points.json');
+    await norwayFile.save(norwayBuffer, {
+      contentType: 'application/json',
+      metadata: { cacheControl: 'public, max-age=300' }
+    });
+    try {
+      await norwayFile.makePublic();
+      console.log('Norway file made publicly readable.');
+    } catch (err) {
+      console.warn(
+        'Could not set public ACL for Norway file (fine if uniform bucket-level access is enabled):\n',
+        err.message
+      );
+    }
+    console.log(`Norway done. ${norwayPoints.length} point(s) written.`);
+  } else {
+    console.log('No Norway points found — norway-points.json not written.');
+  }
 }
 
 main().catch(err => {
