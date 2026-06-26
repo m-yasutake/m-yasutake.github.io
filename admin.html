@@ -1380,6 +1380,19 @@
         <button class="btn btn-primary" id="gmaps-admin-btn">📍 Add Point</button>
       </div>
 
+      <!-- Delete points by filename -->
+      <div class="mapdata-upload-block">
+        <h3>🗑 Delete Points by Filename</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Delete all points that were uploaded from a specific CSV file. Use the country selector above to scope the search, then type or paste the exact filename.</p>
+        <div class="form-row" style="margin-bottom:.75rem">
+          <input type="text" id="del-filename-input" class="form-control" placeholder="e.g. norway_huts.csv" style="flex:1;min-width:0">
+          <button class="btn" id="del-filename-search-btn" style="background:var(--color-gray-200);white-space:nowrap">🔍 Search</button>
+        </div>
+        <div id="del-filename-preview" style="font-size:.85rem;color:var(--color-gray-700);min-height:1.2em;margin-bottom:.5rem"></div>
+        <div class="mapdata-upload-status" id="del-filename-status"></div>
+        <button class="btn" id="del-filename-btn" disabled style="background:#fee;color:#c0392b">🗑 Delete Points</button>
+      </div>
+
       <!-- Visited Onsens picker -->
       <div class="mapdata-upload-block">
         <h3>♨️ Mark Visited Onsens</h3>
@@ -4000,10 +4013,81 @@ const GearManagerAdmin = (function () {
     });
   }
 
+  // ── Delete points by filename wiring
+  function setupDeleteByFilename() {
+    const searchBtn  = document.getElementById('del-filename-search-btn');
+    const deleteBtn  = document.getElementById('del-filename-btn');
+    const input      = document.getElementById('del-filename-input');
+    const previewEl  = document.getElementById('del-filename-preview');
+    const statusEl   = document.getElementById('del-filename-status');
+
+    let matchedDocs = [];
+
+    function reset() {
+      matchedDocs = [];
+      previewEl.textContent = '';
+      statusEl.textContent = '';
+      deleteBtn.disabled = true;
+    }
+
+    input.addEventListener('input', reset);
+
+    searchBtn.addEventListener('click', async () => {
+      const filename = input.value.trim();
+      if (!filename) { previewEl.textContent = 'Enter a filename first.'; return; }
+      previewEl.textContent = 'Searching…';
+      statusEl.textContent = '';
+      deleteBtn.disabled = true;
+      matchedDocs = [];
+      try {
+        await ensureMapReady();
+        const country = getSelectedMapCountry();
+        const snap = await _mapDb.collection('points')
+          .where('fileName', '==', filename)
+          .where('country', '==', country)
+          .get();
+        matchedDocs = snap.docs;
+        if (matchedDocs.length === 0) {
+          previewEl.textContent = `No points found for "${filename}" in ${country}.`;
+        } else {
+          previewEl.textContent = `Found ${matchedDocs.length} point(s) from "${filename}" in ${country}.`;
+          deleteBtn.disabled = false;
+        }
+      } catch (err) {
+        previewEl.textContent = 'Search failed: ' + err.message;
+      }
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+      if (!matchedDocs.length) return;
+      const filename = input.value.trim();
+      const country = getSelectedMapCountry();
+      if (!confirm(`Permanently delete ${matchedDocs.length} point(s) from "${filename}" in ${country}? This cannot be undone.`)) return;
+      deleteBtn.disabled = true;
+      statusEl.textContent = 'Deleting…';
+      try {
+        for (let i = 0; i < matchedDocs.length; i += 500) {
+          const batch = _mapDb.batch();
+          matchedDocs.slice(i, i + 500).forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+        statusEl.textContent = `✓ Deleted ${matchedDocs.length} point(s).`;
+        previewEl.textContent = '';
+        input.value = '';
+        matchedDocs = [];
+        TomikaBikes.showToast('Points deleted!', 'success');
+      } catch (err) {
+        statusEl.textContent = 'Delete failed: ' + err.message;
+        deleteBtn.disabled = false;
+      }
+    });
+  }
+
   // ── Init all wiring on page load
   setupGpxDropZone();
   setupCsvDropZone();
   setupGmapsInput();
+  setupDeleteByFilename();
 })();
 </script>
 
