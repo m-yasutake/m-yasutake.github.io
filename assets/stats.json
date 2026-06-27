@@ -10,14 +10,14 @@
     "currentRouteName": "Mooving on"
   },
   "denmark": {
-    "totalDistanceKm": 253.7,
-    "totalElevationGain": 1944,
-    "rideCount": 4,
+    "totalDistanceKm": 405,
+    "totalElevationGain": 2634,
+    "rideCount": 6,
     "currentPosition": [
-      56.802898,
-      9.872595
+      57.606544,
+      9.954829
     ],
-    "currentRouteName": "Morning Ride"
+    "currentRouteName": "Donemark"
   },
-  "generatedAt": "2026-06-26T03:06:12.829Z"
+  "generatedAt": "2026-06-27T03:05:44.913Z"
 }
