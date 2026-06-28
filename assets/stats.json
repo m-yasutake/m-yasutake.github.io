@@ -10,14 +10,14 @@
     "currentRouteName": "Mooving on"
   },
   "denmark": {
-    "totalDistanceKm": 405,
-    "totalElevationGain": 2634,
-    "rideCount": 6,
+    "totalDistanceKm": 475.2,
+    "totalElevationGain": 3495,
+    "rideCount": 7,
     "currentPosition": [
-      57.606544,
-      9.954829
+      58.041744,
+      7.415171
     ],
-    "currentRouteName": "Donemark"
+    "currentRouteName": "Tooth fairy"
   },
-  "generatedAt": "2026-06-27T03:05:44.913Z"
+  "generatedAt": "2026-06-28T03:06:36.561Z"
 }
