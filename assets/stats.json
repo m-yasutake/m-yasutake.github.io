@@ -10,14 +10,14 @@
     "currentRouteName": "Mooving on"
   },
   "denmark": {
-    "totalDistanceKm": 589.4,
-    "totalElevationGain": 5372,
-    "rideCount": 9,
+    "totalDistanceKm": 652.8,
+    "totalElevationGain": 6750,
+    "rideCount": 10,
     "currentPosition": [
-      58.281474,
-      6.878806
+      58.337807,
+      6.349591
     ],
-    "currentRouteName": "Great brakes"
+    "currentRouteName": "Racketeering"
   },
-  "generatedAt": "2026-06-30T03:05:55.486Z"
+  "generatedAt": "2026-07-01T03:06:41.304Z"
 }
