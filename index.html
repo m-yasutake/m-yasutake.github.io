@@ -476,8 +476,14 @@
     }, 16);
   }
 
+  // ── Per-trip hardcoded stat fallbacks ─────────────────────
+  // Used when Firestore doesn't carry the value (e.g. completed trips).
+  var TRIP_STAT_DEFAULTS = {
+    denmark: { onsensCount: 12 }
+  };
+
   // ── Update stat bar from a Firestore doc ───────────────────
-  function updateStatsDisplay(doc) {
+  function updateStatsDisplay(doc, trip) {
     var sploopsEl   = document.getElementById('stat-sploops');
     var grindsEl    = document.getElementById('stat-grinds');
     var sploopsKmEl = document.getElementById('stat-sploops-km');
@@ -504,8 +510,10 @@
       if (grindsMEl) grindsMEl.textContent = 'm';
     } else { grindsEl.textContent = '0'; if (grindsMEl) grindsMEl.textContent = ''; }
 
-    if (onsensEl && s.onsensCount != null) {
-      animateCounter(onsensEl, s.onsensCount);
+    var defaults = (trip && TRIP_STAT_DEFAULTS[trip]) || {};
+    var onsensVal = s.onsensCount != null ? s.onsensCount : defaults.onsensCount;
+    if (onsensEl && onsensVal != null) {
+      animateCounter(onsensEl, onsensVal);
     } else if (onsensEl) { onsensEl.textContent = '0'; }
   }
 
@@ -551,12 +559,12 @@
     var onsensLabel = document.getElementById('stat-onsens-label');
     if (onsensLabel) {
       if (trip === 'norway') onsensLabel.textContent = 'Hytte 🏠';
-      else if (trip === 'denmark') onsensLabel.textContent = 'Highlights 🌟';
+      else if (trip === 'denmark') onsensLabel.textContent = 'Kanelsnegles 🥐';
       else onsensLabel.textContent = 'Onsens ♨️';
     }
 
     // Update stats, days, and marker
-    updateStatsDisplay(_tripStats[trip] || null);
+    updateStatsDisplay(_tripStats[trip] || null, trip);
     updateDaysDisplay(trip);
     updateWeAreHereMarker(_tripStats[trip] || null);
 
@@ -595,7 +603,7 @@
           .then(function (doc) {
             _tripStats[trip] = doc;
             if (trip === _activeTrip) {
-              updateStatsDisplay(doc);
+              updateStatsDisplay(doc, trip);
               updateWeAreHereMarker(doc);
             }
           })
