@@ -62,10 +62,10 @@ function mapElement(element) {
 async function main() {
   console.log('Querying Overpass API for Norway facilities (this may take up to 60 s)…');
 
+  const params = new URLSearchParams({ data: OVERPASS_QUERY });
   const res = await fetch(OVERPASS_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'data=' + encodeURIComponent(OVERPASS_QUERY)
+    body: params
   });
 
   if (!res.ok) {
