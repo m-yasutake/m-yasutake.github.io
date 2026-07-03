@@ -458,7 +458,8 @@
     var dates = TRIP_DATES[trip];
     if (!dates || !dates.start) { daysEl.textContent = '—'; return; }
     var start = new Date(dates.start + 'T00:00:00');
-    var end   = dates.end ? new Date(dates.end + 'T00:00:00') : new Date();
+    var endDate = dates.end ? new Date(dates.end + 'T00:00:00') : new Date();
+    var end     = endDate < new Date() ? endDate : new Date();
     var days  = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
     daysEl.textContent = days.toLocaleString();
   }
