@@ -10,14 +10,24 @@
     "currentRouteName": "Mooving on"
   },
   "denmark": {
-    "totalDistanceKm": 652.8,
-    "totalElevationGain": 6750,
-    "rideCount": 10,
+    "totalDistanceKm": 405,
+    "totalElevationGain": 2634,
+    "rideCount": 6,
     "currentPosition": [
-      58.337807,
-      6.349591
+      57.606544,
+      9.954829
     ],
-    "currentRouteName": "Racketeering"
+    "currentRouteName": "Donemark"
   },
-  "generatedAt": "2026-07-03T05:47:15.865Z"
+  "norway": {
+    "totalDistanceKm": 313.6,
+    "totalElevationGain": 5131,
+    "rideCount": 5,
+    "currentPosition": [
+      58.507896,
+      5.847977
+    ],
+    "currentRouteName": "Cabin a great time"
+  },
+  "generatedAt": "2026-07-03T10:05:10.726Z"
 }
