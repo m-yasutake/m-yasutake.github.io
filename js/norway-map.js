@@ -89,6 +89,14 @@
       color: '#1abc9c',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#1abc9c" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5L5.5 11h2v6h9V11h2L12 5.5z" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><rect x="8" y="13.5" width="8" height="3" rx="0.5" fill="none" stroke="#fff" stroke-width="1"/><rect x="8.5" y="13" width="2.5" height="1.5" rx="0.3" fill="#fff"/></svg>'
     },
+    'Drinking Water': {
+      color: '#2980b9',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#2980b9" stroke="#fff" stroke-width="1.5"/><path d="M12 5.5c0 0-5 5.8-5 9.5a5 5 0 0 0 10 0c0-3.7-5-9.5-5-9.5z" fill="#fff"/></svg>'
+    },
+    'Public Toilet': {
+      color: '#16a085',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#16a085" stroke="#fff" stroke-width="1.5"/><circle cx="9" cy="8" r="1.6" fill="#fff"/><circle cx="15" cy="8" r="1.6" fill="#fff"/><path d="M7 10.5h4v4.5l.5 3h1l.5-3V10.5h4" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    },
     'Other': {
       color: '#95a5a6',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#95a5a6" stroke="#fff" stroke-width="1.5"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
@@ -129,6 +137,8 @@
     if (/municipal|day.?trip/i.test(raw))                        return 'Day Hut';
     if (/rental/i.test(raw))                                     return 'Rental';
     if (/open.?shelter|lean.?to|shelter|hut|koie|hytte/i.test(raw)) return 'Open Shelter';
+    if (/drinking.?water|water.?point/i.test(raw)) return 'Drinking Water';
+    if (/toilet|restroom|wc/i.test(raw))           return 'Public Toilet';
     if (/other/i.test(raw))           return 'Other';
     return POINT_TYPE_ICONS[raw] ? raw : 'Other';
   }
@@ -198,7 +208,8 @@
 
   L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
-  const pointLayerGroup = L.layerGroup().addTo(map);
+  const pointLayerGroup      = L.layerGroup().addTo(map);
+  const facilitiesLayerGroup = L.layerGroup().addTo(map);
 
   // ── "Show My Location" control ─────────────────────────────
   (function addLocationControl() {
@@ -248,13 +259,15 @@
   })();
 
   // ── Point data ──────────────────────────────────────────────
-  const points = [];
+  const points          = [];
+  const facilitiesPoints = [];
   const pointTypeFilters = new Set();
-  const _seenPointTypes = new Set();
+  const _seenPointTypes  = new Set();
 
   // ── Snapshot state ──────────────────────────────────────────
   let _pointsLoadStarted = false;
-  const NORWAY_SNAPSHOT_URL = 'assets/norway-points.json';
+  const NORWAY_SNAPSHOT_URL    = 'assets/norway-points.json';
+  const NORWAY_FACILITIES_URL  = 'assets/norway-facilities.json';
   let snapshotRawPoints = null;
   let serverClusterLevels = null;
   let serverClusterLevelKeys = [];
@@ -266,6 +279,7 @@
   function getAvailablePointTypes() {
     const available = new Set();
     points.forEach(p => available.add(p.type || 'Other'));
+    facilitiesPoints.forEach(p => available.add(p.type || 'Other'));
     if (available.size === 0) {
       ['Campsite', 'Roadside Station', 'Must See', 'Hotel', 'Other'].forEach(t => available.add(t));
     }
@@ -299,6 +313,16 @@
         pointLayerGroup.addLayer(p.marker);
       } else if (p.marker) {
         pointLayerGroup.removeLayer(p.marker);
+      }
+    });
+    facilitiesPoints.forEach(p => {
+      const type = p.type || 'Other';
+      const show = pointTypeFilters.has(type) && bounds.contains([p.lat, p.lon]);
+      if (show) {
+        if (!p.marker) p.marker = createPointMarker(p);
+        facilitiesLayerGroup.addLayer(p.marker);
+      } else if (p.marker) {
+        facilitiesLayerGroup.removeLayer(p.marker);
       }
     });
   }
@@ -583,6 +607,33 @@
 
   const _safetyTimeout = setTimeout(dismissLoadingOverlay, 30000);
 
+  // ── Load Norway facilities from static snapshot ─────────────
+  function loadNorwayFacilities() {
+    fetch(NORWAY_FACILITIES_URL, { cache: 'default' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.points) || data.points.length === 0) return;
+        data.points.forEach(function (d) {
+          facilitiesPoints.push({
+            name:     d.name     || d.type || 'Facility',
+            lat:      d.lat,
+            lon:      d.lon,
+            url:      d.url      || null,
+            type:     d.type     || 'Other',
+            metadata: d.metadata || {},
+            marker:   null
+          });
+        });
+        scheduleRenderPointToggles();
+      })
+      .catch(function (err) {
+        console.warn('Norway facilities: could not load:', err && err.message || err);
+      });
+  }
+
   // ── Load Norway points from static snapshot ─────────────────
   function loadNorwaySnapshot() {
     if (_pointsLoadStarted) return;
@@ -640,6 +691,7 @@
 
   // ── Initialise ──────────────────────────────────────────────
   loadNorwaySnapshot();
+  loadNorwayFacilities();
 
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(initPMTilesLayer, { timeout: 1000 });

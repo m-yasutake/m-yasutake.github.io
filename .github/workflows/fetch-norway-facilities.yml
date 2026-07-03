@@ -1,0 +1,52 @@
+# .github/workflows/fetch-norway-facilities.yml
+#
+# Workflow: Fetch Norway Facilities
+#
+# Queries the public Overpass API for drinking water points and public toilets
+# across Norway and commits the result to assets/norway-facilities.json so
+# the planning map can load it as a static asset without runtime API calls.
+#
+# No secrets required — Overpass is a public API.
+#
+# Triggers:
+#   - Weekly: every Sunday at 03:00 UTC (keeps OSM data reasonably fresh)
+#   - Manual: Actions tab > "Fetch Norway Facilities" > Run workflow
+
+name: Fetch Norway Facilities
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+jobs:
+  fetch-facilities:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install script dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Fetch Norway facilities from Overpass
+        working-directory: scripts
+        run: node fetch-norway-facilities.js
+
+      - name: Commit updated facilities snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/norway-facilities.json
+          git diff --cached --quiet || git commit -m "chore: update norway-facilities.json [skip ci]"
+          git pull --rebase
+          git push
