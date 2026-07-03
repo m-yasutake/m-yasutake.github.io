@@ -21,12 +21,13 @@ const fs   = require('fs');
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
+// Bounding box covers mainland Norway + Svalbard without needing a slow area lookup.
+// Format: south,west,north,east
 const OVERPASS_QUERY = `
-[out:json][timeout:60];
-area["ISO3166-1"="NO"][admin_level=2]->.norway;
+[out:json][timeout:90][bbox:57.5,4.0,71.5,31.5];
 (
-  node(area.norway)[amenity=drinking_water];
-  node(area.norway)[amenity=toilets];
+  node[amenity=drinking_water];
+  node[amenity=toilets];
 );
 out body;
 `.trim();
