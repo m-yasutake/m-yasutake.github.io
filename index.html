@@ -443,10 +443,13 @@
   // ── Trip date config ──────────────────────────────────────
   // end: null means ongoing (days count up from start to today).
   // start: null means trip hasn't begun yet (shows —).
+  // These fallback dates are overridden by stats.json when it loads; having
+  // them here ensures the map route-filter works immediately on page load so
+  // only one country's routes are visible at a time.
   var TRIP_DATES = {
-    japan:   { start: '2026-03-14', end: '2026-05-24', active: false },
-    denmark: { start: null,         end: null,          active: false },
-    norway:  { start: null,         end: null,          active: true  }
+    japan:   { start: '2026-03-05', end: '2026-05-25', active: false },
+    denmark: { start: '2026-06-20', end: '2026-06-26', active: false },
+    norway:  { start: '2026-06-27', end: null,          active: true  }
   };
 
   function updateDaysDisplay(trip) {
@@ -566,10 +569,15 @@
       _homeMap.flyTo(views[trip].center, views[trip].zoom, { duration: 1.5 });
     }
 
-    // Filter route tiles to show only this trip's rides
+    // Filter route tiles to show only this trip's rides.
+    // Only update the filter when a start date is known; if dates haven't
+    // loaded yet, keep the current filter rather than passing (null, null)
+    // which would remove the filter and reveal all trips' routes at once.
     if (_homeMap && _homeMap.setTripFilter) {
       var dates = TRIP_DATES[trip] || {};
-      _homeMap.setTripFilter(dates.start || null, dates.end || null);
+      if (dates.start) {
+        _homeMap.setTripFilter(dates.start, dates.end || null);
+      }
     }
 
     // Update start/end markers
