@@ -424,13 +424,29 @@
   var _homeMap         = null;
   var _weAreHereMarker = null;
 
+  // ── Start / End markers per trip (coords updated from stats.json) ──────────
+  var TRIP_MARKERS = {
+    japan: {
+      start: { latlng: [30.999, 130.658], label: '🚩 Start – Cape Sata' },
+      end:   { latlng: [45.520, 141.934], label: '🏁 Finish – Cape Soya' }
+    },
+    denmark: {
+      start: { latlng: [55.676, 12.568], label: '🚩 Start – Copenhagen' },
+      end:   { latlng: [57.590,  9.962], label: '🏁 Finish – Hirtshals' }
+    },
+    norway: {
+      start: { latlng: [58.147,  7.995], label: '🚩 Start – Kristiansand' },
+      end:   { latlng: [70.662, 23.682], label: '🏁 Finish – Tromsø' }
+    }
+  };
+
   // ── Trip date config ──────────────────────────────────────
   // end: null means ongoing (days count up from start to today).
   // start: null means trip hasn't begun yet (shows —).
   var TRIP_DATES = {
-    japan:   { start: '2026-03-14', end: '2026-05-24' },
-    denmark: { start: null,         end: null          },
-    norway:  { start: null,         end: null          }
+    japan:   { start: '2026-03-14', end: '2026-05-24', active: false },
+    denmark: { start: null,         end: null,          active: false },
+    norway:  { start: null,         end: null,          active: true  }
   };
 
   function updateDaysDisplay(trip) {
@@ -493,6 +509,7 @@
   function updateWeAreHereMarker(doc) {
     if (!_homeMap) return;
     if (_weAreHereMarker) { _homeMap.removeLayer(_weAreHereMarker); _weAreHereMarker = null; }
+    if (!TRIP_DATES[_activeTrip] || !TRIP_DATES[_activeTrip].active) return;
     if (!doc || !doc.exists) return;
     var s = doc.data();
     if (!s.currentPosition) return;
@@ -549,6 +566,12 @@
       _homeMap.flyTo(views[trip].center, views[trip].zoom, { duration: 1.5 });
     }
 
+    // Filter route tiles to show only this trip's rides
+    if (_homeMap && _homeMap.setTripFilter) {
+      var dates = TRIP_DATES[trip] || {};
+      _homeMap.setTripFilter(dates.start || null, dates.end || null);
+    }
+
     // Update start/end markers
     if (typeof window._addTripMarkers === 'function') window._addTripMarkers(trip);
   }
@@ -572,10 +595,62 @@
     } catch (e) {}
   })();
 
+  // ── Load trip dates from stats.json (sourced from GitHub Actions vars) ─────
+  // Overrides the hardcoded TRIP_DATES with real start/end dates and computes
+  // active status: a trip is active if it has started but has no end date yet.
+  (function loadTripDates() {
+    fetch('assets/stats.json', { cache: 'default' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.tripDates) return;
+        var now = Date.now();
+        Object.keys(data.tripDates).forEach(function (trip) {
+          var d = data.tripDates[trip];
+          if (!TRIP_DATES[trip]) TRIP_DATES[trip] = {};
+          if (d.from) TRIP_DATES[trip].start = d.from.substring(0, 10);
+          if (d.to)   TRIP_DATES[trip].end   = d.to.substring(0, 10);
+          var hasStarted = d.from && new Date(d.from).getTime() <= now;
+          var hasEnded   = d.to   && new Date(d.to).getTime()   <  now;
+          TRIP_DATES[trip].active = !!(hasStarted && !hasEnded);
+        });
+        // Update start/end marker coords and labels from Strava GPS data.
+        // Start: first GPS point of earliest route in the trip window.
+        // End:   last GPS point of latest route (only for finished trips;
+        //        for active trips the "we are here" marker already shows current pos).
+        Object.keys(data).forEach(function (trip) {
+          var s = data[trip];
+          if (!s || typeof s !== 'object' || !TRIP_MARKERS[trip]) return;
+          if (s.tripStartPosition) {
+            TRIP_MARKERS[trip].start.latlng = s.tripStartPosition;
+            if (s.tripStartCity) TRIP_MARKERS[trip].start.label = '🚩 Start – ' + s.tripStartCity;
+          }
+          if (s.currentPosition && TRIP_DATES[trip] && !TRIP_DATES[trip].active) {
+            TRIP_MARKERS[trip].end.latlng = s.currentPosition;
+            if (s.currentCity) TRIP_MARKERS[trip].end.label = '🏁 Finish – ' + s.currentCity;
+          }
+        });
+        if (window._addTripMarkers) window._addTripMarkers(_activeTrip);
+        if (_tripStats[_activeTrip]) updateWeAreHereMarker(_tripStats[_activeTrip]);
+        updateDaysDisplay(_activeTrip);
+        // Re-apply route filter now that we have real dates from GitHub vars
+        if (_homeMap && _homeMap.setTripFilter) {
+          var d = TRIP_DATES[_activeTrip] || {};
+          _homeMap.setTripFilter(d.start || null, d.end || null);
+        }
+      })
+      .catch(function () {});
+  })();
+
   // ── Home-page route map ────────────────────────────────────
   (function initHomeMap() {
     if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
-    _homeMap = RouteMap.init('home-map', { center: [38, 136], zoom: 4 });
+    var _initDates = TRIP_DATES[_activeTrip] || {};
+    _homeMap = RouteMap.init('home-map', {
+      center:   [38, 136],
+      zoom:     4,
+      dateFrom: _initDates.start || null,
+      dateTo:   _initDates.end   || null
+    });
     _homeMap.once('load', function () {
       var el = document.getElementById('home-map-loading');
       if (el) el.classList.add('hidden');
@@ -584,22 +659,6 @@
       var el = document.getElementById('home-map-loading');
       if (el) el.classList.add('hidden');
     }, 2000);
-
-    // ── Start / End markers for Japan route ─────────────────
-    var TRIP_MARKERS = {
-      japan: {
-        start: { latlng: [30.999, 130.658], label: '🚩 Start – Cape Sata' },
-        end:   { latlng: [45.520, 141.934], label: '🏁 Finish – Cape Soya' }
-      },
-      denmark: {
-        start: { latlng: [55.676, 12.568], label: '🚩 Start – Copenhagen' },
-        end:   { latlng: [57.048, 9.921],  label: '🏁 Finish – Aalborg' }
-      },
-      norway: {
-        start: { latlng: [58.460, 5.846], label: '🚩 Start – Egersund' },
-        end:   { latlng: [70.662, 23.682], label: '🏁 Finish – Tromsø' }
-      }
-    };
 
     function makeStartIcon() {
       var html = '<div style="position:relative;width:32px;height:40px">' +

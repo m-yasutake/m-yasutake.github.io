@@ -447,20 +447,45 @@ function parseYmdToUtcMs(ymd, endOfDay = false) {
   return new Date(`${ymd}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`).getTime();
 }
 
+// ── Reverse geocoding ─────────────────────────────────────────────────────────
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Return the nearest city/town name for a [lat, lon] pair using Nominatim.
+ * Respects the 1-req/sec policy; callers must await between calls.
+ */
+async function reverseGeocode(lat, lon) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'roots-bikepacking-blog/1.0 (https://m-yasutake.github.io)' }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data.address || {};
+    return a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || null;
+  } catch (err) {
+    console.warn(`  Reverse geocode failed for [${lat}, ${lon}]:`, err.message);
+    return null;
+  }
+}
+
 function computeStatsForRoutes(routes) {
   let totalDistanceKm    = 0;
   let totalElevationGain = 0;
   let latestTs           = -Infinity;
+  let earliestTs         = Infinity;
   let latestRouteData    = null;
+  let earliestRouteData  = null;
 
   routes.forEach(route => {
     if (typeof route.distanceKm === 'number')         totalDistanceKm    += route.distanceKm;
     if (typeof route.totalElevationGain === 'number') totalElevationGain += route.totalElevationGain;
-    if (route.endLatLng) {
-      const ts = route.activityDate ? route.activityDate.toMillis()
-               : (route.uploadedAt && route.uploadedAt.seconds) ? route.uploadedAt.seconds * 1000 : 0;
-      if (ts > latestTs) { latestTs = ts; latestRouteData = route; }
-    }
+    const ts = route.activityDate ? route.activityDate.toMillis()
+             : (route.uploadedAt && route.uploadedAt.seconds) ? route.uploadedAt.seconds * 1000 : 0;
+    if (route.endLatLng   && ts > latestTs)   { latestTs   = ts; latestRouteData   = route; }
+    if (route.startLatLng && ts < earliestTs) { earliestTs = ts; earliestRouteData = route; }
   });
 
   const stats = {
@@ -473,6 +498,9 @@ function computeStatsForRoutes(routes) {
     stats.currentPosition  = latestRouteData.endLatLng;
     stats.currentRouteName = (latestRouteData.metadata && latestRouteData.metadata.name)
       || latestRouteData.fileName || 'Latest ride';
+  }
+  if (earliestRouteData) {
+    stats.tripStartPosition = earliestRouteData.startLatLng;
   }
   return stats;
 }
@@ -780,14 +808,34 @@ async function updateStatsDocument() {
     if (stats.currentPosition) {
       console.log(`  ✓ stats/${category} currentPosition    = [${stats.currentPosition}] (${stats.currentRouteName})`);
     }
+    // Reverse-geocode start and end positions so the map can label them without
+    // hardcoding place names. Nominatim allows 1 req/sec; sleep between calls.
+    let tripStartCity = null;
+    let currentCity   = null;
+    if (stats.tripStartPosition) {
+      await sleep(1100);
+      tripStartCity = await reverseGeocode(stats.tripStartPosition[0], stats.tripStartPosition[1]);
+      if (tripStartCity) console.log(`  ✓ stats/${category} tripStartCity      = ${tripStartCity}`);
+    }
+    if (stats.currentPosition) {
+      await sleep(1100);
+      currentCity = await reverseGeocode(stats.currentPosition[0], stats.currentPosition[1]);
+      if (currentCity) console.log(`  ✓ stats/${category} currentCity        = ${currentCity}`);
+    }
+
     // Collect serialisable fields for the static file (exclude Firestore sentinels)
     staticStats[category] = {
       totalDistanceKm:    stats.totalDistanceKm,
       totalElevationGain: stats.totalElevationGain,
       rideCount:          stats.rideCount,
+      ...(stats.tripStartPosition ? {
+        tripStartPosition: stats.tripStartPosition,
+        ...(tripStartCity ? { tripStartCity } : {})
+      } : {}),
       ...(stats.currentPosition ? {
         currentPosition:  stats.currentPosition,
-        currentRouteName: stats.currentRouteName
+        currentRouteName: stats.currentRouteName,
+        ...(currentCity ? { currentCity } : {})
       } : {})
     };
   }
@@ -795,9 +843,14 @@ async function updateStatsDocument() {
   // Write a static stats file to the repo so the map page can read trip totals
   // without making a live Firestore query on every page load.
   const statsFilePath = path.join(__dirname, '..', 'assets', 'stats.json');
+  const tripDates = {
+    japan:   { from: process.env.JAPAN_TRIP_FROM   || null, to: process.env.JAPAN_TRIP_TO   || null },
+    denmark: { from: process.env.DENMARK_TRIP_FROM || null, to: process.env.DENMARK_TRIP_TO || null },
+    norway:  { from: process.env.NORWAY_TRIP_FROM  || null, to: process.env.NORWAY_TRIP_TO  || null },
+  };
   fs.writeFileSync(
     statsFilePath,
-    JSON.stringify({ ...staticStats, generatedAt: new Date().toISOString() }, null, 2),
+    JSON.stringify({ ...staticStats, tripDates, generatedAt: new Date().toISOString() }, null, 2),
     'utf8'
   );
   console.log(`  ✓ Static stats written to ${statsFilePath}`);

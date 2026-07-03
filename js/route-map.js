@@ -5,6 +5,7 @@
 //
 // Usage:
 //   RouteMap.init('element-id', { center: [36.5, 138], zoom: 5 });
+//   map.setTripFilter('2026-03-14', '2026-05-24'); // filter by date range
 
 (function () {
   'use strict';
@@ -66,16 +67,13 @@
    *   tilesUrl {string}    direct URL for my-routes.pmtiles
    *   dateFrom {string}    ISO date string YYYY-MM-DD; only show rides on/after this date
    *   dateTo   {string}    ISO date string YYYY-MM-DD; only show rides on/before this date
-   * @returns {L.Map}
+   * @returns {L.Map} with an extra setTripFilter(dateFrom, dateTo) method
    */
   function init(elementId, options) {
     options = options || {};
     var center   = options.center   || [36.5, 138];
     var zoom     = options.zoom     || 5;
-    var tilesUrl = options.tilesUrl ||
-      'assets/tiles/my-routes.pmtiles';
-    var dateFrom = options.dateFrom || null;
-    var dateTo   = options.dateTo   || null;
+    var tilesUrl = options.tilesUrl || 'assets/tiles/my-routes.pmtiles';
 
     // Unique PMTiles instance key per element avoids collisions when multiple
     // maps are on the same page.
@@ -98,54 +96,75 @@
     L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
     // ── Load route tiles via PMTiles + VectorGrid ─────────────────────────
+    var _header     = null;
+    var _routeLayer = null;
+    var _dateFrom   = options.dateFrom || null;
+    var _dateTo     = options.dateTo   || null;
+
+    function buildLayer() {
+      if (_routeLayer) { map.removeLayer(_routeLayer); _routeLayer = null; }
+      if (!_header) return;
+
+      var gridOptions = {
+        vectorTileLayerStyles: {
+          routes: function (properties) {
+            return {
+              weight: getRouteWeight(map.getZoom()),
+              color: properties.color || '#E76F51',
+              opacity: 0.9,
+              fill: false
+            };
+          }
+        },
+        interactive: false,
+        updateWhenZooming: false,
+        keepBuffer: 4,
+        maxNativeZoom: _header.maxZoom || 14,
+        minNativeZoom: _header.minZoom || 2
+      };
+
+      // Date-range filter: only render features whose filename encodes a date
+      // within the specified range. Filenames from fetch-strava-rides.js follow
+      // the pattern: strava_<id>_<YYYY-MM-DD>_<name>.gpx
+      if (_dateFrom || _dateTo) {
+        gridOptions.filter = function (properties) {
+          var filename = properties.filename || '';
+          var m = filename.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
+          if (!m) return false; // hide non-dated routes when a date filter is active
+          var d = m[1];
+          if (_dateFrom && d < _dateFrom) return false;
+          if (_dateTo   && d > _dateTo)   return false;
+          return true;
+        };
+      }
+
+      _routeLayer = L.vectorGrid.protobuf(
+        'pmtiles://' + instanceKey + '/{z}/{x}/{y}',
+        gridOptions
+      );
+      _routeLayer.addTo(map);
+    }
+
     if (typeof pmtiles !== 'undefined' && typeof L.vectorGrid !== 'undefined') {
       var pmInstance = new pmtiles.PMTiles(tilesUrl);
       window.__pmtilesInstances[instanceKey] = pmInstance;
 
       pmInstance.getHeader().then(function (header) {
-        var gridOptions = {
-          vectorTileLayerStyles: {
-            routes: function (properties) {
-              return {
-                weight: getRouteWeight(map.getZoom()),
-                color: properties.color || '#E76F51',
-                opacity: 0.9,
-                fill: false
-              };
-            }
-          },
-          interactive: false,
-          updateWhenZooming: false,
-          keepBuffer: 4,
-          maxNativeZoom: header.maxZoom || 14,
-          minNativeZoom: header.minZoom || 2
-        };
-
-        // Date-range filter: only render features whose filename encodes a date
-        // within the specified range. Filenames from fetch-strava-rides.js follow
-        // the pattern: strava_<id>_<YYYY-MM-DD>_<name>.gpx
-        if (dateFrom || dateTo) {
-          gridOptions.filter = function (properties) {
-            var filename = properties.filename || '';
-            var m = filename.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
-            if (!m) return false; // hide non-dated routes when a date filter is active
-            var d = m[1];
-            if (dateFrom && d < dateFrom) return false;
-            if (dateTo   && d > dateTo)   return false;
-            return true;
-          };
-        }
-
-        var routeLayer = L.vectorGrid.protobuf(
-          'pmtiles://' + instanceKey + '/{z}/{x}/{y}',
-          gridOptions
-        );
-
-        routeLayer.addTo(map);
+        _header = header;
+        buildLayer();
       }).catch(function (err) {
         console.warn('RouteMap: could not load route tiles:', (err && err.message) || err || 'Unknown error');
       });
     }
+
+    // Update the date filter and redraw the route layer.
+    // If the PMTiles header hasn't loaded yet the new filter is stored and
+    // applied automatically when it does.
+    map.setTripFilter = function (dateFrom, dateTo) {
+      _dateFrom = dateFrom || null;
+      _dateTo   = dateTo   || null;
+      buildLayer();
+    };
 
     return map;
   }
