@@ -276,6 +276,14 @@
   let _onZoomEndSnapshot = null;
   let _batchGeneration = 0;
 
+  // ── Facilities cluster state ─────────────────────────────────
+  let facilitiesRawPoints = null;
+  let facilityClusterLevels = null;
+  let facilityClusterLevelKeys = [];
+  let facilityClusterLevelActiveKey = null;
+  let facilityClusterDisableZoom = 8;
+  let _onZoomEndFacilities = null;
+
   function getAvailablePointTypes() {
     const available = new Set();
     points.forEach(p => available.add(p.type || 'Other'));
@@ -299,7 +307,9 @@
     if (_zoomEndTimer) clearTimeout(_zoomEndTimer);
     _zoomEndTimer = setTimeout(function () {
       _zoomEndTimer = null;
-      if (_onZoomEndSnapshot) _onZoomEndSnapshot(map.getZoom());
+      const zoom = map.getZoom();
+      if (_onZoomEndSnapshot)   _onZoomEndSnapshot(zoom);
+      if (_onZoomEndFacilities) _onZoomEndFacilities(zoom);
     }, 150);
   });
 
@@ -431,6 +441,47 @@
       return { levelKey, points: serverClusterLevels[levelKey].map(normalizeServerClusterPoint) };
     }
     return { levelKey: null, points: (snapshotRawPoints || []).map(normalizeSnapshotPoint) };
+  }
+
+  function getFacilityClusterLevelKeyForZoom(zoom) {
+    if (!facilityClusterLevelKeys.length || zoom >= facilityClusterDisableZoom) return null;
+    let selected = facilityClusterLevelKeys[0];
+    for (let i = 0; i < facilityClusterLevelKeys.length; i++) {
+      const key = facilityClusterLevelKeys[i];
+      if (key <= zoom) selected = key;
+      else break;
+    }
+    return String(selected);
+  }
+
+  function applyFacilitiesDisplayForZoom(zoom, force) {
+    if (!facilitiesRawPoints) return;
+    const levelKey = getFacilityClusterLevelKeyForZoom(zoom);
+    if (!force && facilityClusterLevelActiveKey === levelKey) return;
+    facilityClusterLevelActiveKey = levelKey;
+    facilitiesLayerGroup.clearLayers();
+    facilitiesPoints.length = 0;
+
+    let displayPoints;
+    if (levelKey && facilityClusterLevels && Array.isArray(facilityClusterLevels[levelKey])) {
+      displayPoints = facilityClusterLevels[levelKey].map(normalizeServerClusterPoint);
+    } else {
+      displayPoints = facilitiesRawPoints.map(normalizeSnapshotPoint);
+    }
+
+    displayPoints.forEach(function (d) {
+      const pointType = getPointType(d);
+      facilitiesPoints.push({
+        name:     d.name     || 'Point',
+        lat:      d.lat,
+        lon:      d.lon,
+        url:      d.url      || null,
+        type:     pointType,
+        metadata: d.metadata || {},
+        marker:   null
+      });
+    });
+    scheduleRenderPointToggles();
   }
 
   function applySnapshotDisplayForZoom(zoom, force) {
@@ -616,18 +667,29 @@
       })
       .then(function (data) {
         if (!data || !Array.isArray(data.points) || data.points.length === 0) return;
-        data.points.forEach(function (d) {
-          facilitiesPoints.push({
-            name:     d.name     || d.type || 'Facility',
-            lat:      d.lat,
-            lon:      d.lon,
-            url:      d.url      || null,
-            type:     d.type     || 'Other',
-            metadata: d.metadata || {},
-            marker:   null
-          });
-        });
-        scheduleRenderPointToggles();
+
+        facilitiesRawPoints = data.points;
+
+        const disableZoom = data.clusterZoomRange && Number(data.clusterZoomRange.disableClusteringAtZoom);
+        facilityClusterDisableZoom = Number.isFinite(disableZoom) ? disableZoom : 8;
+
+        if (data.clustersByZoom && typeof data.clustersByZoom === 'object') {
+          facilityClusterLevels = data.clustersByZoom;
+          facilityClusterLevelKeys = Object.keys(facilityClusterLevels)
+            .map(function (k) { return Number(k); })
+            .filter(Number.isFinite)
+            .sort(function (a, b) { return a - b; });
+        } else {
+          facilityClusterLevels = null;
+          facilityClusterLevelKeys = [];
+        }
+
+        facilityClusterLevelActiveKey = null;
+        applyFacilitiesDisplayForZoom(map.getZoom(), true);
+
+        if (facilityClusterLevelKeys.length > 0) {
+          _onZoomEndFacilities = function (zoom) { applyFacilitiesDisplayForZoom(zoom, false); };
+        }
       })
       .catch(function (err) {
         console.warn('Norway facilities: could not load:', err && err.message || err);
