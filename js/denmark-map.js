@@ -458,88 +458,36 @@
 
   const _safetyTimeout = setTimeout(dismissLoadingOverlay, 30000);
 
-  // ── Firebase: load Denmark points from Firestore ────────────
-  let db = null;
+  // ── Load Denmark points from static snapshot ────────────────
+  const DENMARK_SNAPSHOT_URL = 'assets/denmark-points.json';
 
-  function loadDenmarkPoints() {
-    if (!db) { dismissLoadingOverlay(); return; }
-    db.collection('points')
-      .where('country', '==', 'Denmark')
-      .get()
-      .then(function (snapshot) {
-        const batch = [];
-        snapshot.forEach(function (doc) {
-          const d = doc.data();
-          if (typeof d.lat !== 'number' || typeof d.lon !== 'number') return;
-          batch.push({
-            name:     d.name || 'Point',
-            lat:      d.lat,
-            lon:      d.lon,
-            url:      d.url || d.URL || null,
-            type:     d.type || (d.metadata && (d.metadata.Type || d.metadata.type)) || null,
-            metadata: d.metadata || {}
-          });
-        });
-        if (batch.length > 0) {
-          addPointsBatch(batch);
-          const fg = L.featureGroup(
-            batch.map(function (p) { return L.marker([p.lat, p.lon]); })
-          );
-          map.fitBounds(fg.getBounds(), { padding: [40, 40], maxZoom: 12 });
-        }
+  function loadDenmarkSnapshot() {
+    fetch(DENMARK_SNAPSHOT_URL, { cache: 'default' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.points)) throw new Error('unrecognised snapshot format');
+        if (data.points.length === 0) throw new Error('empty snapshot');
+
+        addPointsBatch(data.points);
+        const sample = data.points.slice(0, 200);
+        const fg = L.featureGroup(sample.map(function (p) { return L.marker([p.lat, p.lon]); }));
+        map.fitBounds(fg.getBounds(), { padding: [40, 40], maxZoom: 12 });
+
         clearTimeout(_safetyTimeout);
         dismissLoadingOverlay();
       })
       .catch(function (err) {
-        console.warn('Denmark: could not load points from Firestore:', err && err.message || err);
+        console.warn('Denmark: could not load snapshot:', err && err.message || err);
         clearTimeout(_safetyTimeout);
         dismissLoadingOverlay();
       });
   }
 
-  // ── Firebase init ───────────────────────────────────────────
-  function initFirebase() {
-    if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
-      console.log('DenmarkMap: Firebase not configured — running in local-only mode.');
-      clearTimeout(_safetyTimeout);
-      dismissLoadingOverlay();
-      return;
-    }
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      const _app = firebase.app();
-      const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
-                 || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-
-      function _finishInit(settings) {
-        db = firebase.firestore();
-        if (settings) {
-          try { db.settings(settings); } catch (e) { /* already set */ }
-        }
-        loadDenmarkPoints();
-      }
-
-      if (!isIOS) {
-        import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
-          .then(function (mod) {
-            try {
-              mod.initializeFirestore(_app, { localCache: mod.memoryLocalCache() });
-            } catch (e) { /* already initialised */ }
-            _finishInit();
-          })
-          .catch(function () { _finishInit(); });
-      } else {
-        _finishInit({ experimentalForceLongPolling: true });
-      }
-    } catch (err) {
-      console.error('Firebase init error:', err);
-      clearTimeout(_safetyTimeout);
-      dismissLoadingOverlay();
-    }
-  }
-
   // ── Initialise ──────────────────────────────────────────────
-  initFirebase();
+  loadDenmarkSnapshot();
 
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(initPMTilesLayer, { timeout: 1000 });
