@@ -19,6 +19,66 @@
 const path = require('path');
 const fs   = require('fs');
 
+// ── Clustering constants (mirrors generate-points-snapshot.js) ────────────────
+const MAX_CLUSTER_ITEMS          = 12;
+const SERVER_CLUSTER_MIN_ZOOM    = 3;
+const SERVER_CLUSTER_MAX_ZOOM    = 7;
+const SERVER_CLUSTER_DISABLE_ZOOM = 8;
+const BASE_CLUSTER_CELL_SIZE     = 10.0;
+
+function getClusterCellSizeForZoom(zoom) {
+  return BASE_CLUSTER_CELL_SIZE / Math.pow(2, Math.max(0, zoom - SERVER_CLUSTER_MIN_ZOOM));
+}
+
+function buildServerClustersForZoom(points, zoom) {
+  const cellSize = getClusterCellSizeForZoom(zoom);
+  const buckets  = new Map();
+
+  for (const p of points) {
+    if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
+    const type   = p.type || 'Other';
+    const latKey = Math.round(p.lat / cellSize);
+    const lonKey = Math.round(p.lon / cellSize);
+    const key    = `${type}:${latKey}:${lonKey}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, { type, latSum: 0, lonSum: 0, count: 0, items: [], singlePoint: null });
+    }
+    const bucket = buckets.get(key);
+    bucket.latSum += p.lat;
+    bucket.lonSum += p.lon;
+    bucket.count  += 1;
+    if (bucket.count === 1) bucket.singlePoint = p;
+    else bucket.singlePoint = null;
+    if (bucket.items.length < MAX_CLUSTER_ITEMS) {
+      bucket.items.push({ name: p.name || 'Point', url: p.url || null });
+    }
+  }
+
+  return Array.from(buckets.values()).map(bucket => {
+    const count = bucket.count;
+    if (count === 1) {
+      const s = bucket.singlePoint;
+      return { id: s.id || null, name: s.name || 'Point', lat: s.lat, lon: s.lon,
+               url: s.url || null, type: s.type || null, metadata: s.metadata || {} };
+    }
+    return {
+      name: `${bucket.type} (${count})`,
+      lat:  bucket.latSum / count,
+      lon:  bucket.lonSum / count,
+      type: bucket.type,
+      metadata: { __cluster: { count, items: bucket.items } }
+    };
+  });
+}
+
+function buildServerClusterLevels(points) {
+  const levels = {};
+  for (let zoom = SERVER_CLUSTER_MIN_ZOOM; zoom <= SERVER_CLUSTER_MAX_ZOOM; zoom++) {
+    levels[String(zoom)] = buildServerClustersForZoom(points, zoom);
+  }
+  return levels;
+}
+
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
 const OVERPASS_QUERY = `
@@ -88,8 +148,22 @@ async function main() {
   Object.entries(counts).sort().forEach(([type, n]) => console.log('  ' + type + ': ' + n));
   console.log('  Total: ' + points.length);
 
+  const clustersByZoom = buildServerClusterLevels(points);
+  Object.keys(clustersByZoom).forEach(zoom => {
+    console.log('Clusters @ z' + zoom + ': ' + clustersByZoom[zoom].length);
+  });
+
   const generatedAt = new Date().toISOString();
-  const json = JSON.stringify({ generatedAt, points }, null, 0);
+  const json = JSON.stringify({
+    generatedAt,
+    points,
+    clustersByZoom,
+    clusterZoomRange: {
+      min: SERVER_CLUSTER_MIN_ZOOM,
+      max: SERVER_CLUSTER_MAX_ZOOM,
+      disableClusteringAtZoom: SERVER_CLUSTER_DISABLE_ZOOM
+    }
+  }, null, 0);
 
   const outPath = path.join(__dirname, '..', 'assets', 'norway-facilities.json');
   fs.writeFileSync(outPath, json, 'utf8');
