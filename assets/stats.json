@@ -3,16 +3,27 @@
     "totalDistanceKm": 3928.1,
     "totalElevationGain": 37275,
     "rideCount": 61,
+    "tripStartPosition": [
+      31.275334,
+      130.793045
+    ],
+    "tripStartCity": "錦江町",
     "currentPosition": [
       45.126338,
       142.346666
     ],
-    "currentRouteName": "Mooving on"
+    "currentRouteName": "Mooving on",
+    "currentCity": "浜頓別町"
   },
   "denmark": {
     "totalDistanceKm": 405,
     "totalElevationGain": 2634,
     "rideCount": 6,
+    "tripStartPosition": [
+      55.656105,
+      12.609398
+    ],
+    "tripStartCity": "København",
     "currentPosition": [
       57.606544,
       9.954829
@@ -23,11 +34,31 @@
     "totalDistanceKm": 313.6,
     "totalElevationGain": 5131,
     "rideCount": 5,
+    "tripStartPosition": [
+      58.148908,
+      7.998537
+    ],
+    "tripStartCity": "Kristiansand",
     "currentPosition": [
       58.507896,
       5.847977
     ],
-    "currentRouteName": "Cabin a great time"
+    "currentRouteName": "Cabin a great time",
+    "currentCity": "Hå"
   },
-  "generatedAt": "2026-07-03T10:05:10.726Z"
+  "tripDates": {
+    "japan": {
+      "from": "2026-03-05",
+      "to": "2026-05-25"
+    },
+    "denmark": {
+      "from": "2026-06-20",
+      "to": "2026-06-26"
+    },
+    "norway": {
+      "from": "2026-06-27",
+      "to": "2026-09-10"
+    }
+  },
+  "generatedAt": "2026-07-03T11:04:12.407Z"
 }
