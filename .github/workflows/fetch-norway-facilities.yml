@@ -2,9 +2,10 @@
 #
 # Workflow: Fetch Norway Facilities
 #
-# Queries the public Overpass API for drinking water points and public toilets
-# across Norway and commits the result to assets/norway-facilities.json so
-# the planning map can load it as a static asset without runtime API calls.
+# Queries the public Overpass API for drinking water points, public toilets,
+# picnic benches, and public shelters across Norway and commits the result to
+# assets/norway-facilities.json so the planning map can load it as a static
+# asset without runtime API calls.
 #
 # No secrets required — Overpass is a public API.
 #
