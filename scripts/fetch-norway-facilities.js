@@ -3,8 +3,9 @@
 /**
  * fetch-norway-facilities.js
  *
- * Queries the Overpass API for drinking water points and public toilets
- * across Norway and writes the results to assets/norway-facilities.json.
+ * Queries the Overpass API for drinking water points, public toilets,
+ * picnic benches, and public shelters across Norway and writes the results
+ * to assets/norway-facilities.json.
  *
  * The output file is loaded by the Norway planning map (planning-norway.html)
  * as a static asset — no runtime API calls needed.
@@ -88,6 +89,8 @@ const OVERPASS_QUERY = `
 (
   node[amenity=drinking_water];
   node[amenity=toilets];
+  node[leisure=picnic_table];
+  node[amenity=shelter];
 );
 out body;
 `.trim();
@@ -95,7 +98,14 @@ out body;
 function mapElement(element) {
   const tags    = element.tags || {};
   const amenity = tags.amenity;
-  const type    = amenity === 'drinking_water' ? 'Drinking Water' : 'Public Toilet';
+  const leisure = tags.leisure;
+
+  let type;
+  if (amenity === 'drinking_water') type = 'Drinking Water';
+  else if (amenity === 'toilets')   type = 'Public Toilet';
+  else if (amenity === 'shelter')   type = 'Public Shelter';
+  else if (leisure === 'picnic_table') type = 'Picnic Bench';
+  else type = amenity || leisure || 'Other';
 
   const name = tags.name && tags.name.trim() ? tags.name.trim() : type;
 
@@ -103,11 +113,14 @@ function mapElement(element) {
   if (tags.operator)       descParts.push('Operator: ' + tags.operator);
   if (tags.fee)            descParts.push('Fee: ' + tags.fee);
   if (tags.opening_hours)  descParts.push('Hours: ' + tags.opening_hours);
+  if (tags.shelter_type)   descParts.push('Type: ' + tags.shelter_type);
   if (tags.access && tags.access !== 'yes' && tags.access !== 'public') {
     descParts.push('Access: ' + tags.access);
   }
 
-  const metadata = { amenity };
+  const metadata = {};
+  if (amenity) metadata.amenity = amenity;
+  if (leisure) metadata.leisure = leisure;
   if (descParts.length) metadata.description = descParts.join(' · ');
 
   return {
