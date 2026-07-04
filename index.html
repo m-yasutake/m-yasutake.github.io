@@ -443,10 +443,13 @@
   // ── Trip date config ──────────────────────────────────────
   // end: null means ongoing (days count up from start to today).
   // start: null means trip hasn't begun yet (shows —).
+  // These fallback dates are overridden by stats.json when it loads; having
+  // them here ensures the map route-filter works immediately on page load so
+  // only one country's routes are visible at a time.
   var TRIP_DATES = {
-    japan:   { start: '2026-03-14', end: '2026-05-24', active: false },
-    denmark: { start: null,         end: null,          active: false },
-    norway:  { start: null,         end: null,          active: true  }
+    japan:   { start: '2026-03-05', end: '2026-05-25', active: false },
+    denmark: { start: '2026-06-20', end: '2026-06-26', active: false },
+    norway:  { start: '2026-06-27', end: null,          active: true  }
   };
 
   function updateDaysDisplay(trip) {
@@ -455,7 +458,8 @@
     var dates = TRIP_DATES[trip];
     if (!dates || !dates.start) { daysEl.textContent = '—'; return; }
     var start = new Date(dates.start + 'T00:00:00');
-    var end   = dates.end ? new Date(dates.end + 'T00:00:00') : new Date();
+    var endDate = dates.end ? new Date(dates.end + 'T00:00:00') : new Date();
+    var end     = endDate < new Date() ? endDate : new Date();
     var days  = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
     daysEl.textContent = days.toLocaleString();
   }
@@ -472,8 +476,14 @@
     }, 16);
   }
 
+  // ── Per-trip hardcoded stat fallbacks ─────────────────────
+  // Used when Firestore doesn't carry the value (e.g. completed trips).
+  var TRIP_STAT_DEFAULTS = {
+    denmark: { onsensCount: 12 }
+  };
+
   // ── Update stat bar from a Firestore doc ───────────────────
-  function updateStatsDisplay(doc) {
+  function updateStatsDisplay(doc, trip) {
     var sploopsEl   = document.getElementById('stat-sploops');
     var grindsEl    = document.getElementById('stat-grinds');
     var sploopsKmEl = document.getElementById('stat-sploops-km');
@@ -500,8 +510,10 @@
       if (grindsMEl) grindsMEl.textContent = 'm';
     } else { grindsEl.textContent = '0'; if (grindsMEl) grindsMEl.textContent = ''; }
 
-    if (onsensEl && s.onsensCount != null) {
-      animateCounter(onsensEl, s.onsensCount);
+    var defaults = (trip && TRIP_STAT_DEFAULTS[trip]) || {};
+    var onsensVal = s.onsensCount != null ? s.onsensCount : defaults.onsensCount;
+    if (onsensEl && onsensVal != null) {
+      animateCounter(onsensEl, onsensVal);
     } else if (onsensEl) { onsensEl.textContent = '0'; }
   }
 
@@ -547,12 +559,12 @@
     var onsensLabel = document.getElementById('stat-onsens-label');
     if (onsensLabel) {
       if (trip === 'norway') onsensLabel.textContent = 'Hytte 🏠';
-      else if (trip === 'denmark') onsensLabel.textContent = 'Highlights 🌟';
+      else if (trip === 'denmark') onsensLabel.textContent = 'Kanelsnegles 🥐';
       else onsensLabel.textContent = 'Onsens ♨️';
     }
 
     // Update stats, days, and marker
-    updateStatsDisplay(_tripStats[trip] || null);
+    updateStatsDisplay(_tripStats[trip] || null, trip);
     updateDaysDisplay(trip);
     updateWeAreHereMarker(_tripStats[trip] || null);
 
@@ -566,10 +578,15 @@
       _homeMap.flyTo(views[trip].center, views[trip].zoom, { duration: 1.5 });
     }
 
-    // Filter route tiles to show only this trip's rides
+    // Filter route tiles to show only this trip's rides.
+    // Only update the filter when a start date is known; if dates haven't
+    // loaded yet, keep the current filter rather than passing (null, null)
+    // which would remove the filter and reveal all trips' routes at once.
     if (_homeMap && _homeMap.setTripFilter) {
       var dates = TRIP_DATES[trip] || {};
-      _homeMap.setTripFilter(dates.start || null, dates.end || null);
+      if (dates.start) {
+        _homeMap.setTripFilter(dates.start, dates.end || null);
+      }
     }
 
     // Update start/end markers
@@ -586,7 +603,7 @@
           .then(function (doc) {
             _tripStats[trip] = doc;
             if (trip === _activeTrip) {
-              updateStatsDisplay(doc);
+              updateStatsDisplay(doc, trip);
               updateWeAreHereMarker(doc);
             }
           })

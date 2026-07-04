@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 313.6,
-    "totalElevationGain": 5131,
-    "rideCount": 5,
+    "totalDistanceKm": 395,
+    "totalElevationGain": 5720,
+    "rideCount": 6,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      58.507896,
-      5.847977
+      58.966508,
+      5.750099
     ],
-    "currentRouteName": "Cabin a great time",
-    "currentCity": "Hå"
+    "currentRouteName": "Supersoaker",
+    "currentCity": "Stavanger"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-03T11:04:12.407Z"
+  "generatedAt": "2026-07-04T05:40:04.198Z"
 }
