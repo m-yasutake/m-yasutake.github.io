@@ -484,7 +484,7 @@ function computeStatsForRoutes(routes) {
     if (typeof route.totalElevationGain === 'number') totalElevationGain += route.totalElevationGain;
     const ts = route.activityDate ? route.activityDate.toMillis()
              : (route.uploadedAt && route.uploadedAt.seconds) ? route.uploadedAt.seconds * 1000 : 0;
-    if (route.endLatLng   && ts > latestTs)   { latestTs   = ts; latestRouteData   = route; }
+    if (ts > latestTs)   { latestTs   = ts; latestRouteData   = route; }
     if (route.startLatLng && ts < earliestTs) { earliestTs = ts; earliestRouteData = route; }
   });
 
@@ -495,7 +495,7 @@ function computeStatsForRoutes(routes) {
     statsUpdatedAt:     admin.firestore.FieldValue.serverTimestamp(),
   };
   if (latestRouteData) {
-    stats.currentPosition  = latestRouteData.endLatLng;
+    stats.currentPosition  = latestRouteData.endLatLng || latestRouteData.startLatLng;
     stats.currentRouteName = (latestRouteData.metadata && latestRouteData.metadata.name)
       || latestRouteData.fileName || 'Latest ride';
   }
