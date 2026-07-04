@@ -108,6 +108,14 @@
       var gridOptions = {
         vectorTileLayerStyles: {
           routes: function (properties) {
+            if (_dateFrom || _dateTo) {
+              var filename = properties.filename || '';
+              var m = filename.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
+              if (!m) return { weight: 0, opacity: 0, fill: false };
+              var d = m[1];
+              if (_dateFrom && d < _dateFrom) return { weight: 0, opacity: 0, fill: false };
+              if (_dateTo   && d > _dateTo)   return { weight: 0, opacity: 0, fill: false };
+            }
             return {
               weight: getRouteWeight(map.getZoom()),
               color: properties.color || '#E76F51',
@@ -122,21 +130,6 @@
         maxNativeZoom: _header.maxZoom || 14,
         minNativeZoom: _header.minZoom || 2
       };
-
-      // Date-range filter: only render features whose filename encodes a date
-      // within the specified range. Filenames from fetch-strava-rides.js follow
-      // the pattern: strava_<id>_<YYYY-MM-DD>_<name>.gpx
-      if (_dateFrom || _dateTo) {
-        gridOptions.filter = function (properties) {
-          var filename = properties.filename || '';
-          var m = filename.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
-          if (!m) return false; // hide non-dated routes when a date filter is active
-          var d = m[1];
-          if (_dateFrom && d < _dateFrom) return false;
-          if (_dateTo   && d > _dateTo)   return false;
-          return true;
-        };
-      }
 
       _routeLayer = L.vectorGrid.protobuf(
         'pmtiles://' + instanceKey + '/{z}/{x}/{y}',
