@@ -82,17 +82,18 @@ function buildServerClusterLevels(points) {
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
-// Bounding box covers mainland Norway + Svalbard without needing a slow area lookup.
-// Format: south,west,north,east
-const BBOX = '57.5,4.0,71.5,31.5';
+// Use Norway's ISO 3166-1 area instead of a bounding box so points in
+// neighbouring Sweden and Finland are excluded automatically.
+const makeQuery = (filter, timeout = 60) =>
+  `[out:json][timeout:${timeout}];area["ISO3166-1"="NO"]->.norway;${filter}(area.norway);out body;`;
 
 // Each query is issued separately so that high-volume types (e.g. picnic_table)
 // don't cause the combined request to hit the Overpass timeout.
 const QUERIES = [
-  { label: 'drinking water',  query: `[out:json][timeout:60][bbox:${BBOX}];\nnode[amenity=drinking_water];\nout body;` },
-  { label: 'toilets',         query: `[out:json][timeout:60][bbox:${BBOX}];\nnode[amenity=toilets];\nout body;` },
-  { label: 'shelters',        query: `[out:json][timeout:60][bbox:${BBOX}];\nnode[amenity=shelter];\nout body;` },
-  { label: 'picnic benches',  query: `[out:json][timeout:90][bbox:${BBOX}];\nnode[leisure=picnic_table];\nout body;` },
+  { label: 'drinking water',  query: makeQuery('node[amenity=drinking_water]') },
+  { label: 'toilets',         query: makeQuery('node[amenity=toilets]') },
+  { label: 'shelters',        query: makeQuery('node[amenity=shelter]') },
+  { label: 'picnic benches',  query: makeQuery('node[leisure=picnic_table]', 90) },
 ];
 
 function mapElement(element) {
