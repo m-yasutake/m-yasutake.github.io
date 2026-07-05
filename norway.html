@@ -3,66 +3,198 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Tomika Bike – Norway. Coming soon: cycling from Egersund to Tromsø, past the Arctic Circle." />
+  <meta name="description" content="Tomika Bike – Norway. Map, blog and photos from our cycling journey through Norway." />
   <title>Norway – Tomika Bike</title>
 
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
 
   <style>
-    .coming-soon-wrap {
-      min-height: 60vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 4rem 1.5rem;
-    }
+  #home-map {
+    height: 50vh;
+    width: 100%;
+    border-radius: var(--radius-lg, 8px);
+    z-index: 1;
+  }
+  #home-map-wrapper {
+    position: relative;
+    border-radius: var(--radius-lg, 8px);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg, 0 4px 24px rgba(0,0,0,0.12));
+  }
+  #home-map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-gray-100, #f5f5f5);
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  #home-map-loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .current-location-icon {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
 
-    .coming-soon-icon {
-      font-size: 5rem;
-      margin-bottom: 1.5rem;
-      line-height: 1;
-    }
+  /* ── Fullscreen map toggle ──────────────────────────────── */
+  #home-map-fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  #home-map-fullscreen-btn:hover { background: #f4f4f4; }
 
-    .coming-soon-wrap h2 {
-      font-size: clamp(1.75rem, 4vw, 2.75rem);
-      font-weight: 400;
-      margin-bottom: 1rem;
-      color: var(--color-primary);
-    }
+  #home-map-wrapper.map-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    z-index: 9998 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  @supports not (height: 100dvh) {
+    #home-map-wrapper.map-fullscreen { height: -webkit-fill-available !important; }
+  }
+  #home-map-wrapper.map-fullscreen #home-map {
+    height: 100% !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+  }
 
-    .coming-soon-wrap p {
-      font-size: 1.05rem;
-      color: var(--color-gray-600);
-      max-width: 560px;
-      line-height: 1.75;
-      margin-bottom: 2rem;
-    }
+  /* ── Section dividers ──────────────────── */
+  .norway-section-divider {
+    border: none;
+    border-top: 2px solid var(--color-gray-200);
+    margin: 0;
+  }
 
-    .coming-soon-details {
-      display: flex;
-      gap: 2rem;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 2.5rem;
-    }
+  .norway-section-header {
+    background: var(--color-gray-100);
+    border-bottom: 1px solid var(--color-gray-200);
+    padding: 1.25rem 0;
+  }
 
-    .coming-soon-stat {
-      background: var(--color-white);
-      border: 1px solid var(--color-gray-200);
-      border-radius: var(--radius-md);
-      padding: 1.25rem 1.75rem;
-      min-width: 160px;
-    }
+  .norway-section-header .container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
 
-    .coming-soon-stat .stat-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
-    .coming-soon-stat strong { display: block; font-size: 1.1rem; color: var(--color-primary); margin-bottom: 0.25rem; }
-    .coming-soon-stat span { font-size: 0.85rem; color: var(--color-gray-600); }
+  .norway-section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-primary);
+  }
+
+  .norway-section-header .section-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .blog-search-wrap {
+    background: var(--color-white);
+    border-radius: 0;
+    padding: 1.25rem 1.5rem;
+    box-shadow: none;
+    margin-bottom: 3rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid var(--color-gray-200);
+  }
+
+  .blog-search-wrap input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 0;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color var(--transition);
+    background: var(--color-white);
+  }
+
+  .blog-search-wrap input:focus {
+    border-color: var(--color-secondary);
+  }
+
+  .post-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .author-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-gray-600);
+  }
+
+  .author-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-white);
+  }
+
+  .post-date { font-size: 0.78rem; color: var(--color-gray-600); }
+
+  .photos-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .photos-stat {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: .875rem;
+    color: var(--color-gray-600);
+  }
+
+  .photos-stat strong { color: var(--color-primary); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -156,50 +288,161 @@
 <!-- Page Hero -->
 <div class="page-hero">
   <div class="container">
-    <div class="hero-badge" style="margin-bottom:.75rem" data-i18n="norway.badge">Norway</div>
-    <h1 data-i18n="norway.title">Norway</h1>
-    <p data-i18n="norway.subtitle">Egersund to Tromsø – cycling past the Arctic Circle. Coming after Japan.</p>
+    <div class="hero-badge" style="margin-bottom:.75rem">🇳🇴 Norway</div>
+    <h1>Norway</h1>
+    <p>Cycling through Norway – the map, the blog, and photos from the road.</p>
   </div>
 </div>
 
-<!-- Coming Soon Content -->
-<section class="section">
-  <div class="container">
-    <div class="coming-soon-wrap">
-      <div class="coming-soon-icon">⛰️</div>
-      <h2 data-i18n="norway.soon.title">Norway – Coming Soon</h2>
-      <p data-i18n="norway.soon.desc">After cycling the length of Japan, we'll fly to Egersund on Norway's southwest coast — Tom's mum's hometown — and ride north all the way to Tromsø, past the Arctic Circle. This page will be home to the map, blog and photos from that leg of the trip.</p>
-
-      <div class="coming-soon-details">
-        <div class="coming-soon-stat">
-          <div class="stat-icon">📍</div>
-          <strong>Egersund</strong>
-          <span data-i18n="norway.start.label">Start point</span>
-        </div>
-        <div class="coming-soon-stat">
-          <div class="stat-icon">🏔️</div>
-          <strong>Tromsø</strong>
-          <span data-i18n="norway.end.label">End point</span>
-        </div>
-        <div class="coming-soon-stat">
-          <div class="stat-icon">🌍</div>
-          <strong>~3,000 km</strong>
-          <span data-i18n="norway.dist.label">Estimated distance</span>
-        </div>
-        <div class="coming-soon-stat">
-          <div class="stat-icon">❄️</div>
-          <strong>Arctic Circle</strong>
-          <span data-i18n="norway.arctic.label">We're crossing it</span>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
-        <a href="japan.html" class="btn btn-primary" data-i18n="norway.btn1">🇯🇵 Follow Japan first</a>
-        <button class="btn btn-accent" onclick="openSubscribeModal()" data-i18n="norway.btn2">🔔 Get notified</button>
-      </div>
+<!-- ══════════════════════════════════════════
+     MAP SECTION
+════════════════════════════════════════════ -->
+<div id="map-section">
+  <div class="norway-section-header">
+    <div class="container">
+      <span class="section-icon">🗺️</span>
+      <h2>Route Map</h2>
     </div>
   </div>
-</section>
+
+  <section class="section" style="padding-top:2rem">
+    <div class="container">
+      <div id="home-map-wrapper">
+        <button id="home-map-fullscreen-btn" title="Toggle fullscreen map" aria-label="Toggle fullscreen map">
+          <svg id="home-fs-expand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+            <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+          </svg>
+          <svg id="home-fs-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+            <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+          </svg>
+        </button>
+        <div id="home-map-loading">
+          <span style="color:var(--color-gray-500)">⏳ Loading map…</span>
+        </div>
+        <div id="home-map"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<hr class="norway-section-divider" />
+
+<!-- ══════════════════════════════════════════
+     BLOG SECTION
+════════════════════════════════════════════ -->
+<div id="blog-section">
+  <div class="norway-section-header">
+    <div class="container">
+      <span class="section-icon">✍️</span>
+      <h2>Blog</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div id="postList"></div>
+
+      <div id="blog-show-more-wrap" style="text-align:center;margin-top:1.5rem;display:none">
+        <button id="blog-show-more-btn" class="btn btn-outline" onclick="blogShowMore()">Show More ↓</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<hr class="norway-section-divider" />
+
+<!-- ══════════════════════════════════════════
+     PHOTOS SECTION
+════════════════════════════════════════════ -->
+<div id="photos-section">
+  <div class="norway-section-header">
+    <div class="container">
+      <span class="section-icon">📷</span>
+      <h2>Photos</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="photos-stats">
+        <div class="photos-stat">📷 <strong id="photo-count">…</strong> photos</div>
+        <div class="photos-stat">🗺️ <strong id="album-count">…</strong> albums</div>
+      </div>
+
+      <div id="gallery-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
+        <p>Loading photos…</p>
+      </div>
+
+      <div class="gallery-grid" id="gallery" style="display:none"></div>
+
+      <div id="photos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
+        <button id="photos-show-more-btn" class="btn btn-primary" onclick="photosShowMore()">Show More ↓</button>
+      </div>
+
+      <div id="gallery-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
+        <div style="font-size:4rem;margin-bottom:1rem">📷</div>
+        <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Photos coming soon!</h2>
+        <p style="font-size:.95rem;max-width:420px;margin:0 auto">No photos yet — check back soon for updates from the road.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-content">
+      <button class="lightbox-close" id="lightboxClose">✕</button>
+      <div id="lightboxBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     VIDEOS SECTION
+════════════════════════════════════════════ -->
+<div id="videos-section">
+  <div class="norway-section-header">
+    <div class="container">
+      <span class="section-icon">🎬</span>
+      <h2>Videos</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="photos-stats">
+        <div class="photos-stat">🎬 <strong id="video-count">…</strong> videos</div>
+        <div class="photos-stat">🗺️ <strong id="video-album-count">…</strong> albums</div>
+      </div>
+
+      <div id="videos-loading" style="text-align:center;padding:3rem 2rem;color:var(--color-gray-500)">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">⏳</div>
+        <p>Loading videos…</p>
+      </div>
+
+      <div class="video-grid" id="video-grid" style="display:none"></div>
+
+      <div id="videos-show-more-wrap" style="text-align:center;margin-top:2rem;display:none">
+        <button id="videos-show-more-btn" class="btn btn-primary" onclick="videosShowMore()">Show More ↓</button>
+      </div>
+
+      <div id="videos-empty" style="text-align:center;padding:5rem 2rem;color:var(--color-gray-500);display:none">
+        <div style="font-size:4rem;margin-bottom:1rem">🎬</div>
+        <h2 style="font-size:1.5rem;margin-bottom:.5rem;color:var(--color-gray-700)">Videos coming soon!</h2>
+        <p style="font-size:.95rem;max-width:420px;margin:0 auto">No videos yet — check back soon for updates from the road.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="lightbox" id="video-lightbox">
+    <div class="lightbox-content" style="max-width:95vw">
+      <button class="lightbox-close" id="videoLightboxClose">✕</button>
+      <div id="videoLightboxBody"></div>
+    </div>
+  </div>
+</div>
 
 <!-- Footer -->
 <footer>
@@ -212,7 +455,14 @@
           <a class="social-link" title="Strava" aria-label="Strava">🏃</a>
         </div>
       </div>
-      <div class="footer-col"><h4 data-i18n="footer.explore">Explore</h4><a href="index.html" data-i18n="nav.home">Home</a><a href="japan.html" data-i18n="nav.japan">Japan</a><a href="norway.html" data-i18n="nav.norway">Norway</a><a href="gear.html" data-i18n="nav.gear">Gear</a></div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.explore">Explore</h4>
+        <a href="index.html" data-i18n="nav.home">Home</a>
+        <a href="japan.html" data-i18n="nav.japan">Japan</a>
+        <a href="denmark.html" data-i18n="nav.denmark">Denmark</a>
+        <a href="norway.html" data-i18n="nav.norway">Norway</a>
+        <a href="gear.html" data-i18n="nav.gear">Gear</a>
+      </div>
       <div class="footer-col"><h4 data-i18n="footer.info">Info</h4><a href="about.html" data-i18n="footer.about">About Us</a></div>
       <div class="footer-col"><h4 data-i18n="footer.admin">Admin</h4><a href="#" data-auth data-i18n="footer.login">Login</a><a href="admin.html" class="admin-only-link" style="display:none" data-i18n="footer.dashboard">Dashboard</a></div>
     </div>
@@ -223,7 +473,430 @@
   </div>
 </footer>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+<script src="js/route-map.js"></script>
+
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
+
+<script>
+(function () {
+  if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
+
+  // Initialise with the Norway trip start date so only Norway routes are shown.
+  // dateTo is loaded dynamically from stats.json; omitting it here shows all
+  // rides from the start date onwards (correct for an active trip).
+  var map = RouteMap.init('home-map', {
+    center:   [63, 14],
+    zoom:     5,
+    dateFrom: '2026-06-27'
+  });
+  window._norwayMap = map;
+
+  map.once('load', function () {
+    var el = document.getElementById('home-map-loading');
+    if (el) el.classList.add('hidden');
+  });
+  setTimeout(function () {
+    var el = document.getElementById('home-map-loading');
+    if (el) el.classList.add('hidden');
+  }, 2000);
+
+  // Load stats.json to pick up the real end date once the trip finishes,
+  // which will then tighten the dateTo filter on the route layer.
+  fetch('assets/stats.json', { cache: 'default' })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      var d = data && data.tripDates && data.tripDates.norway;
+      if (d && d.to && map.setTripFilter) {
+        map.setTripFilter('2026-06-27', d.to.substring(0, 10));
+      }
+    })
+    .catch(function () {});
+})();
+</script>
+
+<script>
+(function () {
+  var fsBtn          = document.getElementById('home-map-fullscreen-btn');
+  var fsExpandIcon   = document.getElementById('home-fs-expand-icon');
+  var fsCollapseIcon = document.getElementById('home-fs-collapse-icon');
+  var mapWrapper     = document.getElementById('home-map-wrapper');
+  if (!fsBtn) return;
+
+  fsBtn.addEventListener('click', function () {
+    var isFullscreen = mapWrapper.classList.toggle('map-fullscreen');
+    fsExpandIcon.style.display   = isFullscreen ? 'none' : '';
+    fsCollapseIcon.style.display = isFullscreen ? '' : 'none';
+    document.body.style.overflow = isFullscreen ? 'hidden' : '';
+    setTimeout(function () {
+      if (window._norwayMap) window._norwayMap.invalidateSize();
+    }, 200);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && mapWrapper.classList.contains('map-fullscreen')) {
+      mapWrapper.classList.remove('map-fullscreen');
+      fsExpandIcon.style.display   = '';
+      fsCollapseIcon.style.display = 'none';
+      document.body.style.overflow = '';
+      setTimeout(function () {
+        if (window._norwayMap) window._norwayMap.invalidateSize();
+      }, 200);
+    }
+  });
+}());
+</script>
+
+<script>
+  (function () {
+    const BLOG_PAGE = 2;
+    let shownCount = BLOG_PAGE;
+
+    function refreshBlogPosts() {
+      const posts = Array.from(document.querySelectorAll('#postList .blog-post-card'));
+      posts.forEach(function (post, i) {
+        post.style.display = i < shownCount ? '' : 'none';
+      });
+      const wrap = document.getElementById('blog-show-more-wrap');
+      if (wrap) wrap.style.display = shownCount < posts.length ? '' : 'none';
+    }
+
+    window.blogShowMore = function () {
+      shownCount += BLOG_PAGE;
+      refreshBlogPosts();
+    };
+
+    window.blogRefresh = refreshBlogPosts;
+    refreshBlogPosts();
+  })();
+</script>
+
+<script>
+(function () {
+  var _norwayDocs = [];
+
+  function esc(str) {
+    var d = document.createElement('div');
+    d.textContent = String(str == null ? '' : str);
+    return d.innerHTML;
+  }
+  function fmtDate(s) {
+    if (!s) return '';
+    var d = new Date(s + 'T00:00:00');
+    return d.toLocaleDateString(I18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function pick(data, field) {
+    var lang = I18n.currentLang();
+    return (lang !== 'en' && data[field + '_' + lang]) || data[field] || '';
+  }
+
+  function renderNorwayDocs() {
+    if (!_norwayDocs.length) return;
+    var list = document.getElementById('postList');
+    list.innerHTML = '';
+    _norwayDocs.forEach(function (p) {
+      var d = p.data;
+      var title   = pick(d, 'title');
+      var excerpt = pick(d, 'excerpt');
+      var card = document.createElement('article');
+      card.className = 'blog-post-card';
+      card.setAttribute('data-cat', 'norway');
+      card.innerHTML =
+        '<div class="blog-post-img" style="height:200px;' + (d.coverImage ? 'background-image:url(' + d.coverImage.replace(/"/g,'%22') + ');background-size:cover;background-position:center;font-size:0' : 'background:linear-gradient(160deg,var(--color-primary),var(--color-secondary));display:flex;align-items:center;justify-content:center;font-size:5rem') + '">' +
+          (d.coverImage ? '' : '✍️') + '</div>' +
+        '<div class="blog-post-body" style="padding:1.5rem">' +
+          '<div class="post-meta-row">' +
+            '<div class="author-chip">' +
+              '<div class="author-avatar" style="background:var(--color-secondary)">' +
+                esc((d.author || 'M').charAt(0).toUpperCase()) +
+              '</div>' +
+              '<span>' + esc(d.author || '') + '</span>' +
+            '</div>' +
+            '<span class="post-date" data-i18n-date="' + esc(d.date || '') + '">' + esc(fmtDate(d.date)) + '</span>' +
+          '</div>' +
+          '<h2>' + esc(title) + '</h2>' +
+          (excerpt ? '<p>' + esc(excerpt) + '</p>' : '') +
+          '<a href="post?id=' + encodeURIComponent(p.id) + '" class="btn btn-primary" style="margin-top:.5rem" data-i18n="post.read">' + I18n.t('post.read') + '</a>' +
+        '</div>';
+      list.appendChild(card);
+    });
+    if (typeof window.blogRefresh === 'function') window.blogRefresh();
+  }
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    var _db = firebase.firestore();
+
+    _db.collection('blog_posts')
+      .where('status', '==', 'published')
+      .where('category', '==', 'norway')
+      .orderBy('date', 'desc')
+      .get()
+      .then(function (snap) {
+        if (!snap || snap.empty) return;
+        var docs = [];
+        snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
+        _norwayDocs = docs;
+        renderNorwayDocs();
+      })
+      .catch(function (err) { console.warn('Blog posts load error:', err.message); });
+
+    document.addEventListener('langchange', renderNorwayDocs);
+  } catch (e) {}
+})();
+</script>
+
+<script>
+(function () {
+  const lightbox     = document.getElementById('lightbox');
+  const lightboxBody = document.getElementById('lightboxBody');
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openLightbox(url, caption, location) {
+    lightboxBody.innerHTML =
+      '<img src="' + url.replace(/"/g, '&quot;') + '" alt="' + (caption || '').replace(/"/g, '&quot;') + '">' +
+      (location ? '<p style="color:rgba(255,255,255,.7);text-align:center;margin-top:.75rem;font-size:.8rem">📍 ' + escHtml(location) + '</p>' : '') +
+      (caption ? '<p style="color:#fff;text-align:center;margin-top:.25rem;font-size:.9rem">' + escHtml(caption) + '</p>' : '');
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxBody.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox(); });
+
+  const PHOTOS_PAGE = 20;
+  let allDocs = [];
+  let shownPhotos = 0;
+
+  function renderGallery(docs) {
+    const grid    = document.getElementById('gallery');
+    const loading = document.getElementById('gallery-loading');
+    const empty   = document.getElementById('gallery-empty');
+    const countEl  = document.getElementById('photo-count');
+    const albumsEl = document.getElementById('album-count');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      empty.style.display  = '';
+      countEl.textContent  = '0';
+      albumsEl.textContent = '0';
+      return;
+    }
+
+    allDocs = docs.slice();
+    const albums = [...new Set(allDocs.map(d => d.album).filter(Boolean))].sort();
+    countEl.textContent  = allDocs.length;
+    albumsEl.textContent = albums.length;
+
+    grid.addEventListener('click', e => {
+      const item = e.target.closest('.gallery-item');
+      if (item) openLightbox(item.dataset.url, item.dataset.caption, item.dataset.location);
+    });
+
+    shownPhotos = 0;
+    appendPhotos(PHOTOS_PAGE);
+    grid.style.display = '';
+  }
+
+  function appendPhotos(count) {
+    const grid  = document.getElementById('gallery');
+    const batch = allDocs.slice(shownPhotos, shownPhotos + count);
+    batch.forEach(doc => {
+      const caption  = doc.caption  || doc.fileName || '';
+      const location = doc.location || '';
+      const fullUrl  = doc.url      || '';
+      const thumbUrl = doc.thumbUrl || fullUrl;
+      const el = document.createElement('div');
+      el.className = 'gallery-item';
+      el.dataset.url      = fullUrl;
+      el.dataset.caption  = caption;
+      el.dataset.location = location;
+      el.innerHTML =
+        '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + caption.replace(/"/g, '&quot;') + '" loading="lazy">' +
+        '<div class="gallery-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(caption) + '</p>' +
+        '</div>';
+      grid.appendChild(el);
+    });
+    shownPhotos += batch.length;
+    const wrap = document.getElementById('photos-show-more-wrap');
+    if (wrap) wrap.style.display = shownPhotos < allDocs.length ? '' : 'none';
+  }
+
+  window.photosShowMore = function () { appendPhotos(PHOTOS_PAGE); };
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.firestore().collection('photos')
+      .where('country', '==', 'norway')
+      .orderBy('uploadedAt', 'desc')
+      .limit(PHOTOS_PAGE)
+      .get()
+      .then(snapshot => {
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc.data()));
+        renderGallery(docs);
+      })
+      .catch(() => {
+        document.getElementById('gallery-loading').style.display = 'none';
+        document.getElementById('gallery-empty').style.display   = '';
+        document.getElementById('photo-count').textContent  = '0';
+        document.getElementById('album-count').textContent  = '0';
+      });
+  } catch (e) {
+    document.getElementById('gallery-loading').style.display = 'none';
+    document.getElementById('gallery-empty').style.display   = '';
+    document.getElementById('photo-count').textContent  = '0';
+    document.getElementById('album-count').textContent  = '0';
+  }
+})();
+</script>
+
+<script>
+(function () {
+  const vlb     = document.getElementById('video-lightbox');
+  const vlbBody = document.getElementById('videoLightboxBody');
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openVideoLightbox(url, title, location) {
+    vlbBody.innerHTML =
+      '<video controls autoplay playsinline src="' + url.replace(/"/g, '&quot;') + '" ' +
+        'style="max-width:100%;max-height:75vh;border-radius:var(--radius-md);display:block"></video>' +
+      (title    ? '<p style="color:#fff;text-align:center;margin-top:.75rem;font-size:.9rem">'                    + escHtml(title)    + '</p>' : '') +
+      (location ? '<p style="color:rgba(255,255,255,.7);text-align:center;margin-top:.25rem;font-size:.8rem">📍 ' + escHtml(location) + '</p>' : '');
+    vlb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeVideoLightbox() {
+    vlb.classList.remove('open');
+    vlbBody.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('videoLightboxClose').addEventListener('click', closeVideoLightbox);
+  vlb.addEventListener('click', e => { if (e.target === vlb) closeVideoLightbox(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && vlb.classList.contains('open')) closeVideoLightbox();
+  });
+
+  const VIDEOS_PAGE = 12;
+  let allVideoDocs = [];
+  let shownVideos  = 0;
+
+  function renderVideoGrid(docs) {
+    const grid     = document.getElementById('video-grid');
+    const loading  = document.getElementById('videos-loading');
+    const empty    = document.getElementById('videos-empty');
+    const countEl  = document.getElementById('video-count');
+    const albumsEl = document.getElementById('video-album-count');
+
+    loading.style.display = 'none';
+
+    if (!docs.length) {
+      empty.style.display  = '';
+      countEl.textContent  = '0';
+      albumsEl.textContent = '0';
+      return;
+    }
+
+    allVideoDocs = docs.slice();
+    const albums = [...new Set(allVideoDocs.map(d => d.album).filter(Boolean))];
+    countEl.textContent  = allVideoDocs.length;
+    albumsEl.textContent = albums.length;
+
+    grid.addEventListener('click', e => {
+      const item = e.target.closest('.video-item');
+      if (item) openVideoLightbox(item.dataset.url, item.dataset.title, item.dataset.location);
+    });
+
+    shownVideos = 0;
+    appendVideos(VIDEOS_PAGE);
+    grid.style.display = '';
+  }
+
+  function appendVideos(count) {
+    const grid  = document.getElementById('video-grid');
+    const batch = allVideoDocs.slice(shownVideos, shownVideos + count);
+    batch.forEach(doc => {
+      const title    = doc.title    || doc.fileName || '';
+      const location = doc.location || '';
+      const thumbUrl = doc.thumbUrl || '';
+      const el = document.createElement('div');
+      el.className        = 'video-item';
+      el.dataset.url      = doc.url   || '';
+      el.dataset.title    = title;
+      el.dataset.location = location;
+      el.innerHTML =
+        '<div class="video-item-thumb">' +
+          (thumbUrl
+            ? '<img src="' + thumbUrl.replace(/"/g, '&quot;') + '" alt="' + title.replace(/"/g, '&quot;') + '" loading="lazy">'
+            : '<div class="video-item-placeholder">🎬</div>') +
+          '<div class="video-play-overlay"><span class="video-play-btn">▶</span></div>' +
+        '</div>' +
+        '<div class="video-item-overlay">' +
+          (location ? '<p class="gallery-item-location">📍 ' + escHtml(location) + '</p>' : '') +
+          '<p>' + escHtml(title) + '</p>' +
+        '</div>';
+      grid.appendChild(el);
+    });
+    shownVideos += batch.length;
+    const wrap = document.getElementById('videos-show-more-wrap');
+    if (wrap) wrap.style.display = shownVideos < allVideoDocs.length ? '' : 'none';
+  }
+
+  window.videosShowMore = function () { appendVideos(VIDEOS_PAGE); };
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.firestore().collection('videos')
+      .where('country', '==', 'norway')
+      .orderBy('uploadedAt', 'desc')
+      .limit(VIDEOS_PAGE)
+      .get()
+      .then(snapshot => {
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc.data()));
+        renderVideoGrid(docs);
+      })
+      .catch(() => {
+        document.getElementById('videos-loading').style.display = 'none';
+        document.getElementById('videos-empty').style.display   = '';
+        document.getElementById('video-count').textContent  = '0';
+        document.getElementById('video-album-count').textContent = '0';
+      });
+  } catch (e) {
+    document.getElementById('videos-loading').style.display = 'none';
+    document.getElementById('videos-empty').style.display   = '';
+    document.getElementById('video-count').textContent  = '0';
+    document.getElementById('video-album-count').textContent = '0';
+  }
+})();
+</script>
+
 </body>
 </html>
