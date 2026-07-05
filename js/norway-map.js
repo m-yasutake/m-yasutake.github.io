@@ -97,6 +97,14 @@
       color: '#16a085',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#16a085" stroke="#fff" stroke-width="1.5"/><circle cx="9" cy="8" r="1.6" fill="#fff"/><circle cx="15" cy="8" r="1.6" fill="#fff"/><path d="M7 10.5h4v4.5l.5 3h1l.5-3V10.5h4" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     },
+    'Public Shelter': {
+      color: '#8e44ad',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#8e44ad" stroke="#fff" stroke-width="1.5"/><rect x="6" y="8" width="12" height="2.5" rx="0.5" fill="#fff"/><line x1="8" y1="10.5" x2="8" y2="16" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="10.5" x2="16" y2="16" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="16" x2="17" y2="16" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>'
+    },
+    'Picnic Bench': {
+      color: '#27ae60',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#27ae60" stroke="#fff" stroke-width="1.5"/><rect x="7" y="10" width="10" height="2" rx="0.5" fill="#fff"/><line x1="9" y1="12" x2="8" y2="16" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/><line x1="15" y1="12" x2="16" y2="16" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/><line x1="6" y1="14" x2="10" y2="14" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/><line x1="14" y1="14" x2="18" y2="14" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    },
     'Other': {
       color: '#95a5a6',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#95a5a6" stroke="#fff" stroke-width="1.5"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
@@ -136,10 +144,12 @@
     if (/cave|rock.?shelter/i.test(raw))                         return 'Cave';
     if (/municipal|day.?trip/i.test(raw))                        return 'Day Hut';
     if (/rental/i.test(raw))                                     return 'Rental';
+    if (/public.?shelter/i.test(raw))                            return 'Public Shelter';
     if (/open.?shelter|lean.?to|shelter|hut|koie|hytte/i.test(raw)) return 'Open Shelter';
     if (/drinking.?water|water.?point/i.test(raw)) return 'Drinking Water';
     if (/toilet|restroom|wc/i.test(raw))           return 'Public Toilet';
-    if (/other/i.test(raw))           return 'Other';
+    if (/picnic/i.test(raw))                       return 'Picnic Bench';
+    if (/other/i.test(raw))                        return 'Other';
     return POINT_TYPE_ICONS[raw] ? raw : 'Other';
   }
 
