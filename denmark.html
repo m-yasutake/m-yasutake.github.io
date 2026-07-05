@@ -490,7 +490,7 @@
 <script>
 (function () {
   if (typeof RouteMap === 'undefined' || typeof L === 'undefined') return;
-  var map = RouteMap.init('home-map', { center: [56.0, 10.5], zoom: 6, dateFrom: '2026-06-01' });
+  var map = RouteMap.init('home-map', { center: [56.0, 10.5], zoom: 6, dateFrom: '2026-06-20', dateTo: '2026-06-26' });
   window._denmarkMap = map;
   map.once('load', function () {
     var el = document.getElementById('home-map-loading');
