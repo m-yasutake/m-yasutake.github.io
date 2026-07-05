@@ -158,7 +158,7 @@ async function fetchQuery({ label, query }, retries = 4) {
     if (!retryable || attempt === retries) {
       throw new Error(`Overpass returned HTTP ${res.status} for ${label}: ${text.slice(0, 200)}`);
     }
-    const delay = Math.pow(2, attempt) * 5000; // 10s, 20s, 40s
+    const delay = Math.pow(2, attempt) * 15000; // 30s, 60s, 120s
     console.log(`  HTTP ${res.status} — retrying in ${delay / 1000}s…`);
     await sleep(delay);
   }
@@ -170,8 +170,8 @@ async function main() {
     const points = await fetchQuery(q);
     console.log(`  ${q.label}: ${points.length}`);
     allPoints.push(...points);
-    // Brief pause between requests to avoid hammering the public Overpass instance.
-    await sleep(3000);
+    // Pause between requests so Overpass can free up quota before the next query.
+    await sleep(30000);
   }
   const points = allPoints;
 
