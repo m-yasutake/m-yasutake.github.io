@@ -84,16 +84,16 @@ const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
 // Bounding box covers mainland Norway + Svalbard without needing a slow area lookup.
 // Format: south,west,north,east
-const OVERPASS_QUERY = `
-[out:json][timeout:90][bbox:57.5,4.0,71.5,31.5];
-(
-  node[amenity=drinking_water];
-  node[amenity=toilets];
-  node[leisure=picnic_table];
-  node[amenity=shelter];
-);
-out body;
-`.trim();
+const BBOX = '57.5,4.0,71.5,31.5';
+
+// Each query is issued separately so that high-volume types (e.g. picnic_table)
+// don't cause the combined request to hit the Overpass timeout.
+const QUERIES = [
+  { label: 'drinking water',  query: `[out:json][timeout:60][bbox:${BBOX}];\nnode[amenity=drinking_water];\nout body;` },
+  { label: 'toilets',         query: `[out:json][timeout:60][bbox:${BBOX}];\nnode[amenity=toilets];\nout body;` },
+  { label: 'shelters',        query: `[out:json][timeout:60][bbox:${BBOX}];\nnode[amenity=shelter];\nout body;` },
+  { label: 'picnic benches',  query: `[out:json][timeout:90][bbox:${BBOX}];\nnode[leisure=picnic_table];\nout body;` },
+];
 
 function mapElement(element) {
   const tags    = element.tags || {};
@@ -133,28 +133,33 @@ function mapElement(element) {
   };
 }
 
-async function main() {
-  console.log('Querying Overpass API for Norway facilities (this may take up to 60 s)…');
-
+async function fetchQuery({ label, query }) {
+  console.log(`Querying Overpass for ${label}…`);
   const res = await fetch(
-    OVERPASS_URL + '?data=' + encodeURIComponent(OVERPASS_QUERY),
+    OVERPASS_URL + '?data=' + encodeURIComponent(query),
     { headers: { 'User-Agent': 'norway-facilities-fetcher/1.0 (github.com/m-yasutake)' } }
   );
-
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error('Overpass returned HTTP ' + res.status + ': ' + text.slice(0, 200));
+    throw new Error(`Overpass returned HTTP ${res.status} for ${label}: ${text.slice(0, 200)}`);
   }
-
   const data = await res.json();
-
   if (!Array.isArray(data.elements)) {
-    throw new Error('Unexpected Overpass response format');
+    throw new Error(`Unexpected Overpass response format for ${label}`);
   }
-
-  const points = data.elements
+  return data.elements
     .filter(el => el.type === 'node' && typeof el.lat === 'number' && typeof el.lon === 'number')
     .map(mapElement);
+}
+
+async function main() {
+  const allPoints = [];
+  for (const q of QUERIES) {
+    const points = await fetchQuery(q);
+    console.log(`  ${q.label}: ${points.length}`);
+    allPoints.push(...points);
+  }
+  const points = allPoints;
 
   const counts = {};
   points.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
