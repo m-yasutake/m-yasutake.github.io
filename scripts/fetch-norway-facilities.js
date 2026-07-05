@@ -133,23 +133,35 @@ function mapElement(element) {
   };
 }
 
-async function fetchQuery({ label, query }) {
-  console.log(`Querying Overpass for ${label}…`);
-  const res = await fetch(
-    OVERPASS_URL + '?data=' + encodeURIComponent(query),
-    { headers: { 'User-Agent': 'norway-facilities-fetcher/1.0 (github.com/m-yasutake)' } }
-  );
-  if (!res.ok) {
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Retries on 429 / 5xx with exponential backoff. Overpass occasionally returns
+// 504 under load even for fast queries — retrying is the right response.
+async function fetchQuery({ label, query }, retries = 4) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    console.log(`Querying Overpass for ${label} (attempt ${attempt}/${retries})…`);
+    const res = await fetch(
+      OVERPASS_URL + '?data=' + encodeURIComponent(query),
+      { headers: { 'User-Agent': 'norway-facilities-fetcher/1.0 (github.com/m-yasutake)' } }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (!Array.isArray(data.elements)) {
+        throw new Error(`Unexpected Overpass response format for ${label}`);
+      }
+      return data.elements
+        .filter(el => el.type === 'node' && typeof el.lat === 'number' && typeof el.lon === 'number')
+        .map(mapElement);
+    }
     const text = await res.text().catch(() => '');
-    throw new Error(`Overpass returned HTTP ${res.status} for ${label}: ${text.slice(0, 200)}`);
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt === retries) {
+      throw new Error(`Overpass returned HTTP ${res.status} for ${label}: ${text.slice(0, 200)}`);
+    }
+    const delay = Math.pow(2, attempt) * 15000; // 30s, 60s, 120s
+    console.log(`  HTTP ${res.status} — retrying in ${delay / 1000}s…`);
+    await sleep(delay);
   }
-  const data = await res.json();
-  if (!Array.isArray(data.elements)) {
-    throw new Error(`Unexpected Overpass response format for ${label}`);
-  }
-  return data.elements
-    .filter(el => el.type === 'node' && typeof el.lat === 'number' && typeof el.lon === 'number')
-    .map(mapElement);
 }
 
 async function main() {
@@ -158,6 +170,8 @@ async function main() {
     const points = await fetchQuery(q);
     console.log(`  ${q.label}: ${points.length}`);
     allPoints.push(...points);
+    // Pause between requests so Overpass can free up quota before the next query.
+    await sleep(30000);
   }
   const points = allPoints;
 
