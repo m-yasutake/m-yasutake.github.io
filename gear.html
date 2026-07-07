@@ -148,7 +148,7 @@
       padding: 0 3px;
       cursor: text;
     }
-    .gear-row-delete {
+    .gear-row-delete, .gear-row-move {
       background: none;
       border: none;
       cursor: pointer;
@@ -157,7 +157,17 @@
       padding: 0.2rem;
       transition: opacity 0.15s;
     }
-    .gear-row-delete:hover { opacity: 1; }
+    .gear-row-delete:hover, .gear-row-move:hover { opacity: 1; }
+    .gear-row-move { font-size: 0.85rem; }
+    .gear-group-header td {
+      background: var(--color-gray-100);
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-primary);
+      padding: 0.4rem 1rem;
+    }
     .gear-cat-delete {
       margin-left: auto;
       background: rgba(255,255,255,0.2);
@@ -422,30 +432,50 @@
   // ── Default / seed data ──────────────────────────────────
   const GEAR_DEFAULT = [
     { id: 'mika-rig', icon: '🚲', name: "Mika's Rig", order: 0, items: [
-      { id: 'mr1', name: 'Touring bike', notes: 'Steel frame, 700c wheels' },
-      { id: 'mr2', name: 'Rear panniers (pair)', notes: 'Ortlieb Back-Roller Classic' },
-      { id: 'mr3', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller' },
-      { id: 'mr4', name: 'Handlebar bag', notes: 'Quick access for camera and snacks' },
-      { id: 'mr5', name: 'Frame bag', notes: 'Tools and spares' },
+      { id: 'mr1', name: 'Touring bike', notes: 'Steel frame, 700c wheels', group: 'Bike' },
+      { id: 'mr2', name: 'Rear rack', notes: '', group: 'Mounts' },
+      { id: 'mr3', name: 'Front rack', notes: '', group: 'Mounts' },
+      { id: 'mr4', name: 'Rear panniers (pair)', notes: 'Ortlieb Back-Roller Classic', group: 'Bags' },
+      { id: 'mr5', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller', group: 'Bags' },
+      { id: 'mr6', name: 'Handlebar bag', notes: 'Quick access for camera and snacks', group: 'Bags' },
+      { id: 'mr7', name: 'Frame bag', notes: 'Tools and spares', group: 'Bags' },
     ]},
     { id: 'tom-rig', icon: '🚲', name: "Tom's Rig", order: 1, items: [
-      { id: 'tr1', name: 'Touring bike', notes: 'Steel frame, 700c wheels' },
-      { id: 'tr2', name: 'Rear panniers (pair)', notes: 'Ortlieb Back-Roller Classic' },
-      { id: 'tr3', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller' },
-      { id: 'tr4', name: 'Handlebar bag', notes: 'Route notes and quick-access gear' },
-      { id: 'tr5', name: 'Frame bag', notes: 'Pump and repair essentials' },
+      { id: 'tr1', name: 'Touring bike', notes: 'Steel frame, 700c wheels', group: 'Bike' },
+      { id: 'tr2', name: 'Rear rack', notes: '', group: 'Mounts' },
+      { id: 'tr3', name: 'Front rack', notes: '', group: 'Mounts' },
+      { id: 'tr4', name: 'Rear panniers (pair)', notes: 'Ortlieb Back-Roller Classic', group: 'Bags' },
+      { id: 'tr5', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller', group: 'Bags' },
+      { id: 'tr6', name: 'Handlebar bag', notes: 'Route notes and quick-access gear', group: 'Bags' },
+      { id: 'tr7', name: 'Frame bag', notes: 'Pump and repair essentials', group: 'Bags' },
     ]},
-    { id: 'necessary-items', icon: '⛺', name: 'Necessary Items', order: 2, items: [
-      { id: 'ni1', name: 'Tent (2-person)', notes: 'Main shelter' },
-      { id: 'ni2', name: 'Sleeping bags', notes: 'Down bags for cool nights' },
-      { id: 'ni3', name: 'Sleeping mats', notes: 'Compact inflatable mats' },
-      { id: 'ni4', name: 'Cooking stove + fuel', notes: 'Primary cooking setup' },
-      { id: 'ni5', name: 'Cook pot + pan', notes: 'Simple camp cooking set' },
-      { id: 'ni6', name: 'Mugs, bowls and utensils', notes: 'Shared meal kit' },
+    { id: 'shelter-sleep', icon: '🛏️', name: 'Shelter & Sleep', order: 2, items: [
+      { id: 'ss1', name: 'Tent (2-person)', notes: 'Main shelter', group: '' },
+      { id: 'ss2', name: 'Sleeping bags', notes: 'Down bags for cool nights', group: '' },
+      { id: 'ss3', name: 'Sleeping mats', notes: 'Compact inflatable mats', group: '' },
     ]},
-    { id: 'unnecessary-items', icon: '🎁', name: 'Unnecessary Items', order: 3, items: [
-      { id: 'ui1', name: 'Coffee dripper', notes: 'Tom' },
-      { id: 'ui2', name: 'Small sketchbook', notes: 'Mika' },
+    { id: 'cooking-eating', icon: '🍳', name: 'Cooking & Eating', order: 3, items: [
+      { id: 'ce1', name: 'Cooking stove + fuel', notes: 'Primary cooking setup', group: '' },
+      { id: 'ce2', name: 'Cook pot + pan', notes: 'Simple camp cooking set', group: '' },
+      { id: 'ce3', name: 'Mugs, bowls and utensils', notes: 'Shared meal kit', group: '' },
+    ]},
+    { id: 'clothing', icon: '👕', name: 'Clothing', order: 4, items: [
+      { id: 'cl1', name: 'Cycling jerseys (×3)', notes: 'Merino wool preferred', group: '' },
+      { id: 'cl2', name: 'Bib shorts / shorts (×2)', notes: '', group: '' },
+      { id: 'cl3', name: 'Rain jacket', notes: 'Lightweight packable', group: '' },
+    ]},
+    { id: 'nav-tech', icon: '📡', name: 'Navigation & Tech', order: 5, items: [
+      { id: 'nt1', name: 'GPS device', notes: 'Garmin Edge', group: '' },
+      { id: 'nt2', name: 'Camera', notes: '', group: '' },
+      { id: 'nt3', name: 'Laptop', notes: 'For blog & work on the road', group: '' },
+    ]},
+    { id: 'bike-maintenance', icon: '🔧', name: 'Bike Maintenance', order: 6, items: [
+      { id: 'bm1', name: 'Repair kit & multi-tool', notes: '', group: '' },
+      { id: 'bm2', name: 'Spare tubes (×4)', notes: '700×35c', group: '' },
+    ]},
+    { id: 'extras', icon: '✨', name: 'Extras & Luxuries', order: 7, items: [
+      { id: 'ex1', name: 'Coffee dripper', notes: '', group: '' },
+      { id: 'ex2', name: 'Small sketchbook', notes: '', group: '' },
     ]},
   ];
 
@@ -488,8 +518,17 @@
   }
 
   // ── Rendering ─────────────────────────────────────────────
+  const RIG_IDS = new Set(['mika-rig', 'tom-rig']);
+
   function renderCategory(cat, editMode, includeHeader = true) {
     const cid = cat.id;
+    const isRig = RIG_IDS.has(cid);
+    // rig edit mode: Item | Group | Notes | actions
+    // rig view mode: Item | Notes  (with group separator rows)
+    // other edit:   Item | Notes | actions
+    // other view:   Item | Notes
+    const colCount = editMode ? (isRig ? 4 : 3) : 2;
+
     let html = '<div class="gear-category"' + (editMode ? ' data-editing="1"' : '') + ' data-cat-id="' + cid + '">';
     if (includeHeader) {
       html += '<div class="gear-category-header">';
@@ -498,19 +537,42 @@
       if (editMode) html += '<button class="gear-cat-delete" onclick="GearManager.deleteCategory(\'' + cid + '\')" title="Remove category">✕ Remove</button>';
       html += '</div>';
     }
-    html += '<table class="gear-table"><thead><tr><th>Item</th><th>Notes</th>' + (editMode ? '<th></th>' : '') + '</tr></thead><tbody>';
+
+    let headerCols = '<th>Item</th>';
+    if (editMode && isRig) headerCols += '<th>Group</th>';
+    headerCols += '<th>Notes</th>';
+    if (editMode) headerCols += '<th></th>';
+
+    html += '<table class="gear-table"><thead><tr>' + headerCols + '</tr></thead><tbody>';
+
+    const RIG_GROUPS = ['Bike', 'Mounts', 'Bags'];
+    let lastGroup = null;
     cat.items.forEach(item => {
       const iid = item.id;
+      const grp = item.group || '';
+      if (!editMode && isRig && grp && grp !== lastGroup) {
+        lastGroup = grp;
+        html += '<tr class="gear-group-header"><td colspan="' + colCount + '" class="gear-group-label">' + grp + '</td></tr>';
+      }
       html += '<tr data-item-id="' + iid + '">';
       html += '<td data-label="Item"' + (editMode ? ' contenteditable="true" data-field="name"' : '') + '>' + (item.name || '') + '</td>';
+      if (editMode && isRig) {
+        html += '<td data-label="Group"><select class="gear-status-select" data-field="group">' +
+          ['', ...RIG_GROUPS].map(v => '<option value="' + v + '"' + (grp === v ? ' selected' : '') + '>' + (v || '—') + '</option>').join('') +
+          '</select></td>';
+      }
       html += '<td data-label="Notes" class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + (item.notes || '') + '</td>';
-      if (editMode) html += '<td data-label=""><button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
+      if (editMode) {
+        html += '<td data-label="" style="white-space:nowrap">' +
+          '<button class="gear-row-move" onclick="GearManager.moveItemUp(\'' + cid + '\',\'' + iid + '\')" title="Move up">↑</button>' +
+          '<button class="gear-row-move" onclick="GearManager.moveItemDown(\'' + cid + '\',\'' + iid + '\')" title="Move down">↓</button>' +
+          '<button class="gear-row-delete" onclick="GearManager.deleteItem(\'' + cid + '\',\'' + iid + '\')" title="Delete row">🗑</button></td>';
+      }
       html += '</tr>';
     });
     html += '</tbody>';
     if (editMode) {
-      const colSpan = editMode ? 3 : 2;
-      html += '<tfoot><tr><td colspan="' + colSpan + '"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
+      html += '<tfoot><tr><td colspan="' + colCount + '"><button class="gear-add-row-btn" onclick="GearManager.addItem(\'' + cid + '\')">＋ Add item</button></td></tr></tfoot>';
     }
     html += '</table></div>';
     return html;
@@ -554,11 +616,13 @@
       catEl.querySelectorAll('tbody tr').forEach(row => {
         const nameEl   = row.querySelector('[data-field="name"]');
         const notesEl  = row.querySelector('[data-field="notes"]');
+        const groupEl  = row.querySelector('[data-field="group"]');
         if (!nameEl) return;
         items.push({
-          id:     row.dataset.itemId || uid(),
-          name:   nameEl.textContent.trim(),
-          notes:  notesEl  ? notesEl.textContent.trim()  : '',
+          id:    row.dataset.itemId || uid(),
+          name:  nameEl.textContent.trim(),
+          notes: notesEl ? notesEl.textContent.trim() : '',
+          group: groupEl ? groupEl.value : '',
         });
       });
       cats.push({ id: catId, icon: icon.trim(), name: name.trim(), items });
@@ -582,12 +646,30 @@
     addItem(catId) {
       _gearData = collectFromDOM();
       const cat = _gearData.find(c => c.id === catId);
-      if (cat) cat.items.push({ id: uid(), name: 'New item', notes: '' });
+      if (cat) cat.items.push({ id: uid(), name: 'New item', notes: '', group: '' });
       renderGear(_gearData, true);
     },
     addCategory() {
       _gearData = collectFromDOM();
       _gearData.push({ id: uid(), icon: '📦', name: 'New Category', order: _gearData.length, items: [] });
+      renderGear(_gearData, true);
+    },
+    moveItemUp(catId, itemId) {
+      _gearData = collectFromDOM();
+      const cat = _gearData.find(c => c.id === catId);
+      if (!cat) return;
+      const idx = cat.items.findIndex(i => i.id === itemId);
+      if (idx <= 0) return;
+      [cat.items[idx - 1], cat.items[idx]] = [cat.items[idx], cat.items[idx - 1]];
+      renderGear(_gearData, true);
+    },
+    moveItemDown(catId, itemId) {
+      _gearData = collectFromDOM();
+      const cat = _gearData.find(c => c.id === catId);
+      if (!cat) return;
+      const idx = cat.items.findIndex(i => i.id === itemId);
+      if (idx < 0 || idx >= cat.items.length - 1) return;
+      [cat.items[idx + 1], cat.items[idx]] = [cat.items[idx], cat.items[idx + 1]];
       renderGear(_gearData, true);
     },
   };
@@ -652,13 +734,14 @@
   // ── Init ──────────────────────────────────────────────────
   function isRevampedShape(data) {
     const ids = new Set((data || []).map(cat => cat.id));
-    return ids.has('mika-rig') && ids.has('tom-rig') && ids.has('necessary-items') && ids.has('unnecessary-items');
+    return ids.has('mika-rig') && ids.has('tom-rig');
   }
 
   async function init() {
     try {
       await window.TomikaBikes.ensureFirebaseAuth();
       await ensureFirestore();
+      await loadBikeLinks();
       const data = await fetchFromFirestore();
       _gearData = (data && isRevampedShape(data)) ? data : GEAR_DEFAULT;
       if (!data || !isRevampedShape(data)) await saveToFirestore(_gearData);
@@ -667,7 +750,6 @@
       _gearData = GEAR_DEFAULT;
     }
     renderGear(_gearData, false);
-    loadBikeLinks();
     watchAdminState();
   }
 
