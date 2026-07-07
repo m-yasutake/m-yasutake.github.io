@@ -734,7 +734,11 @@
   // ── Init ──────────────────────────────────────────────────
   function isRevampedShape(data) {
     const ids = new Set((data || []).map(cat => cat.id));
-    return ids.has('mika-rig') && ids.has('tom-rig');
+    if (!ids.has('mika-rig') || !ids.has('tom-rig')) return false;
+    // Require that rig items have the group field (added in v2 of the schema).
+    // Without this, old Firestore data without groups would be used as-is.
+    const mikaRig = data.find(c => c.id === 'mika-rig');
+    return !!(mikaRig && mikaRig.items && mikaRig.items.some(i => 'group' in i));
   }
 
   async function init() {
@@ -797,7 +801,7 @@
           label.appendChild(a);
         }
       });
-    } catch (e) { /* non-critical */ }
+    } catch (e) { console.warn('Gear: bike photos failed to load:', e.message || e); }
   }
 
   init();
