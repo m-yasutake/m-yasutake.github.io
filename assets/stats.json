@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 395,
-    "totalElevationGain": 5720,
-    "rideCount": 6,
+    "totalDistanceKm": 489.7,
+    "totalElevationGain": 6888,
+    "rideCount": 8,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      58.966508,
-      5.750099
+      59.4321,
+      5.520056
     ],
-    "currentRouteName": "Supersoaker",
-    "currentCity": "Stavanger"
+    "currentRouteName": "Just a boat right",
+    "currentCity": "Tysvær"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-06T06:22:08.570Z"
+  "generatedAt": "2026-07-07T06:01:57.121Z"
 }
