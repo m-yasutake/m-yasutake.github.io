@@ -1285,15 +1285,6 @@
         <button class="gear-admin-btn cancel" id="gearCancelBtn" style="display:none">✕ Cancel</button>
       </div>
 
-      <!-- Weight summary (inline on admin page) -->
-      <div style="display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap">
-        <div style="background:var(--color-white);border:1px solid var(--color-gray-200);border-radius:var(--radius-md);padding:.75rem 1.25rem;box-shadow:var(--shadow-sm)">
-          <div style="font-size:.75rem;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:.05em">Total Weight</div>
-          <div style="font-size:1.4rem;font-weight:700;color:var(--color-secondary)" id="weightTotal">—</div>
-          <div style="font-size:.72rem;color:var(--color-gray-500)">kg listed</div>
-        </div>
-      </div>
-
       <div id="gearContent">
         <p style="padding:2rem;color:var(--color-gray-600)">Loading gear list…</p>
       </div>
@@ -3343,50 +3334,50 @@ const GearManagerAdmin = (function () {
 
   const GEAR_DEFAULT = [
     { id: 'mika-rig', icon: '🚲', name: "Mika's Rig", order: 0, items: [
-      { id: 'mr1', name: 'Touring bike',          weight: '', notes: 'Steel frame, 700c wheels',     group: 'Bike'   },
-      { id: 'mr2', name: 'Rear rack',             weight: '', notes: '',                             group: 'Mounts' },
-      { id: 'mr3', name: 'Front rack',            weight: '', notes: '',                             group: 'Mounts' },
-      { id: 'mr4', name: 'Rear panniers (pair)',  weight: '', notes: 'Ortlieb Back-Roller Classic',  group: 'Bags'   },
-      { id: 'mr5', name: 'Front panniers (pair)', weight: '', notes: 'Ortlieb Front-Roller',         group: 'Bags'   },
-      { id: 'mr6', name: 'Handlebar bag',         weight: '', notes: 'Quick access for snacks & map',group: 'Bags'   },
-      { id: 'mr7', name: 'Frame bag',             weight: '', notes: 'Tools & spares',               group: 'Bags'   },
+      { id: 'mr1', name: 'Touring bike',          notes: 'Steel frame, 700c wheels',     group: 'Bike'   },
+      { id: 'mr2', name: 'Rear rack',             notes: '',                             group: 'Mounts' },
+      { id: 'mr3', name: 'Front rack',            notes: '',                             group: 'Mounts' },
+      { id: 'mr4', name: 'Rear panniers (pair)',  notes: 'Ortlieb Back-Roller Classic',  group: 'Bags'   },
+      { id: 'mr5', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller',         group: 'Bags'   },
+      { id: 'mr6', name: 'Handlebar bag',         notes: 'Quick access for snacks & map',group: 'Bags'   },
+      { id: 'mr7', name: 'Frame bag',             notes: 'Tools & spares',               group: 'Bags'   },
     ]},
     { id: 'tom-rig', icon: '🚲', name: "Tom's Rig", order: 1, items: [
-      { id: 'tr1', name: 'Touring bike',          weight: '', notes: 'Steel frame, 700c wheels',     group: 'Bike'   },
-      { id: 'tr2', name: 'Rear rack',             weight: '', notes: '',                             group: 'Mounts' },
-      { id: 'tr3', name: 'Front rack',            weight: '', notes: '',                             group: 'Mounts' },
-      { id: 'tr4', name: 'Rear panniers (pair)',  weight: '', notes: 'Ortlieb Back-Roller Classic',  group: 'Bags'   },
-      { id: 'tr5', name: 'Front panniers (pair)', weight: '', notes: 'Ortlieb Front-Roller',         group: 'Bags'   },
-      { id: 'tr6', name: 'Handlebar bag',         weight: '', notes: 'Route notes and quick-access gear', group: 'Bags' },
-      { id: 'tr7', name: 'Frame bag',             weight: '', notes: 'Pump and repair essentials',   group: 'Bags'   },
+      { id: 'tr1', name: 'Touring bike',          notes: 'Steel frame, 700c wheels',     group: 'Bike'   },
+      { id: 'tr2', name: 'Rear rack',             notes: '',                             group: 'Mounts' },
+      { id: 'tr3', name: 'Front rack',            notes: '',                             group: 'Mounts' },
+      { id: 'tr4', name: 'Rear panniers (pair)',  notes: 'Ortlieb Back-Roller Classic',  group: 'Bags'   },
+      { id: 'tr5', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller',         group: 'Bags'   },
+      { id: 'tr6', name: 'Handlebar bag',         notes: 'Route notes and quick-access gear', group: 'Bags' },
+      { id: 'tr7', name: 'Frame bag',             notes: 'Pump and repair essentials',   group: 'Bags'   },
     ]},
     { id: 'shelter-sleep', icon: '🛏️', name: 'Shelter & Sleep', order: 2, items: [
-      { id: 'ss1', name: 'Tent (2-person)',     weight: '', notes: 'Main shelter',           group: '' },
-      { id: 'ss2', name: 'Sleeping bags',       weight: '', notes: 'Down bags for cool nights', group: '' },
-      { id: 'ss3', name: 'Sleeping mats',       weight: '', notes: 'Compact inflatable mats',  group: '' },
+      { id: 'ss1', name: 'Tent (2-person)',     notes: 'Main shelter',           group: '' },
+      { id: 'ss2', name: 'Sleeping bags',       notes: 'Down bags for cool nights', group: '' },
+      { id: 'ss3', name: 'Sleeping mats',       notes: 'Compact inflatable mats',  group: '' },
     ]},
     { id: 'cooking-eating', icon: '🍳', name: 'Cooking & Eating', order: 3, items: [
-      { id: 'ce1', name: 'Cooking stove + fuel',     weight: '', notes: 'Primary cooking setup', group: '' },
-      { id: 'ce2', name: 'Cook pot + pan',           weight: '', notes: 'Simple camp cooking set', group: '' },
-      { id: 'ce3', name: 'Mugs, bowls and utensils', weight: '', notes: 'Shared meal kit', group: '' },
+      { id: 'ce1', name: 'Cooking stove + fuel',     notes: 'Primary cooking setup', group: '' },
+      { id: 'ce2', name: 'Cook pot + pan',           notes: 'Simple camp cooking set', group: '' },
+      { id: 'ce3', name: 'Mugs, bowls and utensils', notes: 'Shared meal kit', group: '' },
     ]},
     { id: 'clothing', icon: '👕', name: 'Clothing', order: 4, items: [
-      { id: 'cl1', name: 'Cycling jerseys (×3)', weight: '', notes: 'Merino wool preferred', group: '' },
-      { id: 'cl2', name: 'Bib shorts / shorts (×2)', weight: '', notes: '', group: '' },
-      { id: 'cl3', name: 'Rain jacket',          weight: '', notes: 'Lightweight packable', group: '' },
+      { id: 'cl1', name: 'Cycling jerseys (×3)', notes: 'Merino wool preferred', group: '' },
+      { id: 'cl2', name: 'Bib shorts / shorts (×2)', notes: '', group: '' },
+      { id: 'cl3', name: 'Rain jacket',          notes: 'Lightweight packable', group: '' },
     ]},
     { id: 'nav-tech', icon: '📡', name: 'Navigation & Tech', order: 5, items: [
-      { id: 'nt1', name: 'GPS device',  weight: '', notes: 'Garmin Edge', group: '' },
-      { id: 'nt2', name: 'Camera',      weight: '', notes: '',            group: '' },
-      { id: 'nt3', name: 'Laptop',      weight: '', notes: 'For blog & work on the road', group: '' },
+      { id: 'nt1', name: 'GPS device',  notes: 'Garmin Edge', group: '' },
+      { id: 'nt2', name: 'Camera',      notes: '',            group: '' },
+      { id: 'nt3', name: 'Laptop',      notes: 'For blog & work on the road', group: '' },
     ]},
     { id: 'bike-maintenance', icon: '🔧', name: 'Bike Maintenance', order: 6, items: [
-      { id: 'bm1', name: 'Repair kit & multi-tool', weight: '', notes: '', group: '' },
-      { id: 'bm2', name: 'Spare tubes (×4)',         weight: '', notes: '700×35c', group: '' },
+      { id: 'bm1', name: 'Repair kit & multi-tool', notes: '', group: '' },
+      { id: 'bm2', name: 'Spare tubes (×4)',         notes: '700×35c', group: '' },
     ]},
     { id: 'extras', icon: '✨', name: 'Extras & Luxuries', order: 7, items: [
-      { id: 'ex1', name: 'Coffee dripper',  weight: '', notes: '', group: '' },
-      { id: 'ex2', name: 'Small sketchbook', weight: '', notes: '', group: '' },
+      { id: 'ex1', name: 'Coffee dripper',  notes: '', group: '' },
+      { id: 'ex2', name: 'Small sketchbook', notes: '', group: '' },
     ]},
   ];
 
@@ -3436,20 +3427,6 @@ const GearManagerAdmin = (function () {
     return '<span class="gear-tag ' + cls + '">' + (who || 'Both') + '</span>';
   }
 
-  function parseWeight(w) {
-    const m = (w || '').match(/([\d.]+)\s*kg/i);
-    return m ? parseFloat(m[1]) : 0;
-  }
-
-  function updateWeightSummary(data) {
-    let total = 0;
-    data.forEach(cat => {
-      cat.items.forEach(item => { total += parseWeight(item.weight); });
-    });
-    const el = document.getElementById('weightTotal');
-    if (el) el.textContent = total > 0 ? total.toFixed(1) : '—';
-  }
-
   const RIG_IDS = new Set(['mika-rig', 'tom-rig']);
   const RIG_GROUPS = ['Bike', 'Mounts', 'Bags'];
 
@@ -3460,11 +3437,11 @@ const GearManagerAdmin = (function () {
     data.forEach(cat => {
       const cid = cat.id;
       const isRig = RIG_IDS.has(cid);
-      // rig edit: Item | Group | Weight | Notes | actions (5 cols)
-      // rig view: Item | Weight | Notes (3 cols, with group separators)
-      // other edit: Item | Weight | Notes | actions (4 cols)
-      // other view: Item | Weight | Notes (3 cols)
-      const colCount = editMode ? (isRig ? 5 : 4) : 3;
+      // rig edit: Item | Group | Notes | actions (4 cols)
+      // rig view: Item | Notes (2 cols, with group separators)
+      // other edit: Item | Notes | actions (3 cols)
+      // other view: Item | Notes (2 cols)
+      const colCount = editMode ? (isRig ? 4 : 3) : 2;
 
       html += '<div class="gear-category"' + (editMode ? ' data-editing="1"' : '') + ' data-cat-id="' + cid + '">';
       html += '<div class="gear-category-header">';
@@ -3475,7 +3452,7 @@ const GearManagerAdmin = (function () {
 
       let headerCols = '<th>Item</th>';
       if (editMode && isRig) headerCols += '<th>Group</th>';
-      headerCols += '<th>Weight</th><th>Notes</th>';
+      headerCols += '<th>Notes</th>';
       if (editMode) headerCols += '<th></th>';
 
       html += '<table class="gear-table"><thead><tr>' + headerCols + '</tr></thead><tbody>';
@@ -3495,7 +3472,6 @@ const GearManagerAdmin = (function () {
             ['', ...RIG_GROUPS].map(v => '<option value="' + v + '"' + (grp === v ? ' selected' : '') + '>' + (v || '—') + '</option>').join('') +
             '</select></td>';
         }
-        html += '<td data-label="Weight" class="gear-weight"' + (editMode ? ' contenteditable="true" data-field="weight"' : '') + '>' + (item.weight || '') + '</td>';
         html += '<td data-label="Notes" class="gear-notes"' + (editMode ? ' contenteditable="true" data-field="notes"' : '') + '>' + (item.notes || '') + '</td>';
         if (editMode) {
           html += '<td data-label="" style="white-space:nowrap">' +
@@ -3515,7 +3491,6 @@ const GearManagerAdmin = (function () {
       html += '<button class="gear-add-cat-btn" onclick="GearManagerAdmin.addCategory()">＋ Add category</button>';
     }
     content.innerHTML = html;
-    updateWeightSummary(data);
   }
 
   function collectFromDOM() {
@@ -3527,17 +3502,15 @@ const GearManagerAdmin = (function () {
       const name   = (header.querySelector('[data-field="name"]') || {}).textContent || '';
       const items  = [];
       catEl.querySelectorAll('tbody tr').forEach(row => {
-        const nameEl   = row.querySelector('[data-field="name"]');
-        const weightEl = row.querySelector('[data-field="weight"]');
-        const notesEl  = row.querySelector('[data-field="notes"]');
-        const groupEl  = row.querySelector('[data-field="group"]');
+        const nameEl  = row.querySelector('[data-field="name"]');
+        const notesEl = row.querySelector('[data-field="notes"]');
+        const groupEl = row.querySelector('[data-field="group"]');
         if (!nameEl) return;
         items.push({
-          id:     row.dataset.itemId || uid(),
-          name:   nameEl.textContent.trim(),
-          weight: weightEl ? weightEl.textContent.trim() : '',
-          notes:  notesEl  ? notesEl.textContent.trim()  : '',
-          group:  groupEl  ? groupEl.value               : '',
+          id:    row.dataset.itemId || uid(),
+          name:  nameEl.textContent.trim(),
+          notes: notesEl ? notesEl.textContent.trim() : '',
+          group: groupEl ? groupEl.value              : '',
         });
       });
       cats.push({ id: catId, icon: icon.trim(), name: name.trim(), items });
@@ -3650,7 +3623,7 @@ const GearManagerAdmin = (function () {
     addItem(catId) {
       _gearData = collectFromDOM();
       const cat = _gearData.find(c => c.id === catId);
-      if (cat) cat.items.push({ id: uid(), name: 'New item', weight: '', notes: '', group: '' });
+      if (cat) cat.items.push({ id: uid(), name: 'New item', notes: '', group: '' });
       renderGear(_gearData, true);
     },
     addCategory() {
