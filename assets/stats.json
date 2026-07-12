@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 563.7,
-    "totalElevationGain": 8040,
-    "rideCount": 9,
+    "totalDistanceKm": 683.8,
+    "totalElevationGain": 10069,
+    "rideCount": 12,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      59.7399,
-      5.230245
+      60.4141,
+      5.337475
     ],
-    "currentRouteName": "The rode home",
-    "currentCity": "Bømlo"
+    "currentRouteName": "Not very Brrrrgen",
+    "currentCity": "Bergen"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-11T04:59:20.171Z"
+  "generatedAt": "2026-07-12T05:22:49.541Z"
 }
