@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 683.8,
-    "totalElevationGain": 10069,
-    "rideCount": 12,
+    "totalDistanceKm": 739.2,
+    "totalElevationGain": 10663,
+    "rideCount": 13,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      60.4141,
-      5.337475
+      60.557266,
+      5.720997
     ],
-    "currentRouteName": "Not very Brrrrgen",
-    "currentCity": "Bergen"
+    "currentRouteName": "Morning Ride",
+    "currentCity": "Vaksdal"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-12T05:22:49.541Z"
+  "generatedAt": "2026-07-13T05:31:32.289Z"
 }
