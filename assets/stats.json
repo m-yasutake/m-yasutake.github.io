@@ -31,19 +31,19 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 739.2,
-    "totalElevationGain": 10663,
-    "rideCount": 13,
+    "totalDistanceKm": 807.1,
+    "totalElevationGain": 11714,
+    "rideCount": 14,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      60.557266,
-      5.720997
+      60.793604,
+      6.134615
     ],
-    "currentRouteName": "Morning Ride",
+    "currentRouteName": "Washingaton",
     "currentCity": "Vaksdal"
   },
   "tripDates": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-13T05:31:32.289Z"
+  "generatedAt": "2026-07-14T04:45:36.544Z"
 }
