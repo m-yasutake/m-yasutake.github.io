@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 807.1,
-    "totalElevationGain": 11714,
-    "rideCount": 14,
+    "totalDistanceKm": 902.5,
+    "totalElevationGain": 13561,
+    "rideCount": 16,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      60.793604,
-      6.134615
+      60.725434,
+      7.011599
     ],
-    "currentRouteName": "Washingaton",
-    "currentCity": "Vaksdal"
+    "currentRouteName": "Baa baa bikes!",
+    "currentCity": "Aurland"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-14T04:45:36.544Z"
+  "generatedAt": "2026-07-15T04:45:42.862Z"
 }
