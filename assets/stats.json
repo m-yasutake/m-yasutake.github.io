@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 395,
-    "totalElevationGain": 5720,
-    "rideCount": 6,
+    "totalDistanceKm": 902.5,
+    "totalElevationGain": 13561,
+    "rideCount": 16,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      58.966508,
-      5.750099
+      60.725434,
+      7.011599
     ],
-    "currentRouteName": "Supersoaker",
-    "currentCity": "Stavanger"
+    "currentRouteName": "Baa baa bikes!",
+    "currentCity": "Aurland"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-05T05:58:40.247Z"
+  "generatedAt": "2026-07-17T04:58:29.582Z"
 }
