@@ -529,7 +529,7 @@ function haversineKm(la1, lo1, la2, lo2) {
  *   { totalDistanceKm, totalElevationGain, rideCount,
  *     bounds: [[minLat,minLng],[maxLat,maxLng]],
  *     firstPoint: [lat,lng], lastPoint: [lat,lng],
- *     routes: [{ date, pts: [[lat,lng],...], eles: [m|null,...] }],
+ *     routes: [{ date, pts: [[lat,lng],...], eles: [m|null,...], dists: [km,...] }],
  *     elevationProfile: [{ dist: km, ele: m }, ...],
  *     generatedAt: ISO string }
  */
@@ -558,7 +558,7 @@ async function generatePostRouteCache(post, matchingRoutes) {
     const url = `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/` +
                 `${encodeURIComponent(route.storagePath)}?alt=media`;
 
-    let pts = [], eles = [];
+    let pts = [], eles = [], ptDist = [];
     try {
       const res = await fetch(url);
       if (!res.ok) {
@@ -599,6 +599,7 @@ async function generatePostRouteCache(post, matchingRoutes) {
         }
       }
       if (eles[i] != null) rawElevProfile.push({ dist: cumDistGlobal, ele: eles[i] });
+      ptDist.push(cumDistGlobal);
       if (pts[i][0] < minLat) minLat = pts[i][0];
       if (pts[i][0] > maxLat) maxLat = pts[i][0];
       if (pts[i][1] < minLng) minLng = pts[i][1];
@@ -613,16 +614,20 @@ async function generatePostRouteCache(post, matchingRoutes) {
     const indices = new Set();
     for (let i = 0; i < pts.length; i += step) indices.add(i);
     indices.add(pts.length - 1);
-    const sPts = [], sEles = [];
+    const sPts = [], sEles = [], sDists = [];
     for (const i of [...indices].sort((a, b) => a - b)) {
       sPts.push([Math.round(pts[i][0] * 1e5) / 1e5, Math.round(pts[i][1] * 1e5) / 1e5]);
       sEles.push(eles[i] != null ? Math.round(eles[i]) : null);
+      sDists.push(Math.round(ptDist[i] * 10) / 10);
     }
 
     const dateStr = route.activityMs
       ? new Date(route.activityMs).toISOString().slice(0, 10)
       : null;
-    cacheRoutes.push({ date: dateStr, pts: sPts, eles: sEles });
+    // dists: cumulative km at full resolution (matches elevationProfile's
+    // distance scale exactly), sampled at the same indices as pts/eles so the
+    // map hover stays chronologically aligned with the elevation chart.
+    cacheRoutes.push({ date: dateStr, pts: sPts, eles: sEles, dists: sDists });
   }
 
   if (cacheRoutes.length === 0) {

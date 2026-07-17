@@ -677,11 +677,10 @@
         if (elGain  && typeof cache.totalElevationGain === 'number') elGain.textContent  = cache.totalElevationGain > 0 ? Math.round(cache.totalElevationGain) + ' m' : '—';
         if (elRides && typeof cache.rideCount          === 'number') elRides.textContent = cache.rideCount + (cache.rideCount === 1 ? ' ride' : ' rides');
 
-        // Sort routes chronologically by date so polylines, start/end markers,
-        // and the elevation hover all move in the correct order.
-        var sortedRoutes = (cache.routes || []).slice().sort(function (a, b) {
-          return (a.date || '') < (b.date || '') ? -1 : (a.date || '') > (b.date || '') ? 1 : 0;
-        });
+        // Routes are already chronologically ordered server-side (sorted by
+        // exact Strava activity timestamp, not just calendar date — same-day
+        // multi-activity rides would otherwise tie/misorder on a date-only sort).
+        var sortedRoutes = cache.routes || [];
 
         // Draw one polyline per route (in date order)
         sortedRoutes.forEach(function (r) {
@@ -716,15 +715,23 @@
 
         // Elevation chart + distance-aware hover
         if (cache.elevationProfile && cache.elevationProfile.length > 1) {
-          // Build coordProfile with cumulative km per downsampled point so the
-          // hover binary-searches by distance and stays aligned with the chart's
+          // Build coordProfile with cumulative km per point so the hover
+          // binary-searches by distance and stays aligned with the chart's
           // X-axis (cumulative km), rather than mapping by array-index fraction.
+          // Prefer the server-computed `dists` (full-resolution, same distance
+          // scale as elevationProfile) — falls back to re-deriving distance
+          // from the downsampled points for caches generated before this field
+          // existed, which drifts increasingly out of sync on longer, multi-day
+          // routes since corner-cutting from downsampling underestimates distance.
           var coordProfile = [];
           var cumDist = 0;
           sortedRoutes.forEach(function (r) {
             var pts = r.pts || [];
+            var dists = r.dists;
             for (var i = 0; i < pts.length; i++) {
-              if (i > 0) {
+              if (dists && dists[i] != null) {
+                cumDist = dists[i];
+              } else if (i > 0) {
                 var dLat = (pts[i][0] - pts[i-1][0]) * Math.PI / 180;
                 var dLon = (pts[i][1] - pts[i-1][1]) * Math.PI / 180;
                 var sinDLat = Math.sin(dLat / 2);
