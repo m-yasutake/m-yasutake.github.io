@@ -113,7 +113,7 @@
     }
     .post-body .photo-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
       margin-bottom: 1rem;
     }
@@ -122,6 +122,10 @@
       border-radius: var(--radius-md);
       object-fit: cover;
       aspect-ratio: 3/4;
+      cursor: pointer;
+    }
+    @media (max-width: 480px) {
+      .post-body .photo-grid { gap: .4rem; }
     }
     .post-body .video-embed {
       position: relative;
@@ -395,6 +399,14 @@
 <!-- Post Body (populated by JS) -->
 <div id="post-body"></div>
 
+<!-- Lightbox (for photo-grid full-size view) -->
+<div class="lightbox" id="post-lightbox">
+  <div class="lightbox-content">
+    <button class="lightbox-close" id="post-lightbox-close">✕</button>
+    <div id="post-lightbox-body"></div>
+  </div>
+</div>
+
 <!-- Footer -->
 <footer>
   <div class="container">
@@ -460,6 +472,32 @@
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     return firebase.firestore();
   }
+
+  // Photo-grid lightbox — click any image in a .photo-grid to view full size
+  var postLightbox     = document.getElementById('post-lightbox');
+  var postLightboxBody = document.getElementById('post-lightbox-body');
+
+  function openPostLightbox(src, alt) {
+    postLightboxBody.innerHTML = '<img src="' + src.replace(/"/g, '&quot;') + '" alt="' + esc(alt || '') + '">';
+    postLightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePostLightbox() {
+    postLightbox.classList.remove('open');
+    postLightboxBody.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('post-lightbox-close').addEventListener('click', closePostLightbox);
+  postLightbox.addEventListener('click', function (e) { if (e.target === postLightbox) closePostLightbox(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && postLightbox.classList.contains('open')) closePostLightbox();
+  });
+  document.getElementById('post-body').addEventListener('click', function (e) {
+    var img = e.target.closest('.photo-grid img');
+    if (img) openPostLightbox(img.currentSrc || img.src, img.alt);
+  });
 
   function showError(msg) {
     document.getElementById('post-hero-inner').innerHTML =
