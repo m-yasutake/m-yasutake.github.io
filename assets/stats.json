@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 902.5,
-    "totalElevationGain": 13561,
-    "rideCount": 16,
+    "totalDistanceKm": 914.5,
+    "totalElevationGain": 13916,
+    "rideCount": 17,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      60.725434,
-      7.011599
+      60.697502,
+      7.20415
     ],
-    "currentRouteName": "Baa baa bikes!",
-    "currentCity": "Aurland"
+    "currentRouteName": "Afternoon Ride",
+    "currentCity": "Ulvik"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-21T05:15:52.286Z"
+  "generatedAt": "2026-07-22T05:14:40.388Z"
 }
