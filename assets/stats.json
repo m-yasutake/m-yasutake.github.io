@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 914.5,
-    "totalElevationGain": 13916,
-    "rideCount": 17,
+    "totalDistanceKm": 992.8,
+    "totalElevationGain": 14957,
+    "rideCount": 18,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      60.697502,
-      7.20415
+      60.531743,
+      8.212109
     ],
-    "currentRouteName": "Afternoon Ride",
-    "currentCity": "Ulvik"
+    "currentRouteName": "Rallywayan",
+    "currentCity": "Hol"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-22T05:14:40.388Z"
+  "generatedAt": "2026-07-23T05:19:59.050Z"
 }
