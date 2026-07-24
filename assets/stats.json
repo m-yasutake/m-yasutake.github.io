@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 992.8,
-    "totalElevationGain": 14957,
-    "rideCount": 18,
+    "totalDistanceKm": 1075.7,
+    "totalElevationGain": 16516,
+    "rideCount": 19,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      60.531743,
-      8.212109
+      60.797179,
+      8.941431
     ],
-    "currentRouteName": "Rallywayan",
-    "currentCity": "Hol"
+    "currentRouteName": "Just roll with it",
+    "currentCity": "Gol"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-23T05:19:59.050Z"
+  "generatedAt": "2026-07-24T05:15:44.817Z"
 }
