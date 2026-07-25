@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1075.7,
-    "totalElevationGain": 16516,
-    "rideCount": 19,
+    "totalDistanceKm": 1114.8,
+    "totalElevationGain": 17142,
+    "rideCount": 20,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      60.797179,
-      8.941431
+      61.005044,
+      8.907492
     ],
-    "currentRouteName": "Just roll with it",
-    "currentCity": "Gol"
+    "currentRouteName": "Ride hard play hard",
+    "currentCity": "Vestre Slidre"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-24T05:15:44.817Z"
+  "generatedAt": "2026-07-25T04:59:50.181Z"
 }
