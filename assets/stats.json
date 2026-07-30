@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1324.1,
-    "totalElevationGain": 21166,
-    "rideCount": 24,
+    "totalDistanceKm": 1381.5,
+    "totalElevationGain": 22741,
+    "rideCount": 25,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      61.870297,
-      9.10333
+      62.092842,
+      9.217718
     ],
-    "currentRouteName": "Lunch Ride",
-    "currentCity": "Vågå"
+    "currentRouteName": "Dearhunter",
+    "currentCity": "Dovre"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-29T05:16:35.747Z"
+  "generatedAt": "2026-07-30T04:53:44.658Z"
 }
