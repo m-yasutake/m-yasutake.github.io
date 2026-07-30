@@ -62,22 +62,24 @@
    *
    * @param {string} elementId  – id of the map <div>
    * @param {object} [options]
-   *   center   {number[]}  [lat, lng] map center    (default: central Japan)
-   *   zoom     {number}    initial zoom             (default: 5)
-   *   tilesUrl {string}    direct URL for my-routes.pmtiles
-   *   dateFrom {string}    ISO date string YYYY-MM-DD; only show rides on/after this date
-   *   dateTo   {string}    ISO date string YYYY-MM-DD; only show rides on/before this date
+   *   center      {number[]}  [lat, lng] map center    (default: central Japan)
+   *   zoom        {number}    initial zoom             (default: 5)
+   *   manifestUrl {string}    URL for the my-routes-manifest.json shard list
+   *   dateFrom    {string}    ISO date string YYYY-MM-DD; only show rides on/after this date
+   *   dateTo      {string}    ISO date string YYYY-MM-DD; only show rides on/before this date
    * @returns {L.Map} with an extra setTripFilter(dateFrom, dateTo) method
    */
   function init(elementId, options) {
     options = options || {};
-    var center   = options.center   || [36.5, 138];
-    var zoom     = options.zoom     || 5;
-    var tilesUrl = options.tilesUrl || 'assets/tiles/my-routes.pmtiles';
+    var center      = options.center      || [36.5, 138];
+    var zoom        = options.zoom        || 5;
+    var manifestUrl = options.manifestUrl || 'assets/tiles/my-routes-manifest.json';
 
-    // Unique PMTiles instance key per element avoids collisions when multiple
-    // maps are on the same page.
-    var instanceKey = 'route-map-' + elementId;
+    // Unique PMTiles instance key prefix per element avoids collisions when
+    // multiple maps are on the same page. My Routes is split into several
+    // per-trip shards (see scripts/generate-pmtiles.js) so each shard gets
+    // its own instance key, e.g. "route-map-<elementId>-japan".
+    var instanceKeyPrefix = 'route-map-' + elementId;
 
     var map = L.map(elementId, {
       renderer: L.canvas({ tolerance: 10 }),
@@ -96,54 +98,74 @@
     L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
     // ── Load route tiles via PMTiles + VectorGrid ─────────────────────────
-    var _header     = null;
-    var _routeLayer = null;
-    var _dateFrom   = options.dateFrom || null;
-    var _dateTo     = options.dateTo   || null;
+    // My Routes is split into several per-trip shards; the manifest lists
+    // which ones exist so this file never needs a hardcoded category list.
+    var _categories      = [];   // shard categories loaded from the manifest
+    var _headers         = {};   // category -> PMTiles header
+    var _routeLayerGroup = null; // group of all shard layers, one map entry
+    var _dateFrom        = options.dateFrom || null;
+    var _dateTo          = options.dateTo   || null;
+
+    function routeStyle(properties) {
+      if (_dateFrom || _dateTo) {
+        var filename = properties.filename || '';
+        var m = filename.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
+        if (!m) return { weight: 0, opacity: 0, fill: false };
+        var d = m[1];
+        if (_dateFrom && d < _dateFrom) return { weight: 0, opacity: 0, fill: false };
+        if (_dateTo   && d > _dateTo)   return { weight: 0, opacity: 0, fill: false };
+      }
+      return {
+        weight: getRouteWeight(map.getZoom()),
+        color: properties.color || '#E76F51',
+        opacity: 0.9,
+        fill: false
+      };
+    }
 
     function buildLayer() {
-      if (_routeLayer) { map.removeLayer(_routeLayer); _routeLayer = null; }
-      if (!_header) return;
+      if (_routeLayerGroup) { map.removeLayer(_routeLayerGroup); _routeLayerGroup = null; }
+      if (_categories.length === 0) return;
 
-      var gridOptions = {
-        vectorTileLayerStyles: {
-          routes: function (properties) {
-            if (_dateFrom || _dateTo) {
-              var filename = properties.filename || '';
-              var m = filename.match(/strava_\d+_(\d{4}-\d{2}-\d{2})_/);
-              if (!m) return { weight: 0, opacity: 0, fill: false };
-              var d = m[1];
-              if (_dateFrom && d < _dateFrom) return { weight: 0, opacity: 0, fill: false };
-              if (_dateTo   && d > _dateTo)   return { weight: 0, opacity: 0, fill: false };
-            }
-            return {
-              weight: getRouteWeight(map.getZoom()),
-              color: properties.color || '#E76F51',
-              opacity: 0.9,
-              fill: false
-            };
+      var layers = _categories.map(function (category) {
+        var header = _headers[category] || { minZoom: 2, maxZoom: 14 };
+        return L.vectorGrid.protobuf(
+          'pmtiles://' + instanceKeyPrefix + '-' + category + '/{z}/{x}/{y}',
+          {
+            vectorTileLayerStyles: { routes: routeStyle },
+            interactive: false,
+            updateWhenZooming: false,
+            keepBuffer: 4,
+            maxNativeZoom: header.maxZoom || 14,
+            minNativeZoom: header.minZoom || 2
           }
-        },
-        interactive: false,
-        updateWhenZooming: false,
-        keepBuffer: 4,
-        maxNativeZoom: _header.maxZoom || 14,
-        minNativeZoom: _header.minZoom || 2
-      };
+        );
+      });
 
-      _routeLayer = L.vectorGrid.protobuf(
-        'pmtiles://' + instanceKey + '/{z}/{x}/{y}',
-        gridOptions
-      );
-      _routeLayer.addTo(map);
+      _routeLayerGroup = L.layerGroup(layers);
+      _routeLayerGroup.addTo(map);
     }
 
     if (typeof pmtiles !== 'undefined' && typeof L.vectorGrid !== 'undefined') {
-      var pmInstance = new pmtiles.PMTiles(tilesUrl);
-      window.__pmtilesInstances[instanceKey] = pmInstance;
-
-      pmInstance.getHeader().then(function (header) {
-        _header = header;
+      fetch(manifestUrl).then(function (res) {
+        if (!res.ok) throw new Error('manifest fetch failed: ' + res.status);
+        return res.json();
+      }).then(function (manifest) {
+        var categories = (manifest && manifest.categories) || [];
+        return Promise.all(categories.map(function (category) {
+          var key = instanceKeyPrefix + '-' + category;
+          var p = new pmtiles.PMTiles('assets/tiles/my-routes-' + category + '.pmtiles');
+          window.__pmtilesInstances[key] = p;
+          return p.getHeader().then(function (header) {
+            _headers[category] = header;
+          }).catch(function () {
+            _headers[category] = { minZoom: 2, maxZoom: 14 };
+          }).then(function () {
+            return category;
+          });
+        }));
+      }).then(function (loadedCategories) {
+        _categories = loadedCategories || [];
         buildLayer();
       }).catch(function (err) {
         console.warn('RouteMap: could not load route tiles:', (err && err.message) || err || 'Unknown error');

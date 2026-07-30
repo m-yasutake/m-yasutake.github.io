@@ -443,7 +443,31 @@
         });
     }
 
-    loadTile('my-routes.pmtiles',      'dk-my-routes',      'My Routes (tiles)',      true);
+    // My Routes is split into several per-trip shards (see
+    // scripts/generate-pmtiles.js) so no single file grows past GitHub's
+    // 100 MB limit. The manifest lists which shards exist; they're all
+    // grouped into one layer so the UI still shows a single "My Routes"
+    // toggle, same as before.
+    function loadMyRoutesShards() {
+      fetch('assets/tiles/my-routes-manifest.json').then(function (res) {
+        if (!res.ok) throw new Error('manifest fetch failed: ' + res.status);
+        return res.json();
+      }).then(function (manifest) {
+        var categories = (manifest && manifest.categories) || [];
+        return Promise.all(categories.map(function (category) {
+          return buildLayer('assets/tiles/my-routes-' + category + '.pmtiles', 'dk-my-routes-' + category);
+        }));
+      }).then(function (layers) {
+        if (layers.length === 0) return;
+        var group = L.layerGroup(layers);
+        layerControl.addOverlay(group, 'My Routes (tiles)');
+        group.addTo(map);
+      }).catch(function (err) {
+        console.warn('PMTiles layer "My Routes (tiles)" unavailable:', err && err.message || err);
+      });
+    }
+
+    loadMyRoutesShards();
     loadTile('planned-routes.pmtiles', 'dk-planned-routes', 'Planned Routes (tiles)', true);
   }
 

@@ -4,15 +4,29 @@
  * generate-pmtiles.js
  *
  * Downloads all GPX files from Firebase Storage (gpx/ prefix), converts them
- * to GeoJSON, and runs tippecanoe to generate two separate PMTiles files:
- *   - tiles/my-routes.pmtiles   – personal/Strava routes (isOwner: true)
+ * to GeoJSON, and runs tippecanoe to generate PMTiles files:
+ *   - tiles/my-routes-<category>.pmtiles – personal/Strava routes (isOwner:
+ *     true), split into bounded shards by trip so no single file grows
+ *     past GitHub's 100 MB limit. Category is one of 'japan', 'norway',
+ *     'denmark' (using the same JAPAN_TRIP_FROM/TO-style date windows as
+ *     fetch-strava-rides.js) or 'other-<year>' for anything outside those
+ *     windows.
  *   - tiles/planned-routes.pmtiles – manually uploaded planning routes
+ *   - assets/tiles/my-routes-manifest.json – lists the category shards
+ *     generated this run, so frontend pages can discover them without any
+ *     hardcoded list.
  *
- * Both files are uploaded back to Firebase Storage in the tiles/ prefix.
+ * All pmtiles files are uploaded back to Firebase Storage in the tiles/
+ * prefix and copied to assets/tiles/ for GitHub Pages serving.
  *
  * Usage:
  *   FIREBASE_SERVICE_ACCOUNT='<json>' node generate-pmtiles.js
  *   # or place serviceAccountKey.json in the same directory as this script
+ *
+ * Optional env vars (same names/format as fetch-strava-rides.js):
+ *   JAPAN_TRIP_FROM / JAPAN_TRIP_TO
+ *   NORWAY_TRIP_FROM / NORWAY_TRIP_TO
+ *   DENMARK_TRIP_FROM / DENMARK_TRIP_TO
  */
 
 const path = require('path');
@@ -61,6 +75,49 @@ const bucket = admin.storage().bucket();
 /** Returns true if a Firestore route document belongs to the owner (personal/Strava route). */
 function isOwnerDoc(data) {
   return !!(data.isOwner || data.source === 'strava');
+}
+
+// Matches the date segment in: strava_{id}_{YYYY-MM-DD}_{name}.gpx — same
+// convention used by fetch-strava-rides.js and route-map.js.
+const DATE_FROM_FILENAME_RE = /strava_\d+_(\d{4}-\d{2}-\d{2})_/;
+
+/**
+ * Returns the activity date (epoch ms) for a Firestore route doc, preferring
+ * the structured `activityDate` Timestamp field and falling back to parsing
+ * the date out of the file name for older/unbackfilled docs.
+ */
+function extractActivityMs(data) {
+  if (data.activityDate && typeof data.activityDate.toMillis === 'function') {
+    return data.activityDate.toMillis();
+  }
+  const candidate = data.fileName || (data.storagePath ? path.basename(data.storagePath) : '');
+  const m = candidate.match(DATE_FROM_FILENAME_RE);
+  if (!m) return null;
+  return new Date(m[1] + 'T00:00:00Z').getTime();
+}
+
+/** True if the given timestamp (ms) falls inside the <PREFIX>_TRIP_FROM/TO env window. */
+function isInTripWindow(activityMs, envPrefix) {
+  const fromEnv = process.env[`${envPrefix}_TRIP_FROM`];
+  if (!fromEnv) return false;
+  const fromMs = new Date(fromEnv).getTime();
+  const toEnv = process.env[`${envPrefix}_TRIP_TO`];
+  const toMs = toEnv ? new Date(toEnv).getTime() : Date.now();
+  return activityMs >= fromMs && activityMs <= toMs;
+}
+
+/**
+ * Classifies a personal route's activity date into a bounded pmtiles shard
+ * category: a named trip if it falls inside one of the JAPAN/NORWAY/DENMARK
+ * date windows, otherwise 'other-<year>' so the fallback bucket can't grow
+ * unbounded either. Returns 'other-unknown' if no date could be determined.
+ */
+function computeCategory(activityMs) {
+  if (activityMs == null) return 'other-unknown';
+  if (isInTripWindow(activityMs, 'JAPAN'))   return 'japan';
+  if (isInTripWindow(activityMs, 'DENMARK')) return 'denmark';
+  if (isInTripWindow(activityMs, 'NORWAY'))  return 'norway';
+  return `other-${new Date(activityMs).getUTCFullYear()}`;
 }
 
 /**
@@ -168,6 +225,9 @@ async function generateAndUpload(features, tmpDir, baseName, bucket) {
   //    -Z2              minimum zoom level 2
   //    --drop-densest-as-needed  thin points at lower zooms to keep tiles small
   //    --extend-zooms-if-still-dropping  add zoom levels until all features fit
+  //    --simplification=10  slightly more aggressive line simplification than
+  //                     tippecanoe's default, to keep output size down with
+  //                     negligible visual difference at normal viewing zooms
   //    -l routes        name the layer "routes" (referenced in planning.html)
   //    --force          overwrite output file if it already exists
   const outputPath = path.join(tmpDir, `${baseName}.pmtiles`);
@@ -177,6 +237,7 @@ async function generateAndUpload(features, tmpDir, baseName, bucket) {
     '-Z2',
     '--drop-densest-as-needed',
     '--extend-zooms-if-still-dropping',
+    '--simplification=10',
     '-l', 'routes',
     '-o', outputPath,
     '--force',
@@ -186,6 +247,21 @@ async function generateAndUpload(features, tmpDir, baseName, bucket) {
   console.log(`Running tippecanoe for ${baseName}...`);
   execSync(tippecanoeCmd, { stdio: 'inherit' });
   console.log(`Generated ${baseName}.pmtiles at: ${outputPath}`);
+
+  // Safety guard: fail loudly here, with an actionable message, rather than
+  // letting an oversized file reach `git push` and get rejected there.
+  // GitHub's hard limit is 100 MB; 90 MB leaves a safety margin.
+  const MAX_SAFE_BYTES = 90 * 1024 * 1024;
+  const outputSize = fs.statSync(outputPath).size;
+  console.log(`  ${baseName}.pmtiles size: ${(outputSize / (1024 * 1024)).toFixed(1)} MB`);
+  if (outputSize > MAX_SAFE_BYTES) {
+    throw new Error(
+      `${baseName}.pmtiles is ${(outputSize / (1024 * 1024)).toFixed(1)} MB, ` +
+      `exceeding the ${(MAX_SAFE_BYTES / (1024 * 1024)).toFixed(0)} MB safety threshold ` +
+      `(GitHub's hard limit is 100 MB). This shard needs a narrower trip window, an ` +
+      `additional split, or more simplification before it can be committed.`
+    );
+  }
 
   // Upload to Firebase Storage
   const destination = `tiles/${baseName}.pmtiles`;
@@ -238,7 +314,8 @@ async function main() {
         sourceUrl:   (data.metadata && data.metadata.sourceUrl) || null,
         gpxContent:  data.gpxContent || null, // backward-compat: legacy docs may have gpxContent cached inline
         storagePath: data.storagePath || null,
-        fileName:    data.fileName    || null
+        fileName:    data.fileName    || null,
+        category:    isOwner ? computeCategory(extractActivityMs(data)) : null
       };
       if (isOwner) {
         myRoutesMeta.push(meta);
@@ -278,7 +355,7 @@ async function main() {
     //    Route membership (personal vs planning) is determined by which colorMap
     //    contains the storagePath/fileName.
     const parser = new DOMParser();
-    const myFeatures   = [];
+    const myFeaturesByCategory = {}; // category -> feature array
     const planFeatures = [];
 
     // Determine if a storage file belongs to personal routes
@@ -287,13 +364,25 @@ async function main() {
       return !!(myColorMap[storagePath] || myColorMap[fileName]);
     }
 
+    function categoryForFile(storagePath) {
+      const fileName = path.basename(storagePath);
+      const meta = myColorMap[storagePath] || myColorMap[fileName];
+      return (meta && meta.category) || 'other-unknown';
+    }
+
+    function addToCategory(category, features) {
+      if (features.length === 0) return;
+      if (!myFeaturesByCategory[category]) myFeaturesByCategory[category] = [];
+      myFeaturesByCategory[category].push(...features);
+    }
+
     for (const file of gpxFiles) {
       console.log(`  Processing Storage file: ${file.name}`);
       try {
         const [content] = await file.download();
         const xmlStr = content.toString('utf8');
         if (isOwnerFile(file.name)) {
-          myFeatures.push(...gpxTextToFeatures(parser, xmlStr, file.name, null, myColorMap));
+          addToCategory(categoryForFile(file.name), gpxTextToFeatures(parser, xmlStr, file.name, null, myColorMap));
         } else {
           planFeatures.push(...gpxTextToFeatures(parser, xmlStr, file.name, null, planColorMap));
         }
@@ -324,7 +413,10 @@ async function main() {
     for (const r of myFirestoreOnly) {
       console.log(`  Processing Firestore-cached GPX (personal): ${r.fileName || '(unknown)'}`);
       try {
-        myFeatures.push(...gpxTextToFeatures(parser, r.gpxContent, r.storagePath, r.fileName, myColorMap));
+        addToCategory(
+          r.category || 'other-unknown',
+          gpxTextToFeatures(parser, r.gpxContent, r.storagePath, r.fileName, myColorMap)
+        );
       } catch (err) {
         console.warn(`  Warning: Failed to process inline gpxContent for ${r.fileName || '(unknown)'}:`, err.message);
       }
@@ -339,17 +431,30 @@ async function main() {
       }
     }
 
-    console.log(`Personal routes: ${myFeatures.length} GeoJSON feature(s).`);
+    const categories = Object.keys(myFeaturesByCategory).sort();
+    const myFeatureCount = categories.reduce((sum, c) => sum + myFeaturesByCategory[c].length, 0);
+    console.log(`Personal routes: ${myFeatureCount} GeoJSON feature(s) across ${categories.length} categor${categories.length === 1 ? 'y' : 'ies'}: ${categories.join(', ') || '(none)'}.`);
     console.log(`Planning routes: ${planFeatures.length} GeoJSON feature(s).`);
 
-    if (myFeatures.length === 0 && planFeatures.length === 0) {
+    if (myFeatureCount === 0 && planFeatures.length === 0) {
       console.warn('No valid GeoJSON features produced for either route set. Exiting without generating tiles.');
       return;
     }
 
-    // 4 & 5. Generate and upload separate PMTiles for each route type.
-    await generateAndUpload(myFeatures,   tmpDir, 'my-routes',      bucket);
+    // 4 & 5. Generate and upload one PMTiles shard per personal-route category,
+    // plus a single file for planned routes.
+    for (const category of categories) {
+      await generateAndUpload(myFeaturesByCategory[category], tmpDir, `my-routes-${category}`, bucket);
+    }
     await generateAndUpload(planFeatures, tmpDir, 'planned-routes', bucket);
+
+    // Write a manifest listing the shards generated this run, so frontend
+    // pages can discover them dynamically without any hardcoded category list.
+    const assetsDir = path.join(__dirname, '..', 'assets', 'tiles');
+    if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
+    const manifestPath = path.join(assetsDir, 'my-routes-manifest.json');
+    fs.writeFileSync(manifestPath, JSON.stringify({ categories }, null, 2));
+    console.log(`Wrote manifest: ${manifestPath}`);
 
   } finally {
     // 6. Clean up temp directory

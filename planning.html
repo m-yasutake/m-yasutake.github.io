@@ -1195,10 +1195,12 @@
   });
 
   // ── PMTiles route layers ────────────────────────────────────
-  // Loads two separate PMTiles files from Firebase Storage:
-  //   my-routes.pmtiles      – personal/Strava routes (isOwner)
-  //   planned-routes.pmtiles – manually uploaded planning routes
-  // Each is added as a separate overlay in the layer control.
+  // Loads PMTiles files from Firebase Storage:
+  //   my-routes-<category>.pmtiles – personal/Strava routes (isOwner),
+  //     split into per-trip shards (see scripts/generate-pmtiles.js);
+  //     the manifest lists which shards exist, and they're grouped into
+  //     one "My Routes (tiles)" overlay in the layer control.
+  //   planned-routes.pmtiles       – manually uploaded planning routes
   function initPMTilesLayer() {
     if (typeof pmtiles === 'undefined' || typeof L.vectorGrid === 'undefined') return;
 
@@ -1269,14 +1271,42 @@
       });
     }
 
-    // Personal (Strava) routes — on by default
-    tryLoadTile(
-      'my-routes.pmtiles',
-      'my-routes',
-      'My Routes (tiles)',
-      'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes.pmtiles?alt=media',
-      true  // add to map by default
-    );
+    // Loads a single shard layer (Firebase Storage first, direct-URL fallback)
+    // without touching the layer control — the caller groups shards together.
+    function loadShardLayer(storageName, instanceKey, directUrl) {
+      const storagePromise = storage
+        ? storage.ref('tiles/' + storageName).getDownloadURL().then(function(url) { return buildLayer(url, instanceKey); })
+        : Promise.reject(new Error('storage not ready'));
+      return storagePromise.catch(function() {
+        return buildLayer(directUrl, instanceKey);
+      });
+    }
+
+    // Personal (Strava) routes — split into several per-trip shards (see
+    // scripts/generate-pmtiles.js) so no single file grows past GitHub's
+    // 100 MB limit. The manifest lists which shards exist; they're all
+    // grouped into one layer so the UI still shows a single "My Routes"
+    // toggle, on by default like before.
+    fetch('assets/tiles/my-routes-manifest.json').then(function(res) {
+      if (!res.ok) throw new Error('manifest fetch failed: ' + res.status);
+      return res.json();
+    }).then(function(manifest) {
+      const categories = (manifest && manifest.categories) || [];
+      return Promise.all(categories.map(function(category) {
+        return loadShardLayer(
+          'my-routes-' + category + '.pmtiles',
+          'my-routes-' + category,
+          'https://firebasestorage.googleapis.com/v0/b/roots-eddf5.firebasestorage.app/o/tiles%2Fmy-routes-' + category + '.pmtiles?alt=media'
+        );
+      }));
+    }).then(function(layers) {
+      if (layers.length === 0) return;
+      const group = L.layerGroup(layers);
+      layerControl.addOverlay(group, 'My Routes (tiles)');
+      group.addTo(map);
+    }).catch(function(err) {
+      console.warn('PMTiles layer "My Routes (tiles)" unavailable:', err && err.message || err);
+    });
 
     // Planned routes — off by default
     tryLoadTile(
