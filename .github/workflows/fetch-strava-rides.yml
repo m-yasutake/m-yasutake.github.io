@@ -113,17 +113,23 @@ jobs:
         working-directory: scripts
         run: npm install
 
-      - name: Generate and upload PMTiles (my-routes + planned-routes)
+      - name: Generate and upload PMTiles (my-routes shards + planned-routes)
         working-directory: scripts
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          JAPAN_TRIP_FROM:      ${{ vars.JAPAN_TRIP_FROM }}
+          JAPAN_TRIP_TO:        ${{ vars.JAPAN_TRIP_TO }}
+          DENMARK_TRIP_FROM:    ${{ vars.DENMARK_TRIP_FROM }}
+          DENMARK_TRIP_TO:      ${{ vars.DENMARK_TRIP_TO }}
+          NORWAY_TRIP_FROM:     ${{ vars.NORWAY_TRIP_FROM }}
+          NORWAY_TRIP_TO:       ${{ vars.NORWAY_TRIP_TO }}
         run: node generate-pmtiles.js
 
       - name: Commit updated PMTiles to repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add assets/tiles/my-routes.pmtiles assets/tiles/planned-routes.pmtiles
+          git add assets/tiles/my-routes-*.pmtiles assets/tiles/my-routes-manifest.json assets/tiles/planned-routes.pmtiles
           git diff --cached --quiet || git commit -m "chore: update assets/tiles/*.pmtiles [skip ci]"
           git pull --rebase
           git push
