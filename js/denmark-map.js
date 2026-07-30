@@ -1,6 +1,7 @@
 // js/denmark-map.js — Interactive planning map for the Denmark trip
-// Loads points directly from Firestore (country=Denmark), shows PMTiles route
-// overlays, point-type filter UI, fullscreen toggle.
+// Loads points from a static JSON snapshot (assets/denmark-points.json) with
+// server-side clustering at zoom levels 3–7; shows PMTiles route overlays,
+// point-type filter UI, fullscreen toggle.
 
 // ── PMTiles protocol interceptor ────────────────────────────
 // Idempotent: shared with route-map.js; only installed once per page load.
@@ -245,6 +246,15 @@
   const pointTypeFilters = new Set();
   const _seenPointTypes = new Set();
 
+  // ── Snapshot state ──────────────────────────────────────────
+  let _pointsLoadStarted = false;
+  let snapshotRawPoints = null;
+  let serverClusterLevels = null;
+  let serverClusterLevelKeys = [];
+  let serverClusterLevelActiveKey = null;
+  let serverClusterDisableZoom = 8;
+  let _onZoomEndSnapshot = null;
+
   function getAvailablePointTypes() {
     const available = new Set();
     points.forEach(p => available.add(p.type || 'Other'));
@@ -259,6 +269,17 @@
   map.on('moveend', function () {
     if (_moveEndTimer) clearTimeout(_moveEndTimer);
     _moveEndTimer = setTimeout(applyPointTypeFilters, 150);
+  });
+
+  // ── Zoom-based cluster switching ────────────────────────────
+  let _zoomEndTimer = null;
+  map.on('zoomend', function () {
+    if (_zoomEndTimer) clearTimeout(_zoomEndTimer);
+    _zoomEndTimer = setTimeout(function () {
+      _zoomEndTimer = null;
+      const zoom = map.getZoom();
+      if (_onZoomEndSnapshot) _onZoomEndSnapshot(zoom);
+    }, 150);
   });
 
   function applyPointTypeFilters() {
@@ -276,6 +297,39 @@
   }
 
   function createPointMarker(pointData) {
+    // Render cluster node (pre-aggregated by the snapshot generator)
+    const clusterMeta = pointData && pointData.metadata && pointData.metadata.__cluster;
+    const clusterCount = Number(clusterMeta && clusterMeta.count) || 0;
+    if (clusterCount > 1) {
+      const clusterClass = clusterCount > 100 ? 'marker-cluster-large'
+                         : clusterCount > 10  ? 'marker-cluster-medium'
+                         : 'marker-cluster-small';
+      const marker = L.marker([pointData.lat, pointData.lon], {
+        icon: L.divIcon({
+          html: '<div><span>' + clusterCount + '</span></div>',
+          className: 'marker-cluster ' + clusterClass,
+          iconSize: L.point(40, 40)
+        })
+      });
+      marker.bindPopup(function () {
+        const items = (clusterMeta && clusterMeta.items) || [];
+        let html = '<b>' + escapeHtml(pointData.name || 'Cluster') + '</b><br>'
+                 + '<span style="font-size:0.9em;color:#6c757d;">' + clusterCount + ' points</span>';
+        if (items.length > 0) {
+          html += '<ul style="margin:0.4em 0 0 1.1em;padding:0;max-height:180px;overflow:auto">';
+          items.forEach(function (item) {
+            const n = item && item.name ? item.name : 'Point';
+            const u = item && item.url ? String(item.url) : '';
+            html += '<li>' + (u ? '<a href="' + escapeAttr(u) + '" target="_blank" rel="noopener">' + escapeHtml(n) + '</a>' : escapeHtml(n)) + '</li>';
+          });
+          html += '</ul>';
+        }
+        return html;
+      });
+      return marker;
+    }
+
+    // Individual point marker
     const pointType = getPointType(pointData);
     const marker = L.marker([pointData.lat, pointData.lon], { icon: getPointIcon(pointType) });
     marker.bindPopup(function () {
@@ -299,8 +353,59 @@
     return marker;
   }
 
-  function addPointsBatch(dataArray) {
-    dataArray.forEach(function (d) {
+  // ── Snapshot helpers ────────────────────────────────────────
+
+  function normalizeSnapshotPoint(d) {
+    return {
+      name: d.name || 'Point',
+      lat: d.lat,
+      lon: d.lon,
+      url: d.url || null,
+      type: d.type || null,
+      metadata: d.metadata || {},
+      fileName: d.fileName || 'denmark-points.json',
+      id: d.id || null
+    };
+  }
+
+  function normalizeServerClusterPoint(d) {
+    const pd = normalizeSnapshotPoint(d);
+    const count = Number(d && d.metadata && d.metadata.__cluster && d.metadata.__cluster.count || 0);
+    if (count > 1 && (!pd.metadata || !pd.metadata.__cluster)) {
+      pd.metadata = Object.assign({}, pd.metadata, {
+        __cluster: { count, items: Array.isArray(d.items) ? d.items : [] }
+      });
+    }
+    return pd;
+  }
+
+  function getServerClusterLevelKeyForZoom(zoom) {
+    if (!serverClusterLevelKeys.length || zoom >= serverClusterDisableZoom) return null;
+    let selected = serverClusterLevelKeys[0];
+    for (let i = 0; i < serverClusterLevelKeys.length; i++) {
+      const key = serverClusterLevelKeys[i];
+      if (key <= zoom) selected = key;
+      else break;
+    }
+    return String(selected);
+  }
+
+  function getSnapshotDisplayPointsForZoom(zoom) {
+    const levelKey = getServerClusterLevelKeyForZoom(zoom);
+    if (levelKey && serverClusterLevels && Array.isArray(serverClusterLevels[levelKey])) {
+      return { levelKey, points: serverClusterLevels[levelKey].map(normalizeServerClusterPoint) };
+    }
+    return { levelKey: null, points: (snapshotRawPoints || []).map(normalizeSnapshotPoint) };
+  }
+
+  function applySnapshotDisplayForZoom(zoom, force) {
+    if (!snapshotRawPoints) return;
+    const display = getSnapshotDisplayPointsForZoom(zoom);
+    if (!force && serverClusterLevelActiveKey === display.levelKey) return;
+    serverClusterLevelActiveKey = display.levelKey;
+    pointLayerGroup.clearLayers();
+    points.length = 0;
+    display.points.forEach(function (d) {
       const pointType = getPointType(d);
       points.push({
         name: d.name || 'Point',
@@ -486,6 +591,9 @@
   const DENMARK_SNAPSHOT_URL = 'assets/denmark-points.json';
 
   function loadDenmarkSnapshot() {
+    if (_pointsLoadStarted) return;
+    _pointsLoadStarted = true;
+
     fetch(DENMARK_SNAPSHOT_URL, { cache: 'default' })
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -495,10 +603,36 @@
         if (!data || !Array.isArray(data.points)) throw new Error('unrecognised snapshot format');
         if (data.points.length === 0) throw new Error('empty snapshot');
 
-        addPointsBatch(data.points);
-        const sample = data.points.slice(0, 200);
-        const fg = L.featureGroup(sample.map(function (p) { return L.marker([p.lat, p.lon]); }));
-        map.fitBounds(fg.getBounds(), { padding: [40, 40], maxZoom: 12 });
+        snapshotRawPoints = data.points;
+
+        const disableZoom = data.clusterZoomRange && Number(data.clusterZoomRange.disableClusteringAtZoom);
+        serverClusterDisableZoom = Number.isFinite(disableZoom) ? disableZoom : 8;
+
+        if (data.clustersByZoom && typeof data.clustersByZoom === 'object') {
+          serverClusterLevels = data.clustersByZoom;
+          serverClusterLevelKeys = Object.keys(serverClusterLevels)
+            .map(function (k) { return Number(k); })
+            .filter(Number.isFinite)
+            .sort(function (a, b) { return a - b; });
+        } else {
+          serverClusterLevels = null;
+          serverClusterLevelKeys = [];
+        }
+
+        serverClusterLevelActiveKey = null;
+        applySnapshotDisplayForZoom(map.getZoom(), true);
+
+        if (serverClusterLevelKeys.length > 0) {
+          _onZoomEndSnapshot = function (zoom) { applySnapshotDisplayForZoom(zoom, false); };
+        }
+
+        // Fit map to a sample of the raw points so the view isn't dominated by
+        // a handful of z3 cluster centroids spanning the whole country.
+        const sample = snapshotRawPoints.slice(0, 200);
+        if (sample.length > 0) {
+          const fg = L.featureGroup(sample.map(function (p) { return L.marker([p.lat, p.lon]); }));
+          map.fitBounds(fg.getBounds(), { padding: [40, 40], maxZoom: 12 });
+        }
 
         clearTimeout(_safetyTimeout);
         dismissLoadingOverlay();
