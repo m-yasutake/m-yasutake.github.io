@@ -31,19 +31,19 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1381.5,
-    "totalElevationGain": 22741,
-    "rideCount": 25,
+    "totalDistanceKm": 1409.3,
+    "totalElevationGain": 23046,
+    "rideCount": 26,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      62.092842,
-      9.217718
+      62.215456,
+      9.57798
     ],
-    "currentRouteName": "Dearhunter",
+    "currentRouteName": "Pretty sheltered",
     "currentCity": "Dovre"
   },
   "tripDates": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-07-30T04:53:44.658Z"
+  "generatedAt": "2026-07-31T05:30:02.254Z"
 }
