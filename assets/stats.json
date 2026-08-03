@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1409.3,
-    "totalElevationGain": 23046,
-    "rideCount": 26,
+    "totalDistanceKm": 1569.9,
+    "totalElevationGain": 25164,
+    "rideCount": 29,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      62.215456,
-      9.57798
+      63.012903,
+      9.735894
     ],
-    "currentRouteName": "Pretty sheltered",
-    "currentCity": "Dovre"
+    "currentRouteName": "Waffling on",
+    "currentCity": "Orkland"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-02T05:21:20.623Z"
+  "generatedAt": "2026-08-03T05:35:50.443Z"
 }
