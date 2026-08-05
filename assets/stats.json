@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1569.9,
-    "totalElevationGain": 25164,
-    "rideCount": 29,
+    "totalDistanceKm": 1667.7,
+    "totalElevationGain": 26227,
+    "rideCount": 31,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      63.012903,
-      9.735894
+      63.436493,
+      10.428856
     ],
-    "currentRouteName": "Waffling on",
-    "currentCity": "Orkland"
+    "currentRouteName": "Morning Ride",
+    "currentCity": "Trondheim"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-04T04:58:43.920Z"
+  "generatedAt": "2026-08-05T05:00:08.646Z"
 }
