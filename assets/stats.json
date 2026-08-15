@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1667.7,
-    "totalElevationGain": 26227,
-    "rideCount": 31,
+    "totalDistanceKm": 1798.7,
+    "totalElevationGain": 27956,
+    "rideCount": 33,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      63.436493,
-      10.428856
+      64.024053,
+      11.466014
     ],
-    "currentRouteName": "Morning Ride",
-    "currentCity": "Trondheim"
+    "currentRouteName": "Tuned in",
+    "currentCity": "Steinkjer"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-14T04:00:30.737Z"
+  "generatedAt": "2026-08-15T02:45:56.718Z"
 }
