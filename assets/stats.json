@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1798.7,
-    "totalElevationGain": 27956,
-    "rideCount": 33,
+    "totalDistanceKm": 1883.7,
+    "totalElevationGain": 28994,
+    "rideCount": 34,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      64.024053,
-      11.466014
+      64.489885,
+      11.532237
     ],
-    "currentRouteName": "Tuned in",
-    "currentCity": "Steinkjer"
+    "currentRouteName": "Knott bad",
+    "currentCity": "Namsos"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-15T02:45:56.718Z"
+  "generatedAt": "2026-08-16T02:54:21.545Z"
 }
