@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1883.7,
-    "totalElevationGain": 28994,
-    "rideCount": 34,
+    "totalDistanceKm": 1950.5,
+    "totalElevationGain": 29976,
+    "rideCount": 35,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      64.489885,
-      11.532237
+      64.881889,
+      11.604534
     ],
-    "currentRouteName": "Knott bad",
-    "currentCity": "Namsos"
+    "currentRouteName": "Soil mates",
+    "currentCity": "Nærøysund"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-16T02:54:21.545Z"
+  "generatedAt": "2026-08-17T02:54:47.188Z"
 }
