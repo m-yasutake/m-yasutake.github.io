@@ -731,6 +731,35 @@
     box-shadow: 0 1px 3px rgba(0,0,0,.3);
   }
 
+  /* ── Mobile admin fit ───────────────────────────────── */
+  @media (max-width: 768px) {
+    .admin-main { padding: 1rem; }
+    .new-post-form,
+    .email-composer-card,
+    .mapdata-upload-block { padding: 1.25rem; }
+    /* iOS Safari zooms in on focus when a field's font-size is below 16px */
+    .admin-main .form-control,
+    .admin-main textarea,
+    .admin-main select,
+    .admin-main input { font-size: 16px; }
+    .fmt-toolbar button,
+    .email-fmt-toolbar button { font-size: 16px; padding: .35rem .6rem; }
+    #blog-content, #blog-content-ja, #blog-content-no { font-size: 16px; }
+  }
+
+  /* ── Photos grid: mobile shows a compact 3-column grid ── */
+  @media (max-width: 640px) {
+    #photos-gallery { grid-template-columns: repeat(3, 1fr) !important; gap: .4rem !important; }
+    .photo-gallery-card .pgc-body { padding: .35rem; }
+    .photo-gallery-card .pgc-album,
+    .photo-gallery-card .pgc-location,
+    .photo-gallery-card .pgc-caption,
+    .photo-gallery-card .pgc-date { font-size: .6rem; }
+    .photo-gallery-card .pgc-actions { padding: .25rem .3rem; flex-wrap: wrap; }
+    .photo-gallery-card .pgc-actions a,
+    .photo-gallery-card .pgc-actions button { font-size: .62rem; padding: .1rem .25rem; }
+  }
+
   </style>
 </head>
 <body>
@@ -1163,6 +1192,9 @@
         </div>
         <div id="photos-gallery-status" style="color:var(--color-gray-500);font-size:.85rem;margin-bottom:.75rem">Loading photos...</div>
         <div id="photos-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem"></div>
+        <div style="text-align:center;margin-top:1.25rem">
+          <button class="btn" id="photos-gallery-more-btn" style="background:var(--color-gray-200);display:none">See more photos</button>
+        </div>
       </div>
 
       <!-- Photo Edit Modal -->
@@ -2028,20 +2060,49 @@ function _getAdminDb() {
     });
   }
 
-  // ── Gallery
+  // ── Gallery (paginated — loads GALLERY_PAGE_SIZE at a time, "See more" fetches the next page)
+  const GALLERY_PAGE_SIZE = 60;
+  let _galleryLastDoc = null;
+  let _galleryHasMore = true;
+
   function loadGallery() {
+    galleryDocs = [];
+    _galleryLastDoc = null;
+    _galleryHasMore = true;
     const statusEl = document.getElementById('photos-gallery-status');
     statusEl.textContent = 'Loading photos…';
     ensureReady()
-      .then(() => photosDb.collection('photos').orderBy('uploadedAt', 'desc').limit(200).get())
-      .then(snapshot => {
-        galleryDocs = [];
-        snapshot.forEach(doc => galleryDocs.push({ id: doc.id, data: doc.data() }));
-        populateAlbumFilter();
-        renderGallery(document.getElementById('photos-gallery-filter').value);
-        statusEl.textContent = galleryDocs.length + ' photo' + (galleryDocs.length !== 1 ? 's' : '');
-      })
+      .then(() => fetchGalleryPage())
       .catch(err => { statusEl.textContent = 'Error loading gallery: ' + err.message; });
+  }
+
+  function fetchGalleryPage() {
+    let q = photosDb.collection('photos').orderBy('uploadedAt', 'desc').limit(GALLERY_PAGE_SIZE);
+    if (_galleryLastDoc) q = q.startAfter(_galleryLastDoc);
+    return q.get().then(snapshot => {
+      snapshot.forEach(doc => galleryDocs.push({ id: doc.id, data: doc.data() }));
+      _galleryHasMore = snapshot.size === GALLERY_PAGE_SIZE;
+      if (!snapshot.empty) _galleryLastDoc = snapshot.docs[snapshot.docs.length - 1];
+      populateAlbumFilter();
+      renderGallery(document.getElementById('photos-gallery-filter').value);
+      const statusEl = document.getElementById('photos-gallery-status');
+      statusEl.textContent = galleryDocs.length + ' photo' + (galleryDocs.length !== 1 ? 's' : '') +
+        (_galleryHasMore ? ' — more available' : '');
+      const moreBtn = document.getElementById('photos-gallery-more-btn');
+      moreBtn.style.display = _galleryHasMore ? '' : 'none';
+    });
+  }
+
+  function loadMoreGallery() {
+    const btn = document.getElementById('photos-gallery-more-btn');
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    fetchGalleryPage()
+      .catch(err => showToast('Failed to load more photos: ' + err.message, 'error'))
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'See more photos';
+      });
   }
 
   function populateAlbumFilter() {
@@ -2084,8 +2145,8 @@ function _getAdminDb() {
       gallery.innerHTML = '<p style="color:var(--color-gray-500);grid-column:1/-1">No photos yet.</p>';
       return;
     }
-    // Sort by takenAt first, falling back to uploadedAt (oldest first within the page for chronological browsing)
-    docs = docs.slice().sort((a, b) => docTs(a.data) - docTs(b.data));
+    // Sort by takenAt first, falling back to uploadedAt (most recent first, oldest last)
+    docs = docs.slice().sort((a, b) => docTs(b.data) - docTs(a.data));
     gallery.innerHTML = docs.map(doc => {
       const d = doc.data;
       const dateStr = fmtDocDate(d.takenAt || d.uploadedAt);
@@ -2218,6 +2279,7 @@ function _getAdminDb() {
       syncUploadBtn();
     });
     document.getElementById('photos-gallery-filter').addEventListener('change', e => renderGallery(e.target.value));
+    document.getElementById('photos-gallery-more-btn').addEventListener('click', loadMoreGallery);
     // Edit modal
     document.getElementById('photo-edit-close').addEventListener('click', closeEditModal);
     document.getElementById('photo-edit-cancel').addEventListener('click', closeEditModal);
@@ -4768,27 +4830,40 @@ function adminDashLoadCounts() {
       || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return;
   try {
     const db = _getAdminDb();
-    db.collection('photos').limit(1000).get()
-      .then(s => { const el = document.getElementById('dash-photo-count'); if (el) el.textContent = s.size; })
+    // Aggregate count() queries are computed server-side and don't transfer any
+    // document data, so they stay fast (and accurate) no matter how large a
+    // collection grows — unlike fetching up to N docs just to read .size.
+    const countInto = (collection, elId) => db.collection(collection).count().get()
+      .then(s => { const el = document.getElementById(elId); if (el) el.textContent = s.data().count; })
+      .catch(() => {
+        // Fallback for older SDKs/environments without count() support
+        return db.collection(collection).get()
+          .then(s => { const el = document.getElementById(elId); if (el) el.textContent = s.size; })
+          .catch(() => {});
+      });
+    countInto('photos', 'dash-photo-count');
+    countInto('routes', 'dash-route-count');
+    countInto('points', 'dash-point-count');
+    countInto('subscribers', 'dash-subscriber-count');
+    // Blog Posts stat card uses the real collection count, independent of the
+    // 20-row cap used just below for populating the recent-posts table.
+    db.collection('blog_posts').count().get()
+      .then(s => {
+        document.querySelectorAll('.admin-stat-card').forEach(card => {
+          if (card.querySelector('.stat-label')?.textContent === 'Blog Posts') {
+            card.querySelector('.stat-value').textContent = s.data().count;
+          }
+        });
+      })
       .catch(() => {});
-    db.collection('routes').limit(200).get()
-      .then(s => { const el = document.getElementById('dash-route-count'); if (el) el.textContent = s.size; })
-      .catch(() => {});
-    db.collection('points').limit(1000).get()
-      .then(s => { const el = document.getElementById('dash-point-count'); if (el) el.textContent = s.size; })
-      .catch(() => {});
-    db.collection('subscribers').limit(1000).get()
-      .then(s => { const el = document.getElementById('dash-subscriber-count'); if (el) el.textContent = s.size; })
-      .catch(() => {});
-    // Populate the dashboard posts table
+    // Populate the dashboard posts table (most recent 20 — the table itself is
+    // just a preview, not a total; the stat card above shows the real count)
     db.collection('blog_posts').orderBy('date', 'desc').limit(20).get()
       .then(snap => {
         const tbody = document.getElementById('dash-posts-tbody');
         if (!tbody) return;
         if (snap.empty) {
           tbody.innerHTML = '<tr><td colspan="5" style="color:var(--color-gray-500);padding:.75rem 1rem">No posts yet.</td></tr>';
-          const statEl = document.querySelector('.admin-stat-card .stat-value');
-          if (statEl && statEl.closest('.admin-stat-card').querySelector('.stat-label')?.textContent === 'Blog Posts') statEl.textContent = 0;
           return;
         }
         const rows = [];
@@ -4805,12 +4880,6 @@ function adminDashLoadCounts() {
           '</tr>');
         });
         tbody.innerHTML = rows.join('');
-        // Update the stat counter
-        document.querySelectorAll('.admin-stat-card').forEach(card => {
-          if (card.querySelector('.stat-label')?.textContent === 'Blog Posts') {
-            card.querySelector('.stat-value').textContent = snap.size;
-          }
-        });
       })
       .catch(() => {});
   } catch (e) { /* Firebase not ready */ }
