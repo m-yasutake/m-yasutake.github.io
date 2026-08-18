@@ -248,37 +248,73 @@ async function getExistingStravaIds() {
 // Matches the date segment in: strava_{id}_{YYYY-MM-DD}_{name}.gpx
 const DATE_FROM_FILENAME_RE = /strava_\d+_(\d{4}-\d{2}-\d{2})_/;
 
+// Matches the GPX metadata start time, e.g. <metadata>...<time>2026-05-12T03:14:00.000Z</time>
+const METADATA_TIME_RE = /<metadata>[\s\S]*?<time>([^<]+)<\/time>/;
+
 /**
- * For any Strava route doc that is missing `activityDate`, extract the date
- * from the `fileName` field and write it back. Safe to run on every script
- * invocation — docs that already have `activityDate` are skipped.
+ * For any Strava route doc that is missing `activityDate`, recover the exact
+ * activity start time from the GPX file's <metadata><time> tag (written at
+ * upload time — see buildGpx) and write it back. This preserves time-of-day,
+ * which matters because routes are ordered chronologically within a post by
+ * activityMs; same-day multi-activity rides would tie/misorder without it.
+ *
+ * Falls back to midnight UTC on the date parsed from the file name only if
+ * the GPX metadata time can't be read (e.g. the file is missing). Safe to
+ * run on every script invocation — docs that already have `activityDate`
+ * are skipped.
  */
 async function backfillMissingActivityDates() {
   const snap = await db.collection('routes')
     .where('source', '==', 'strava')
     .get();
 
-  const toUpdate = [];
+  const candidates = [];
   snap.forEach(doc => {
     const d = doc.data();
     if (d.activityDate) return;  // already set
-    const candidate = d.fileName || (d.storagePath ? d.storagePath.split('/').pop() : '');
-    const m = candidate.match(DATE_FROM_FILENAME_RE);
-    if (!m) {
-      console.warn(`  backfill: cannot extract date from "${candidate}" (doc ${doc.id}) — skipping`);
-      return;
-    }
-    toUpdate.push({ id: doc.id, dateStr: m[1] });
+    candidates.push({ id: doc.id, fileName: d.fileName, storagePath: d.storagePath });
   });
+
+  if (candidates.length === 0) return;
+
+  console.log(`Backfilling activityDate on ${candidates.length} route doc(s)...`);
+  const toUpdate = [];
+  for (const { id, fileName, storagePath } of candidates) {
+    let iso = null;
+    if (storagePath) {
+      try {
+        const [buf] = await bucket.file(storagePath).download();
+        const m = buf.toString('utf8').match(METADATA_TIME_RE);
+        if (m && !isNaN(Date.parse(m[1]))) iso = m[1];
+      } catch (err) {
+        console.warn(`  backfill: could not read GPX metadata for doc ${id}: ${err.message}`);
+      }
+    }
+
+    if (iso) {
+      toUpdate.push({ id, ts: admin.firestore.Timestamp.fromDate(new Date(iso)) });
+      continue;
+    }
+
+    // Fall back to date-only precision (midnight UTC) when the GPX metadata
+    // time is unavailable. This can still misorder same-day multi-activity
+    // rides, but keeps the doc from being excluded from post windows entirely.
+    const candidate = fileName || (storagePath ? storagePath.split('/').pop() : '');
+    const dm = candidate.match(DATE_FROM_FILENAME_RE);
+    if (!dm) {
+      console.warn(`  backfill: cannot extract date from "${candidate}" (doc ${id}) — skipping`);
+      continue;
+    }
+    console.warn(`  backfill: no GPX metadata time for doc ${id}, falling back to date-only "${dm[1]}"`);
+    toUpdate.push({ id, ts: admin.firestore.Timestamp.fromDate(new Date(dm[1] + 'T00:00:00Z')) });
+  }
 
   if (toUpdate.length === 0) return;
 
-  console.log(`Backfilling activityDate on ${toUpdate.length} route doc(s)...`);
   const BATCH_SIZE = 499;
   for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
     const batch = db.batch();
-    for (const { id, dateStr } of toUpdate.slice(i, i + BATCH_SIZE)) {
-      const ts = admin.firestore.Timestamp.fromDate(new Date(dateStr + 'T00:00:00Z'));
+    for (const { id, ts } of toUpdate.slice(i, i + BATCH_SIZE)) {
       batch.update(db.collection('routes').doc(id), { activityDate: ts });
     }
     await batch.commit();
