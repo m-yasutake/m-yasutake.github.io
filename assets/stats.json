@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 1950.5,
-    "totalElevationGain": 29976,
-    "rideCount": 35,
+    "totalDistanceKm": 2020.9,
+    "totalElevationGain": 30987,
+    "rideCount": 36,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      64.881889,
-      11.604534
+      65.215281,
+      12.043319
     ],
-    "currentRouteName": "Soil mates",
-    "currentCity": "Nærøysund"
+    "currentRouteName": "Over dew",
+    "currentCity": "Sømna"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-17T02:54:47.188Z"
+  "generatedAt": "2026-08-18T02:50:09.329Z"
 }
