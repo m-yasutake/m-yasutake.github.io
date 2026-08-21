@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2020.9,
-    "totalElevationGain": 30987,
-    "rideCount": 36,
+    "totalDistanceKm": 2199.3,
+    "totalElevationGain": 32541,
+    "rideCount": 38,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      65.215281,
-      12.043319
+      66.281462,
+      13.259637
     ],
-    "currentRouteName": "Over dew",
-    "currentCity": "Sømna"
+    "currentRouteName": "Spoke too soon",
+    "currentCity": "Nesna"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-20T02:51:09.369Z"
+  "generatedAt": "2026-08-21T02:57:14.466Z"
 }
