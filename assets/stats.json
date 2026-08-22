@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2199.3,
-    "totalElevationGain": 32541,
-    "rideCount": 38,
+    "totalDistanceKm": 2309.4,
+    "totalElevationGain": 33856,
+    "rideCount": 39,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      66.281462,
-      13.259637
+      66.756549,
+      13.671077
     ],
-    "currentRouteName": "Spoke too soon",
-    "currentCity": "Nesna"
+    "currentRouteName": "Tonnel",
+    "currentCity": "Meløy"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-21T02:57:14.466Z"
+  "generatedAt": "2026-08-22T02:48:49.314Z"
 }
