@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2309.4,
-    "totalElevationGain": 33856,
-    "rideCount": 39,
+    "totalDistanceKm": 2391.4,
+    "totalElevationGain": 34779,
+    "rideCount": 40,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      66.756549,
-      13.671077
+      67.07758,
+      14.2906
     ],
-    "currentRouteName": "Tonnel",
-    "currentCity": "Meløy"
+    "currentRouteName": "Moving fjordward",
+    "currentCity": "Gildeskål"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-22T02:48:49.314Z"
+  "generatedAt": "2026-08-23T02:56:48.689Z"
 }
