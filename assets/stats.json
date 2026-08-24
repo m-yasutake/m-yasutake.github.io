@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2391.4,
-    "totalElevationGain": 34779,
-    "rideCount": 40,
+    "totalDistanceKm": 2456.5,
+    "totalElevationGain": 35758,
+    "rideCount": 41,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      67.07758,
-      14.2906
+      67.283024,
+      14.376762
     ],
-    "currentRouteName": "Moving fjordward",
-    "currentCity": "Gildeskål"
+    "currentRouteName": "Off de’railleur",
+    "currentCity": "Bodø"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-23T02:56:48.689Z"
+  "generatedAt": "2026-08-24T02:58:14.401Z"
 }
