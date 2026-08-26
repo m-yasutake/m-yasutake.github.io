@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2456.5,
-    "totalElevationGain": 35758,
-    "rideCount": 41,
+    "totalDistanceKm": 2498.3,
+    "totalElevationGain": 36307,
+    "rideCount": 42,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      67.283024,
-      14.376762
+      68.059408,
+      13.313024
     ],
-    "currentRouteName": "Off de’railleur",
-    "currentCity": "Bodø"
+    "currentRouteName": "Lofoten/10",
+    "currentCity": "Flakstad"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-25T02:53:26.631Z"
+  "generatedAt": "2026-08-26T02:59:11.971Z"
 }
