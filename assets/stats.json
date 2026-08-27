@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2498.3,
-    "totalElevationGain": 36307,
-    "rideCount": 42,
+    "totalDistanceKm": 2605,
+    "totalElevationGain": 37301,
+    "rideCount": 43,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      68.059408,
-      13.313024
+      68.296904,
+      14.701776
     ],
-    "currentRouteName": "Lofoten/10",
-    "currentCity": "Flakstad"
+    "currentRouteName": "Sneak a peak",
+    "currentCity": "Vågan"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-26T02:59:11.971Z"
+  "generatedAt": "2026-08-27T12:14:11.328Z"
 }
