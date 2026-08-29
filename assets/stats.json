@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2605,
-    "totalElevationGain": 37301,
-    "rideCount": 43,
+    "totalDistanceKm": 2821.8,
+    "totalElevationGain": 38886,
+    "rideCount": 45,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      68.296904,
-      14.701776
+      69.295554,
+      15.992284
     ],
-    "currentRouteName": "Sneak a peak",
-    "currentCity": "Vågan"
+    "currentRouteName": "Ride in peace",
+    "currentCity": "Andøy"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-28T13:39:33.191Z"
+  "generatedAt": "2026-08-29T08:31:06.769Z"
 }
