@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2821.8,
-    "totalElevationGain": 38886,
-    "rideCount": 45,
+    "totalDistanceKm": 2903.2,
+    "totalElevationGain": 39934,
+    "rideCount": 46,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      69.295554,
-      15.992284
+      69.467368,
+      17.658687
     ],
-    "currentRouteName": "Ride in peace",
-    "currentCity": "Andøy"
+    "currentRouteName": "Tyred",
+    "currentCity": "Senja"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-08-29T08:31:06.769Z"
+  "generatedAt": "2026-08-30T07:44:18.733Z"
 }
