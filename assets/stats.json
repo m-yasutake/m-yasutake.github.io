@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 2980,
-    "totalElevationGain": 40785,
-    "rideCount": 47,
+    "totalDistanceKm": 3054.2,
+    "totalElevationGain": 41501,
+    "rideCount": 48,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      69.653637,
-      18.961406
+      69.604385,
+      20.557169
     ],
-    "currentRouteName": "Just trolling",
-    "currentCity": "Tromsø"
+    "currentRouteName": "Ferry last ferry",
+    "currentCity": "Kåfjord"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-09-01T07:04:28.206Z"
+  "generatedAt": "2026-09-02T06:41:56.609Z"
 }
