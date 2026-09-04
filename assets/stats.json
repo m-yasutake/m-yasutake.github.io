@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 3164.5,
-    "totalElevationGain": 42783,
-    "rideCount": 49,
+    "totalDistanceKm": 3247.3,
+    "totalElevationGain": 43632,
+    "rideCount": 50,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      69.847753,
-      21.896419
+      70.053843,
+      22.984515
     ],
-    "currentRouteName": "In gear",
-    "currentCity": "Kvænangen"
+    "currentRouteName": "Dramallama",
+    "currentCity": "Alta"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-09-03T06:45:04.298Z"
+  "generatedAt": "2026-09-04T06:51:40.369Z"
 }
