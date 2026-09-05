@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 3247.3,
-    "totalElevationGain": 43632,
-    "rideCount": 50,
+    "totalDistanceKm": 3354,
+    "totalElevationGain": 44938,
+    "rideCount": 51,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      70.053843,
-      22.984515
+      70.312131,
+      24.20554
     ],
-    "currentRouteName": "Dramallama",
-    "currentCity": "Alta"
+    "currentRouteName": "Awefally cold",
+    "currentCity": "Hammerfest"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-09-04T06:51:40.369Z"
+  "generatedAt": "2026-09-05T06:35:40.681Z"
 }
