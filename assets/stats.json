@@ -31,20 +31,20 @@
     "currentRouteName": "Donemark"
   },
   "norway": {
-    "totalDistanceKm": 3354,
-    "totalElevationGain": 44938,
-    "rideCount": 51,
+    "totalDistanceKm": 3572.1,
+    "totalElevationGain": 47604,
+    "rideCount": 53,
     "tripStartPosition": [
       58.148908,
       7.998537
     ],
     "tripStartCity": "Kristiansand",
     "currentPosition": [
-      70.312131,
-      24.20554
+      70.982254,
+      25.988676
     ],
-    "currentRouteName": "Awefally cold",
-    "currentCity": "Hammerfest"
+    "currentRouteName": "Capeability",
+    "currentCity": "Nordkapp"
   },
   "tripDates": {
     "japan": {
@@ -60,5 +60,5 @@
       "to": "2026-09-10"
     }
   },
-  "generatedAt": "2026-09-07T06:53:24.024Z"
+  "generatedAt": "2026-09-08T06:48:45.503Z"
 }
