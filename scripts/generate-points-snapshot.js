@@ -4,9 +4,13 @@
  * generate-points-snapshot.js
  *
  * Downloads all point documents from the Firestore 'points' collection and
- * writes a points snapshot plus server-prebuilt dynamic cluster levels to
- * Firebase Storage at points/points.json. The planning map page fetches this
- * file on load and switches cluster levels by zoom without clustering on-device.
+ * writes per-country points snapshots plus server-prebuilt dynamic cluster
+ * levels to Firebase Storage: points/points.json (Japan — every point not
+ * explicitly tagged Norway or Denmark, since Japan points predate the
+ * `country` field and were never backfilled), points/norway-points.json,
+ * points/denmark-points.json. Each country's planning map page fetches its
+ * file on load and switches cluster levels by zoom without clustering
+ * on-device.
  *
  * Usage:
  *   FIREBASE_SERVICE_ACCOUNT='<json>' node generate-points-snapshot.js
@@ -21,6 +25,7 @@ const path = require('path');
 const fs   = require('fs');
 
 const admin = require('firebase-admin');
+const PointTypes = require('../js/point-types.js');
 
 // ── Credentials ───────────────────────────────────────────────────────────────
 let serviceAccount;
@@ -57,52 +62,105 @@ const SERVER_CLUSTER_MAX_ZOOM = 7;
 const SERVER_CLUSTER_DISABLE_ZOOM = 8; // above this zoom render raw points for full detail
 const BASE_CLUSTER_CELL_SIZE = 10.0; // degrees at min zoom; cell size halves each zoom level for dynamic dissolve
 
-function normalizePointType(rawType) {
-  const type = rawType ? String(rawType).trim() : '';
-  if (!type) return 'Other';
-  if (/foot\s*bath/i.test(type)) return 'Foot Bath';
-  if (/hotel\s*onsen|onsen.*hotel|Hotel\/Ryokan Onsen/i.test(type)) return 'Hotel Onsen';
-  if (/super\s*sento/i.test(type)) return 'Super Sento';
-  if (/onsen|community\s*center/i.test(type)) return 'Onsen';
-  if (/camp/i.test(type)) return 'Campsite';
-  if (/roadside\s*station/i.test(type)) return 'Roadside Station';
-  if (/must\s*see/i.test(type)) return 'Must See';
-  if (/hotel/i.test(type)) return 'Hotel';
-  if (/other/i.test(type)) return 'Other';
-  return type;
+// All per-country normalization/icon rules live in js/point-types.js, shared
+// with the frontend (js/japan-map.js, js/norway-map.js, js/denmark-map.js)
+// so this generator can't drift out of sync with what the map actually
+// renders. PointTypes.<country>.normalize returns '_default' for unmatched
+// types; buildServerClustersForZoom below expects 'Other' for that case, so
+// wrap it.
+function wrapDefaultAsOther(normalizeFn) {
+  return (rawType) => {
+    const normalized = normalizeFn(rawType);
+    return normalized === '_default' ? 'Other' : normalized;
+  };
+}
+const normalizePointType        = wrapDefaultAsOther(PointTypes.japan.normalize);
+const normalizeNorwayPointType  = wrapDefaultAsOther(PointTypes.norway.normalize);
+const normalizeDenmarkPointType = wrapDefaultAsOther(PointTypes.denmark.normalize);
+
+// Counts visited onsens among Japan's points and writes stats/japan so
+// index.html can read a single document instead of downloading the entire
+// points collection. Uses { merge: true } so route stats (written by
+// fetch-strava-rides.js) are preserved. Respects TRIP_AFTER_DATE /
+// TRIP_BEFORE_DATE to cap the count to a specific trip.
+const ONSEN_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
+async function writeJapanOnsenStats(japanPoints) {
+  const afterMs  = process.env.TRIP_AFTER_DATE  ? new Date(process.env.TRIP_AFTER_DATE).getTime()  : null;
+  const beforeMs = process.env.TRIP_BEFORE_DATE ? new Date(process.env.TRIP_BEFORE_DATE).getTime() : null;
+  if (afterMs || beforeMs) {
+    console.log(`Counting onsens uploaded after ${process.env.TRIP_AFTER_DATE || '(any)'}` +
+                ` and before ${process.env.TRIP_BEFORE_DATE || '(any)'}`);
+  }
+  let onsensCount = 0;
+  for (const p of japanPoints) {
+    if (!p.visited) continue;
+    if (afterMs || beforeMs) {
+      if (p.uploadedAt !== null) {
+        if (afterMs  && p.uploadedAt < afterMs)  continue;
+        if (beforeMs && p.uploadedAt > beforeMs) continue;
+      }
+    }
+    const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
+    if (ONSEN_RE.test(rawType)) onsensCount++;
+  }
+  console.log(`Onsen count: ${onsensCount}`);
+  await db.collection('stats').doc('japan').set(
+    { onsensCount, statsUpdatedAt: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+  console.log('  ✓ stats/japan onsensCount updated.');
 }
 
-function normalizeDenmarkPointType(rawType) {
-  const type = rawType ? String(rawType).trim() : '';
-  if (!type) return 'Other';
-  if (/^3071$|fri.?telt|wild.?camp/i.test(type))       return 'Wild Camping';
-  if (/camp/i.test(type))                               return 'Campsite';
-  if (/roadside\s*station/i.test(type))                 return 'Roadside Station';
-  if (/must\s*see/i.test(type))                         return 'Must See';
-  if (/hotel/i.test(type))                              return 'Hotel';
-  if (/^3012$|shelter/i.test(type))                     return 'Shelter';
-  if (/^3022$|kano|kajak|canoe|kayak/i.test(type))      return 'Canoe/Kayak Site';
-  if (/^3031$|teltplads|tent.?site/i.test(type))        return 'Tent Site';
-  if (/^3081$|hæng|hammock/i.test(type))                return 'Hammock Grove';
-  if (/^3091$|bålhytte|fire.?hut/i.test(type))          return 'Fire Hut';
-  return 'Other';
-}
+// Per-country snapshot config, used by the loop in main() below.
+//
+// Japan predates the multi-country feature — its snapshot used to just be
+// "all points" because Japan was the only country. Norway/Denmark points
+// were later added to the same Firestore collection and tagged with an
+// explicit `country`, but Japan points were never backfilled with
+// country: 'Japan' (only 6 of ~13.6k have it — see the point-type drift note
+// in js/point-types.js for the same class of issue). So its filter means
+// "not explicitly another country", not "explicitly tagged Japan" — and it
+// keeps the legacy points.json/points/points.json file names instead of the
+// japan-points.json pattern the other countries use.
+//
+// To add another country: add an entry here (and, if it needs frontend
+// icons/normalization, a block in js/point-types.js). Only Japan needs
+// extraStats — it's an optional hook for a country-specific side effect
+// beyond the snapshot file itself.
+const COUNTRY_SNAPSHOTS = [
+  {
+    key: 'japan',
+    filter: (p) => p.country !== 'Norway' && p.country !== 'Denmark',
+    normalize: normalizePointType,
+    localFile: 'points.json',
+    storageFile: 'points/points.json',
+    extraStats: writeJapanOnsenStats
+  },
+  {
+    key: 'norway',
+    filter: (p) => p.country === 'Norway',
+    normalize: normalizeNorwayPointType,
+    localFile: 'norway-points.json',
+    storageFile: 'points/norway-points.json'
+  },
+  {
+    key: 'denmark',
+    filter: (p) => p.country === 'Denmark',
+    normalize: normalizeDenmarkPointType,
+    localFile: 'denmark-points.json',
+    storageFile: 'points/denmark-points.json'
+  }
+];
 
-function normalizeNorwayPointType(rawType) {
-  const type = rawType ? String(rawType).trim() : '';
-  if (!type) return 'Other';
-  if (/camp/i.test(type))                                           return 'Campsite';
-  if (/roadside\s*station/i.test(type))                             return 'Roadside Station';
-  if (/must\s*see/i.test(type))                                     return 'Must See';
-  if (/hotel/i.test(type))                                          return 'Hotel';
-  if (/onsen/i.test(type))                                          return 'Onsen';
-  if (/dnt.+special|dnt.+code|frilufts/i.test(type))               return 'DNT Code Hut';
-  if (/dnt/i.test(type))                                            return 'DNT Hut';
-  if (/cave|rock.?shelter/i.test(type))                             return 'Cave';
-  if (/municipal|day.?trip/i.test(type))                            return 'Day Hut';
-  if (/rental/i.test(type))                                         return 'Rental';
-  if (/open.?shelter|lean.?to|shelter|hut|koie|hytte/i.test(type)) return 'Open Shelter';
-  return 'Other';
+// A large share of Japan points only carry their link under a metadata field
+// (metadata.website, in practice, but check every variant the old frontend
+// code checked) rather than the top-level `url` field the snapshot's
+// consumers read — resolve it once here so no consumer has to special-case
+// metadata lookups themselves.
+function resolvePointUrl(d) {
+  if (d.url) return d.url;
+  const m = d.metadata || {};
+  return m.url || m.URL || m.link || m.Link || m.website || m.Website || m.page || m.Page || null;
 }
 
 function getClusterCellSizeForZoom(zoom) {
@@ -194,7 +252,7 @@ async function main() {
         name:     d.name     || '',
         lat:      d.lat,
         lon:      d.lon,
-        url:      d.url      || null,
+        url:      resolvePointUrl(d),
         metadata: d.metadata || {},
         fileName: d.fileName || null,
         visited:  d.visited  || false,
@@ -212,180 +270,65 @@ async function main() {
 
   console.log(`Total: ${points.length} point(s).`);
 
-  // Count visited onsens and write to stats/japan so index.html can read
-  // a single document instead of downloading the entire points collection.
-  // Uses { merge: true } so route stats (written by fetch-strava-rides.js) are preserved.
-  // Respects TRIP_AFTER_DATE / TRIP_BEFORE_DATE to cap to a specific trip.
-  const afterMs  = process.env.TRIP_AFTER_DATE  ? new Date(process.env.TRIP_AFTER_DATE).getTime()  : null;
-  const beforeMs = process.env.TRIP_BEFORE_DATE ? new Date(process.env.TRIP_BEFORE_DATE).getTime() : null;
-  if (afterMs || beforeMs) {
-    console.log(`Counting onsens uploaded after ${process.env.TRIP_AFTER_DATE || '(any)'}` +
-                ` and before ${process.env.TRIP_BEFORE_DATE || '(any)'}`);
-  }
-  const ONSEN_RE = /onsen|foot\s*bath|super\s*sento|sento|community\s*center/i;
-  let onsensCount = 0;
-  for (const p of points) {
-    if (!p.visited) continue;
-    if (afterMs || beforeMs) {
-      if (p.uploadedAt !== null) {
-        if (afterMs  && p.uploadedAt < afterMs)  continue;
-        if (beforeMs && p.uploadedAt > beforeMs) continue;
-      }
-    }
-    const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
-    if (ONSEN_RE.test(rawType)) onsensCount++;
-  }
-  console.log(`Onsen count: ${onsensCount}`);
-  await db.collection('stats').doc('japan').set(
-    { onsensCount, statsUpdatedAt: admin.firestore.FieldValue.serverTimestamp() },
-    { merge: true }
-  );
-  console.log('  ✓ stats/japan onsensCount updated.');
-
-  const clustersByZoom = buildServerClusterLevels(points);
-  Object.keys(clustersByZoom).forEach((zoom) => {
-    console.log(`Server clusters @ z${zoom}: ${clustersByZoom[zoom].length}`);
-  });
-
-  // Serialise to JSON — wrap in an envelope so the client can detect the
-  // generation time and query Firestore for only the delta (new points added
-  // since the snapshot was taken).
   const generatedAt = new Date().toISOString();
-  const json   = JSON.stringify({
-    generatedAt,
-    points,
-    clustersByZoom,
-    clusterZoomRange: { min: SERVER_CLUSTER_MIN_ZOOM, max: SERVER_CLUSTER_MAX_ZOOM, disableClusteringAtZoom: SERVER_CLUSTER_DISABLE_ZOOM }
-  });
-  const buffer = Buffer.from(json, 'utf8');
-  console.log(`Snapshot size: ${(buffer.length / 1024).toFixed(1)} KB`);
 
-  // Write a local copy to the repo so GitHub Pages serves it as a static asset.
-  // This avoids a round-trip to Firebase Storage on every page load.
-  const localPath = path.join(__dirname, '..', 'assets', 'points.json');
-  fs.writeFileSync(localPath, json, 'utf8');
-  console.log(`Local snapshot written to ${localPath}`);
+  // ── Per-country snapshots (Japan, Norway, Denmark, ...) ─────────────────────
+  // To add a country here, add an entry to COUNTRY_SNAPSHOTS above (and, if it
+  // needs frontend icons/normalization, a block in js/point-types.js).
+  for (const country of COUNTRY_SNAPSHOTS) {
+    const countryPoints = points.filter(country.filter);
+    console.log(`\n${country.key} points: ${countryPoints.length}`);
 
-  // Upload to Firebase Storage
-  console.log('Uploading points/points.json to Firebase Storage...');
-  const file = bucket.file('points/points.json');
-  await file.save(buffer, {
-    contentType: 'application/json',
-    metadata: {
-      cacheControl: 'public, max-age=300'
+    if (countryPoints.length === 0) {
+      console.log(`No ${country.key} points found — ${country.localFile} not written.`);
+      continue;
     }
-  });
 
-  // Make the file publicly readable so the browser can fetch it without auth.
-  // This works when uniform bucket-level access is disabled (the default for
-  // Firebase Storage buckets created before 2023). If your bucket has uniform
-  // access enabled, grant the Storage Object Viewer role to allUsers via IAM
-  // instead and remove this line.
-  try {
-    await file.makePublic();
-    console.log('File made publicly readable.');
-  } catch (err) {
-    console.warn(
-      'Could not set public ACL (this is fine if uniform bucket-level access is\n' +
-      'enabled — ensure allUsers has Storage Object Viewer via IAM instead):\n',
-      err.message
-    );
-  }
+    if (country.extraStats) await country.extraStats(countryPoints);
 
-  console.log(`Done. ${points.length} point(s) written to points/points.json (generatedAt: ${generatedAt}).`);
-
-  // ── Norway snapshot ───────────────────────────────────────────────────────────
-  const norwayPoints = points.filter(p => p.country === 'Norway');
-  console.log(`\nNorway points: ${norwayPoints.length}`);
-
-  if (norwayPoints.length > 0) {
-    const norwayClustersByZoom = buildServerClusterLevels(norwayPoints, normalizeNorwayPointType);
-    Object.keys(norwayClustersByZoom).forEach(zoom => {
-      console.log(`Norway server clusters @ z${zoom}: ${norwayClustersByZoom[zoom].length}`);
+    const clustersByZoom = buildServerClusterLevels(countryPoints, country.normalize);
+    Object.keys(clustersByZoom).forEach(zoom => {
+      console.log(`${country.key} server clusters @ z${zoom}: ${clustersByZoom[zoom].length}`);
     });
 
-    const norwayJson = JSON.stringify({
+    const countryJson = JSON.stringify({
       generatedAt,
-      points: norwayPoints,
-      clustersByZoom: norwayClustersByZoom,
+      points: countryPoints,
+      clustersByZoom,
       clusterZoomRange: {
         min: SERVER_CLUSTER_MIN_ZOOM,
         max: SERVER_CLUSTER_MAX_ZOOM,
         disableClusteringAtZoom: SERVER_CLUSTER_DISABLE_ZOOM
       }
     });
-    const norwayBuffer = Buffer.from(norwayJson, 'utf8');
-    console.log(`Norway snapshot size: ${(norwayBuffer.length / 1024).toFixed(1)} KB`);
+    const countryBuffer = Buffer.from(countryJson, 'utf8');
+    console.log(`${country.key} snapshot size: ${(countryBuffer.length / 1024).toFixed(1)} KB`);
 
-    const norwayLocalPath = path.join(__dirname, '..', 'assets', 'norway-points.json');
-    fs.writeFileSync(norwayLocalPath, norwayJson, 'utf8');
-    console.log(`Norway local snapshot written to ${norwayLocalPath}`);
+    const countryLocalPath = path.join(__dirname, '..', 'assets', country.localFile);
+    fs.writeFileSync(countryLocalPath, countryJson, 'utf8');
+    console.log(`${country.key} local snapshot written to ${countryLocalPath}`);
 
-    console.log('Uploading points/norway-points.json to Firebase Storage...');
-    const norwayFile = bucket.file('points/norway-points.json');
-    await norwayFile.save(norwayBuffer, {
+    console.log(`Uploading ${country.storageFile} to Firebase Storage...`);
+    const countryFile = bucket.file(country.storageFile);
+    await countryFile.save(countryBuffer, {
       contentType: 'application/json',
       metadata: { cacheControl: 'public, max-age=300' }
     });
+    // Make the file publicly readable so the browser can fetch it without
+    // auth. This works when uniform bucket-level access is disabled (the
+    // default for Firebase Storage buckets created before 2023). If your
+    // bucket has uniform access enabled, grant the Storage Object Viewer
+    // role to allUsers via IAM instead and remove this.
     try {
-      await norwayFile.makePublic();
-      console.log('Norway file made publicly readable.');
+      await countryFile.makePublic();
+      console.log(`${country.key} file made publicly readable.`);
     } catch (err) {
       console.warn(
-        'Could not set public ACL for Norway file (fine if uniform bucket-level access is enabled):\n',
+        `Could not set public ACL for ${country.key} file (fine if uniform bucket-level access is enabled):\n`,
         err.message
       );
     }
-    console.log(`Norway done. ${norwayPoints.length} point(s) written.`);
-  } else {
-    console.log('No Norway points found — norway-points.json not written.');
-  }
-
-  // ── Denmark snapshot ──────────────────────────────────────────
-  const denmarkPoints = points.filter(p => p.country === 'Denmark');
-  console.log(`\nDenmark points: ${denmarkPoints.length}`);
-
-  if (denmarkPoints.length > 0) {
-    const denmarkClustersByZoom = buildServerClusterLevels(denmarkPoints, normalizeDenmarkPointType);
-    Object.keys(denmarkClustersByZoom).forEach(zoom => {
-      console.log(`Denmark server clusters @ z${zoom}: ${denmarkClustersByZoom[zoom].length}`);
-    });
-
-    const denmarkJson = JSON.stringify({
-      generatedAt,
-      points: denmarkPoints,
-      clustersByZoom: denmarkClustersByZoom,
-      clusterZoomRange: {
-        min: SERVER_CLUSTER_MIN_ZOOM,
-        max: SERVER_CLUSTER_MAX_ZOOM,
-        disableClusteringAtZoom: SERVER_CLUSTER_DISABLE_ZOOM
-      }
-    });
-    const denmarkBuffer = Buffer.from(denmarkJson, 'utf8');
-    console.log(`Denmark snapshot size: ${(denmarkBuffer.length / 1024).toFixed(1)} KB`);
-
-    const denmarkLocalPath = path.join(__dirname, '..', 'assets', 'denmark-points.json');
-    fs.writeFileSync(denmarkLocalPath, denmarkJson, 'utf8');
-    console.log(`Denmark local snapshot written to ${denmarkLocalPath}`);
-
-    console.log('Uploading points/denmark-points.json to Firebase Storage...');
-    const denmarkFile = bucket.file('points/denmark-points.json');
-    await denmarkFile.save(denmarkBuffer, {
-      contentType: 'application/json',
-      metadata: { cacheControl: 'public, max-age=300' }
-    });
-    try {
-      await denmarkFile.makePublic();
-      console.log('Denmark file made publicly readable.');
-    } catch (err) {
-      console.warn(
-        'Could not set public ACL for Denmark file (fine if uniform bucket-level access is enabled):\n',
-        err.message
-      );
-    }
-    console.log(`Denmark done. ${denmarkPoints.length} point(s) written.`);
-  } else {
-    console.log('No Denmark points found — denmark-points.json not written.');
+    console.log(`${country.key} done. ${countryPoints.length} point(s) written.`);
   }
 }
 

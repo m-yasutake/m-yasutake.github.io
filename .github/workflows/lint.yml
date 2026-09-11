@@ -1,0 +1,37 @@
+# .github/workflows/lint.yml
+#
+# Workflow: Lint
+#
+# Runs ESLint over js/ and scripts/ on every push and pull request. See
+# config/eslint.config.js for why `no-undef` is off for js/ (its plain
+# <script> tags intentionally share one global scope — there's no bundler,
+# see CLAUDE.md) and on for scripts/ (Node/CommonJS, where an undefined
+# reference is a real bug).
+#
+# No secrets required.
+
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install lint dependencies
+        run: npm install
+
+      - name: Run ESLint
+        run: npm run lint

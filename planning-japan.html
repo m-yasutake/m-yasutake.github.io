@@ -77,120 +77,6 @@
   .roots-btn.active { border-color: var(--color-secondary); background: var(--color-secondary); color: var(--color-white); }
   .roots-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  #route-stats {
-    background: var(--color-gray-100);
-    padding: 1em;
-    border-radius: 6px;
-    margin-bottom: 1em;
-    font-size: 0.9em;
-    display: none;
-    border: 1px solid var(--color-gray-200);
-  }
-
-  #route-stats table { width: 100%; border-collapse: collapse; }
-  #route-stats th, #route-stats td { text-align: left; padding: 0.3em 0.6em; border-bottom: 1px solid var(--color-gray-200); }
-  #route-stats th { color: var(--color-primary); }
-
-  .route-color-dot {
-    display: inline-block;
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    margin-right: 0.3em;
-  }
-
-  .delete-btn { background: none; border: none; color: var(--color-coral); cursor: pointer; font-size: 0.8em; padding: 0.2em 0.4em; border-radius: 3px; margin-left: 0.5em; }
-  .delete-btn:hover { background: rgba(231, 111, 81, 0.12); }
-
-  .info-btn { background: none; border: none; color: var(--color-secondary); cursor: pointer; font-size: 0.8em; padding: 0.2em 0.4em; border-radius: 3px; margin-left: 0.3em; }
-  .info-btn:hover { background: rgba(42, 157, 143, 0.12); }
-
-  /* Route toggles panel */
-  #route-panel {
-    margin-top: 1em;
-  }
-  .route-section {
-    margin-bottom: 0.75em;
-  }
-  .route-section-header {
-    font-size: 0.78em;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-gray-600);
-    margin-bottom: 0.4em;
-    padding-bottom: 0.25em;
-    border-bottom: 1px solid var(--color-gray-200);
-  }
-  .route-section-header.our-track-header {
-    color: #c0501a;
-  }
-  .route-section .roots-controls {
-    margin-bottom: 0;
-    flex-wrap: wrap;
-  }
-  /* Current-location marker */
-  .current-location-icon {
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-  }
-
-  .meta-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .meta-overlay.open { display: flex; }
-
-  .meta-modal {
-    background: var(--color-white);
-    border: 1px solid var(--color-gray-200);
-    border-radius: 8px;
-    padding: 1.5em;
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-    color: var(--color-dark);
-    box-shadow: var(--shadow-xl);
-  }
-
-  .meta-modal h3 { margin: 0 0 1em 0; color: var(--color-primary); font-size: 1.1em; font-family: var(--font-heading); }
-
-  .meta-modal label {
-    display: block;
-    font-size: 0.85em;
-    color: var(--color-gray-600);
-    margin-bottom: 0.3em;
-    margin-top: 0.8em;
-  }
-
-  .meta-modal input[type="text"],
-  .meta-modal textarea {
-    width: 100%;
-    padding: 0.5em;
-    background: var(--color-gray-100);
-    border: 1px solid var(--color-gray-200);
-    border-radius: 4px;
-    color: var(--color-dark);
-    font-size: 0.9em;
-    font-family: inherit;
-    box-sizing: border-box;
-  }
-
-  .meta-modal input[type="text"]:focus,
-  .meta-modal textarea:focus { outline: none; border-color: var(--color-secondary); }
-  .meta-modal textarea { resize: vertical; min-height: 60px; }
-
-  .meta-modal .meta-actions { margin-top: 1.2em; display: flex; gap: 0.5em; justify-content: flex-end; }
-  .meta-modal .meta-link { color: var(--color-secondary); text-decoration: none; word-break: break-all; }
-  .meta-modal .meta-link:hover { text-decoration: underline; }
-  .meta-modal .meta-view-value { font-size: 0.95em; margin-bottom: 0.2em; color: var(--color-dark); }
-  .meta-modal .meta-view-value.empty { color: var(--color-gray-400); font-style: italic; }
-
   #map-loading {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -205,9 +91,7 @@
   }
 
   #map-loading.fade-out { opacity: 0; pointer-events: none; }
-  #map-loading .loading-text { color: rgba(255,255,255,0.85); font-size: 0.9em; margin-bottom: 0.8em; }
-  #map-loading .progress-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; }
-  #map-loading .progress-fill { height: 100%; width: 0%; background: var(--color-accent); border-radius: 2px; transition: width 0.3s ease; }
+  #map-loading .loading-text { color: rgba(255,255,255,0.85); font-size: 0.9em; }
   #map-wrapper { position: relative; }
 
   .marker-cluster {
@@ -318,57 +202,6 @@
     line-height: 1.4;
   }
 
-  .timeline { position: relative; padding-left: 2rem; }
-  .timeline::before {
-    content: '';
-    position: absolute;
-    left: .5rem; top: 0; bottom: 0;
-    width: 2px;
-    background: linear-gradient(to bottom, var(--color-secondary), var(--color-accent));
-    border-radius: 2px;
-  }
-
-  .timeline-item { position: relative; margin-bottom: 1.5rem; }
-  .timeline-dot {
-    position: absolute;
-    left: -1.625rem; top: .35rem;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--color-secondary);
-    border: 3px solid var(--color-white);
-    box-shadow: 0 0 0 2px var(--color-secondary);
-  }
-
-  .timeline-content {
-    background: var(--color-white);
-    border-radius: var(--radius-md);
-    padding: 1rem 1.25rem;
-    border: 1px solid var(--color-gray-200);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .timeline-date { font-size: .75rem; font-weight: 700; color: var(--color-secondary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem; }
-  .timeline-content h4 { font-size: 1rem; margin-bottom: .25rem; }
-  .timeline-content p { font-size: .85rem; color: var(--color-gray-600); margin: 0; }
-
-  .pack-list { list-style: none; padding: 0; }
-  .pack-list li { display: flex; align-items: center; gap: .75rem; padding: .6rem 0; border-bottom: 1px solid var(--color-gray-100); font-size: .9rem; }
-  .pack-list li:last-child { border-bottom: none; }
-
-  .pack-check {
-    width: 20px; height: 20px;
-    border-radius: 4px;
-    border: 2px solid var(--color-gray-300);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all var(--transition);
-  }
-
-  .pack-check.checked { background: var(--color-secondary); border-color: var(--color-secondary); color: var(--color-white); }
-
   /* ── Fullscreen map toggle ──────────────────────────────── */
   #fullscreen-btn {
     position: absolute;
@@ -458,71 +291,10 @@
 </div>
 
 <!-- Navigation -->
-<nav class="navbar">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
-    <ul class="nav-links">
-      <li><a href="index.html" data-i18n="nav.home">Home</a></li>
-      <li class="nav-dropdown-item">
-        <a href="#" class="nav-dropdown-toggle"><span data-i18n="nav.trips">Trips</span> <span class="nav-arrow">▼</span></a>
-        <ul class="nav-dropdown-menu">
-          <li><a href="japan.html" data-i18n="nav.japan">Japan</a></li>
-          <li><a href="denmark.html" data-i18n="nav.denmark">Denmark</a></li>
-          <li><a href="norway.html" data-i18n="nav.norway">Norway</a></li>
-        </ul>
-      </li>
-      <li class="nav-dropdown-item">
-        <a href="#" class="nav-dropdown-toggle active"><span data-i18n="nav.planning">Planning</span> <span class="nav-arrow">▼</span></a>
-        <ul class="nav-dropdown-menu">
-          <li><a href="planning-japan.html" class="active" data-i18n="nav.japan">Japan</a></li>
-          <li><a href="planning-denmark.html" data-i18n="nav.denmark">Denmark</a></li>
-          <li><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></li>
-        </ul>
-      </li>
-      <li><a href="blog.html" data-i18n="nav.blog">Blog</a></li>
-      <li><a href="gear.html" data-i18n="nav.gear">Gear</a></li>
-      <li class="admin-only-link" style="display:none"><a href="admin.html" data-i18n="nav.admin">Admin</a></li>
-    </ul>
-    <div class="nav-actions">
-      <div class="lang-dropdown">
-        <button class="lang-toggle-btn"><span data-i18n="nav.lang">🌐 Language</span> <span class="lang-arrow">▼</span></button>
-        <div class="lang-menu">
-          <button class="lang-option" data-lang="en">English</button>
-          <button class="lang-option" data-lang="ja">日本語</button>
-          <button class="lang-option" data-lang="no">Norsk</button>
-        </div>
-      </div>
-      <button class="nav-subscribe-btn" onclick="openSubscribeModal()" data-i18n="nav.subscribe">🔔 Subscribe</button>
-    </div>
-    <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
-  </div>
-</nav>
+<nav class="navbar" id="site-navbar"></nav>
 
 <!-- Mobile Menu -->
-<div class="mobile-menu">
-  <a href="index.html" data-i18n="mobile.home">🏠 Home</a>
-  <div class="mobile-nav-group">
-    <span class="mobile-nav-group-label" data-i18n="nav.trips">Trips</span>
-    <a href="japan.html" data-i18n="mobile.japan">Japan</a>
-    <a href="denmark.html" data-i18n="mobile.denmark">Denmark</a>
-    <a href="norway.html" data-i18n="mobile.norway">Norway</a>
-  </div>
-  <div class="mobile-nav-group">
-    <span class="mobile-nav-group-label" data-i18n="nav.planning">Planning</span>
-    <a href="planning-japan.html" class="active" data-i18n="mobile.japan">Japan</a>
-    <a href="planning-denmark.html" data-i18n="mobile.denmark">Denmark</a>
-    <a href="planning-norway.html" data-i18n="mobile.norway">Norway</a>
-  </div>
-  <a href="blog.html" data-i18n="mobile.blog">✍️ Blog</a>
-  <a href="gear.html" data-i18n="mobile.gear">🎒 Gear</a>
-  <a href="admin.html" class="admin-only-link" style="display:none" data-i18n="mobile.admin">⚙️ Admin</a>
-  <div class="mobile-lang-row">
-    <button class="mobile-lang-btn" data-lang="en">English</button>
-    <button class="mobile-lang-btn" data-lang="ja">日本語</button>
-    <button class="mobile-lang-btn" data-lang="no">Norsk</button>
-  </div>
-  <button class="btn btn-primary" style="margin-top:.5rem" onclick="openSubscribeModal()" data-i18n="mobile.subscribe">🔔 Subscribe to Updates</button>
-</div>
+<div class="mobile-menu" id="site-mobile-menu"></div>
 
 <!-- Page Hero -->
 <div class="page-hero">
@@ -569,18 +341,6 @@
           </div>
         </div>
 
-        <!-- Metadata modal (for Firebase route info) -->
-        <div class="meta-overlay" id="meta-overlay">
-          <div class="meta-modal" id="meta-modal">
-            <h3 id="meta-title" data-i18n="japan.meta.title">Route Info</h3>
-            <div id="meta-body"></div>
-            <div class="meta-actions">
-              <button class="roots-btn" id="meta-save-btn" style="display:none;" data-i18n="japan.meta.save">Save</button>
-              <button class="roots-btn" id="meta-close-btn" data-i18n="japan.meta.close">Close</button>
-            </div>
-          </div>
-        </div>
-
         <div id="map-wrapper">
           <button id="fullscreen-btn" title="Toggle fullscreen map" aria-label="Toggle fullscreen map">
             <!-- expand icon -->
@@ -595,16 +355,9 @@
             </svg>
           </button>
           <div id="map-loading">
-            <div class="loading-text" id="loading-text" data-i18n="japan.loading.routes">Loading routes...</div>
-            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="loading-text" data-i18n="japan.loading.routes">Loading map data…</div>
           </div>
           <div id="map"></div>
-        </div>
-
-        <!-- Route list panel (below map) — hidden; routes are toggled via the Layers button -->
-        <div id="route-panel" style="display:none">
-          <div id="route-toggles"></div>
-          <div id="route-stats"></div>
         </div>
       </div>
 
@@ -615,23 +368,7 @@
 </div>
 
 <!-- Footer -->
-<footer class="footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <a href="index.html" class="nav-logo" style="margin-bottom:.75rem"><span class="logo-icon">🚴</span><span>tomika<span class="accent">.bike</span></span></a>
-      <p data-i18n="footer.brand">A cycling adventure blog documenting our journey through Japan and Norway.</p>
-    </div>
-    <div class="footer-links">
-      <div class="footer-col"><h4 data-i18n="footer.explore">Explore</h4><a href="index.html" data-i18n="nav.home">Home</a><a href="japan.html" data-i18n="nav.japan">Japan</a><a href="norway.html" data-i18n="nav.norway">Norway</a><a href="gear.html" data-i18n="nav.gear">Gear</a></div>
-      <div class="footer-col"><h4 data-i18n="nav.planning">Planning</h4><a href="planning-japan.html" data-i18n="nav.japan">Japan</a><a href="planning-denmark.html" data-i18n="nav.denmark">Denmark</a><a href="planning-norway.html" data-i18n="nav.norway">Norway</a></div>
-      <div class="footer-col"><h4 data-i18n="footer.info">Info</h4><a href="about.html" data-i18n="footer.about">About Us</a></div>
-    </div>
-    <div class="footer-bottom">
-      <p data-i18n="footer.copy">© 2026 tomika.bike</p>
-      <p data-i18n="footer.made">Made with ❤️ and 🚴</p>
-    </div>
-  </div>
-</footer>
+<footer id="site-footer"></footer>
 
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -644,7 +381,13 @@
 <script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
 
 <script src="js/i18n.js"></script>
+<script src="js/site-nav.js"></script>
+<script>SiteNav.init();</script>
+<script src="js/site-footer.js"></script>
+<script>SiteFooter.init();</script>
 <script src="js/main.js"></script>
+<script src="js/point-types.js"></script>
+<script src="js/country-map.js"></script>
 <script src="js/japan-map.js"></script>
 </body>
 </html>

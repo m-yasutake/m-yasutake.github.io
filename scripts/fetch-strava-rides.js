@@ -5,10 +5,12 @@
  *
  * Fetches recent Strava bike rides, converts them to GPX, and uploads each
  * file to Firebase Storage (gpx/ prefix). A Firestore document is also added
- * to the 'routes' collection so that planning.html displays each ride
- * automatically, and so that the generate-pmtiles workflow can include them
+ * to the 'routes' collection so that the planning-<country>.html pages
+ * display each ride automatically, and so that the generate-pmtiles workflow
+ * can include them
  * in the PMTiles vector-tile overlay. The script also updates Firestore stats
- * docs for trips (stats/japan, stats/norway, etc.) and per-blog-post windows
+ * docs for trips (stats/japan, stats/norway, etc. — see scripts/trip-config.js
+ * for the tracked list and how to add a country) and per-blog-post windows
  * (stats/post_<blogPostId>) based on each post's tripDateFrom/tripDateTo.
  *
  * Required environment variables:
@@ -41,6 +43,7 @@ const path = require('path');
 const fs   = require('fs');
 
 const admin = require('firebase-admin');
+const { TRIP_COUNTRIES, getTripWindow } = require('./trip-config');
 
 // ── Credentials ───────────────────────────────────────────────────────────────
 let serviceAccount;
@@ -783,51 +786,24 @@ async function updateStatsDocument() {
     postRoutes.forEach(route => categorySet.add(route.id));
   }
 
-  // If JAPAN_TRIP_FROM is set, override the category total with a direct date-window
-  // query — so the home-page counter covers the whole trip even without full blog
-  // post coverage.  Set JAPAN_TRIP_TO to cap the window (defaults to now).
-  if (process.env.JAPAN_TRIP_FROM) {
-    const tripFromMs = new Date(process.env.JAPAN_TRIP_FROM).getTime();
-    const tripToMs   = process.env.JAPAN_TRIP_TO
-      ? new Date(process.env.JAPAN_TRIP_TO).getTime()
-      : Date.now();
-    const japanRoutes = routes.filter(r =>
-      r.activityMs !== null && r.activityMs >= tripFromMs && r.activityMs <= tripToMs
+  // If <COUNTRY>_TRIP_FROM is set for a tracked trip (scripts/trip-config.js),
+  // override its category total with a direct date-window query — so the
+  // home-page counter covers the whole trip even without full blog post
+  // coverage. Set <COUNTRY>_TRIP_TO to cap the window (defaults to now).
+  for (const category of TRIP_COUNTRIES) {
+    const window = getTripWindow(category);
+    if (!window) continue;
+    const categoryRoutes = routes.filter(r =>
+      r.activityMs !== null && r.activityMs >= window.fromMs && r.activityMs <= window.toMs
     );
-    console.log(`  Using JAPAN_TRIP_FROM window: ${japanRoutes.length} route(s) between ${process.env.JAPAN_TRIP_FROM} and ${process.env.JAPAN_TRIP_TO || 'now'}`);
-    categoryRouteIds.set('japan', new Set(japanRoutes.map(r => r.id)));
+    console.log(`  Using ${category.toUpperCase()}_TRIP_FROM window: ${categoryRoutes.length} route(s) between ${window.fromEnv} and ${window.toEnv || 'now'}`);
+    categoryRouteIds.set(category, new Set(categoryRoutes.map(r => r.id)));
   }
 
-  // If DENMARK_TRIP_FROM is set, override the denmark category total with a direct
-  // date-window query. Set DENMARK_TRIP_TO to cap the window (defaults to now).
-  if (process.env.DENMARK_TRIP_FROM) {
-    const tripFromMs = new Date(process.env.DENMARK_TRIP_FROM).getTime();
-    const tripToMs   = process.env.DENMARK_TRIP_TO
-      ? new Date(process.env.DENMARK_TRIP_TO).getTime()
-      : Date.now();
-    const denmarkRoutes = routes.filter(r =>
-      r.activityMs !== null && r.activityMs >= tripFromMs && r.activityMs <= tripToMs
-    );
-    console.log(`  Using DENMARK_TRIP_FROM window: ${denmarkRoutes.length} route(s) between ${process.env.DENMARK_TRIP_FROM} and ${process.env.DENMARK_TRIP_TO || 'now'}`);
-    categoryRouteIds.set('denmark', new Set(denmarkRoutes.map(r => r.id)));
-  }
-
-  // If NORWAY_TRIP_FROM is set, override the norway category total with a direct
-  // date-window query. Set NORWAY_TRIP_TO to cap the window (defaults to now).
-  if (process.env.NORWAY_TRIP_FROM) {
-    const tripFromMs = new Date(process.env.NORWAY_TRIP_FROM).getTime();
-    const tripToMs   = process.env.NORWAY_TRIP_TO
-      ? new Date(process.env.NORWAY_TRIP_TO).getTime()
-      : Date.now();
-    const norwayRoutes = routes.filter(r =>
-      r.activityMs !== null && r.activityMs >= tripFromMs && r.activityMs <= tripToMs
-    );
-    console.log(`  Using NORWAY_TRIP_FROM window: ${norwayRoutes.length} route(s) between ${process.env.NORWAY_TRIP_FROM} and ${process.env.NORWAY_TRIP_TO || 'now'}`);
-    categoryRouteIds.set('norway', new Set(norwayRoutes.map(r => r.id)));
-  }
-
-  // Fallback to env date window for Japan when no category routes were inferred.
-  else if (!categoryRouteIds.has('japan') || categoryRouteIds.get('japan').size === 0) {
+  // Fallback to the legacy STRAVA_AFTER_DATE/BEFORE_DATE window for Japan when
+  // no JAPAN_TRIP_FROM window is configured and no blog posts covered it
+  // either (older setups that predate the per-country trip-window env vars).
+  if (!categoryRouteIds.has('japan') || categoryRouteIds.get('japan').size === 0) {
     const afterMs  = process.env.STRAVA_AFTER_DATE  ? new Date(process.env.STRAVA_AFTER_DATE).getTime()  : null;
     const beforeMs = process.env.STRAVA_BEFORE_DATE ? new Date(process.env.STRAVA_BEFORE_DATE).getTime() : null;
     const fallbackJapan = routes.filter(r => {
@@ -884,11 +860,14 @@ async function updateStatsDocument() {
   // Write a static stats file to the repo so the map page can read trip totals
   // without making a live Firestore query on every page load.
   const statsFilePath = path.join(__dirname, '..', 'assets', 'stats.json');
-  const tripDates = {
-    japan:   { from: process.env.JAPAN_TRIP_FROM   || null, to: process.env.JAPAN_TRIP_TO   || null },
-    denmark: { from: process.env.DENMARK_TRIP_FROM || null, to: process.env.DENMARK_TRIP_TO || null },
-    norway:  { from: process.env.NORWAY_TRIP_FROM  || null, to: process.env.NORWAY_TRIP_TO  || null },
-  };
+  const tripDates = {};
+  for (const category of TRIP_COUNTRIES) {
+    const prefix = category.toUpperCase();
+    tripDates[category] = {
+      from: process.env[`${prefix}_TRIP_FROM`] || null,
+      to: process.env[`${prefix}_TRIP_TO`] || null
+    };
+  }
   fs.writeFileSync(
     statsFilePath,
     JSON.stringify({ ...staticStats, tripDates, generatedAt: new Date().toISOString() }, null, 2),

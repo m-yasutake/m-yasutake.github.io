@@ -7,14 +7,24 @@
  * to GeoJSON, and runs tippecanoe to generate PMTiles files:
  *   - tiles/my-routes-<category>.pmtiles – personal/Strava routes (isOwner:
  *     true), split into bounded shards by trip so no single file grows
- *     past GitHub's 100 MB limit. Category is one of 'japan', 'norway',
- *     'denmark' (using the same JAPAN_TRIP_FROM/TO-style date windows as
- *     fetch-strava-rides.js) or 'other-<year>' for anything outside those
- *     windows.
+ *     past GitHub's 100 MB limit. Category is one of the trips listed in
+ *     scripts/trip-config.js (using the same <COUNTRY>_TRIP_FROM/TO-style
+ *     date windows as fetch-strava-rides.js) or 'other-<year>' for anything
+ *     outside those windows.
  *   - tiles/planned-routes.pmtiles – manually uploaded planning routes
- *   - assets/tiles/my-routes-manifest.json – lists the category shards
- *     generated this run, so frontend pages can discover them without any
- *     hardcoded list.
+ *   - assets/tiles/my-routes-manifest.json – lists every category shard that
+ *     currently has a valid file on disk (not just ones touched this run),
+ *     so frontend pages can discover them without any hardcoded list.
+ *
+ * Each category's GPX file set is fingerprinted (assets/tiles/
+ * category-fingerprints.json, committed alongside the shards) and compared
+ * against last run — a category is only re-downloaded, re-tiled, re-uploaded,
+ * and re-committed if its fingerprint changed or its output file is missing.
+ * This matters because PMTiles is a compressed binary format: even an
+ * unchanged re-run of tippecanoe produces a git blob with no useful delta
+ * against the last commit, so without this check, one new ride in any single
+ * category used to force fresh multi-megabyte commits for every OTHER
+ * category's shard too, on every run.
  *
  * All pmtiles files are uploaded back to Firebase Storage in the tiles/
  * prefix and copied to assets/tiles/ for GitHub Pages serving.
@@ -23,7 +33,8 @@
  *   FIREBASE_SERVICE_ACCOUNT='<json>' node generate-pmtiles.js
  *   # or place serviceAccountKey.json in the same directory as this script
  *
- * Optional env vars (same names/format as fetch-strava-rides.js):
+ * Optional env vars (same names/format as fetch-strava-rides.js) — see
+ * scripts/trip-config.js for the current list of trips and how to add one:
  *   JAPAN_TRIP_FROM / JAPAN_TRIP_TO
  *   NORWAY_TRIP_FROM / NORWAY_TRIP_TO
  *   DENMARK_TRIP_FROM / DENMARK_TRIP_TO
@@ -32,13 +43,15 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const { execSync } = require('child_process');
 
 const admin = require('firebase-admin');
 const { gpx: gpxToGeoJSON } = require('@tmcw/togeojson');
 const { DOMParser } = require('@xmldom/xmldom');
+const { TRIP_COUNTRIES, getTripWindow } = require('./trip-config');
 
-// Must match ROUTE_COLORS in planning.html exactly
+// Must match ROUTE_COLORS in js/japan-map.js exactly
 const ROUTE_COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a29bfe','#fd79a8','#00b894','#e17055','#0984e3','#6c5ce7','#fdcb6e'];
 
 // ── Credentials ───────────────────────────────────────────────────────────────
@@ -96,28 +109,63 @@ function extractActivityMs(data) {
   return new Date(m[1] + 'T00:00:00Z').getTime();
 }
 
-/** True if the given timestamp (ms) falls inside the <PREFIX>_TRIP_FROM/TO env window. */
-function isInTripWindow(activityMs, envPrefix) {
-  const fromEnv = process.env[`${envPrefix}_TRIP_FROM`];
-  if (!fromEnv) return false;
-  const fromMs = new Date(fromEnv).getTime();
-  const toEnv = process.env[`${envPrefix}_TRIP_TO`];
-  const toMs = toEnv ? new Date(toEnv).getTime() : Date.now();
-  return activityMs >= fromMs && activityMs <= toMs;
-}
-
 /**
  * Classifies a personal route's activity date into a bounded pmtiles shard
- * category: a named trip if it falls inside one of the JAPAN/NORWAY/DENMARK
- * date windows, otherwise 'other-<year>' so the fallback bucket can't grow
- * unbounded either. Returns 'other-unknown' if no date could be determined.
+ * category: a named trip if it falls inside one of the TRIP_COUNTRIES date
+ * windows (scripts/trip-config.js), otherwise 'other-<year>' so the fallback
+ * bucket can't grow unbounded either. Returns 'other-unknown' if no date
+ * could be determined.
  */
 function computeCategory(activityMs) {
   if (activityMs == null) return 'other-unknown';
-  if (isInTripWindow(activityMs, 'JAPAN'))   return 'japan';
-  if (isInTripWindow(activityMs, 'DENMARK')) return 'denmark';
-  if (isInTripWindow(activityMs, 'NORWAY'))  return 'norway';
+  for (const category of TRIP_COUNTRIES) {
+    const window = getTripWindow(category);
+    if (window && activityMs >= window.fromMs && activityMs <= window.toMs) return category;
+  }
   return `other-${new Date(activityMs).getUTCFullYear()}`;
+}
+
+// ── Change detection ─────────────────────────────────────────────────────────
+// This workflow only runs when a new Strava ride was found (see
+// fetch-strava-rides.yml), but it used to rebuild AND re-commit every shard
+// on every such run regardless of which category the new ride actually
+// belongs to. PMTiles is a compressed binary format, so even a byte-identical
+// re-run of tippecanoe produces a git blob with no useful delta against the
+// last commit — meaning one new Japan ride was enough to force fresh
+// multi-megabyte commits for the Norway/Denmark/other shards too, even though
+// their underlying routes hadn't changed at all.
+//
+// Fix: fingerprint each category from its GPX files' Storage `md5Hash` (free
+// metadata from the same bucket.getFiles() list call — no download needed)
+// plus a content hash for any legacy Firestore-inline-gpxContent routes.
+// Compare against the fingerprint recorded last run (assets/tiles/
+// category-fingerprints.json, committed alongside the manifest); skip
+// downloading, tiling, uploading, and touching the local file entirely for
+// any category whose fingerprint is unchanged and whose output file already
+// exists on disk.
+const FINGERPRINTS_PATH = path.join(__dirname, '..', 'assets', 'tiles', 'category-fingerprints.json');
+
+function loadFingerprints() {
+  try {
+    return JSON.parse(fs.readFileSync(FINGERPRINTS_PATH, 'utf8'));
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveFingerprints(fingerprints) {
+  fs.writeFileSync(FINGERPRINTS_PATH, JSON.stringify(fingerprints, null, 2));
+}
+
+/** Stable fingerprint for a set of {name, md5Hash} entries — order-independent. */
+function fingerprintEntries(entries) {
+  const sorted = entries.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const joined = sorted.map(e => `${e.name}:${e.md5Hash}`).join('|');
+  return crypto.createHash('sha1').update(joined).digest('hex');
+}
+
+function md5OfString(str) {
+  return crypto.createHash('md5').update(str).digest('base64');
 }
 
 /**
@@ -228,7 +276,7 @@ async function generateAndUpload(features, tmpDir, baseName, bucket) {
   //    --simplification=10  slightly more aggressive line simplification than
   //                     tippecanoe's default, to keep output size down with
   //                     negligible visual difference at normal viewing zooms
-  //    -l routes        name the layer "routes" (referenced in planning.html)
+  //    -l routes        name the layer "routes" (referenced in js/country-map.js and js/japan-map.js)
   //    --force          overwrite output file if it already exists
   const outputPath = path.join(tmpDir, `${baseName}.pmtiles`);
   const tippecanoeCmd = [
@@ -289,8 +337,8 @@ async function main() {
   console.log('Working directory:', tmpDir);
 
   try {
-    // 1. Fetch ALL route documents from Firestore (same ordering as planning.html so
-    //    colors are assigned consistently).
+    // 1. Fetch ALL route documents from Firestore (same ordering as the route
+    //    list in js/japan-map.js so colors are assigned consistently).
     console.log('Fetching route order from Firestore...');
     const db = admin.firestore();
     const snapshot = await db.collection('routes').orderBy('uploadedAt', 'desc').get();
@@ -351,14 +399,14 @@ async function main() {
     warnMissing(myRoutesMeta,   'personal');
     warnMissing(planRoutesMeta, 'planning');
 
-    // 3. Download each Storage GPX file and convert to GeoJSON LineString features.
-    //    Route membership (personal vs planning) is determined by which colorMap
-    //    contains the storagePath/fileName.
+    // 3. Classify each Storage GPX file into a category WITHOUT downloading it
+    //    — membership and category only depend on Firestore route metadata
+    //    (myColorMap), already loaded above. This lets us fingerprint each
+    //    category (Storage already returns md5Hash per file for free from the
+    //    list call) and skip downloading/parsing entirely for any category
+    //    whose file set turns out to be unchanged from last run.
     const parser = new DOMParser();
-    const myFeaturesByCategory = {}; // category -> feature array
-    const planFeatures = [];
 
-    // Determine if a storage file belongs to personal routes
     function isOwnerFile(storagePath) {
       const fileName = path.basename(storagePath);
       return !!(myColorMap[storagePath] || myColorMap[fileName]);
@@ -370,28 +418,19 @@ async function main() {
       return (meta && meta.category) || 'other-unknown';
     }
 
-    function addToCategory(category, features) {
-      if (features.length === 0) return;
-      if (!myFeaturesByCategory[category]) myFeaturesByCategory[category] = [];
-      myFeaturesByCategory[category].push(...features);
-    }
-
+    const myStorageFilesByCategory = {}; // category -> File[]
+    const planStorageFiles = [];
     for (const file of gpxFiles) {
-      console.log(`  Processing Storage file: ${file.name}`);
-      try {
-        const [content] = await file.download();
-        const xmlStr = content.toString('utf8');
-        if (isOwnerFile(file.name)) {
-          addToCategory(categoryForFile(file.name), gpxTextToFeatures(parser, xmlStr, file.name, null, myColorMap));
-        } else {
-          planFeatures.push(...gpxTextToFeatures(parser, xmlStr, file.name, null, planColorMap));
-        }
-      } catch (err) {
-        console.warn(`  Warning: Failed to process ${file.name}:`, err.message);
+      if (isOwnerFile(file.name)) {
+        const category = categoryForFile(file.name);
+        if (!myStorageFilesByCategory[category]) myStorageFilesByCategory[category] = [];
+        myStorageFilesByCategory[category].push(file);
+      } else {
+        planStorageFiles.push(file);
       }
     }
 
-    // 3b. Process Firestore-only routes (Storage file missing, gpxContent present)
+    // 3b. Firestore-only routes (Storage file missing, gpxContent present)
     const myFirestoreOnly   = myRoutesMeta.filter(r => {
       const inStorage = r.storagePath && storageFileNames.has(r.storagePath);
       return !inStorage && r.gpxContent;
@@ -410,51 +449,124 @@ async function main() {
       planFirestoreOnly.forEach(r => console.warn(`      • ${r.fileName || '(unknown)'}`));
     }
 
+    const myFirestoreOnlyByCategory = {}; // category -> route[]
     for (const r of myFirestoreOnly) {
-      console.log(`  Processing Firestore-cached GPX (personal): ${r.fileName || '(unknown)'}`);
-      try {
-        addToCategory(
-          r.category || 'other-unknown',
-          gpxTextToFeatures(parser, r.gpxContent, r.storagePath, r.fileName, myColorMap)
-        );
-      } catch (err) {
-        console.warn(`  Warning: Failed to process inline gpxContent for ${r.fileName || '(unknown)'}:`, err.message);
-      }
+      const category = r.category || 'other-unknown';
+      if (!myFirestoreOnlyByCategory[category]) myFirestoreOnlyByCategory[category] = [];
+      myFirestoreOnlyByCategory[category].push(r);
     }
 
-    for (const r of planFirestoreOnly) {
-      console.log(`  Processing Firestore-cached GPX (planning): ${r.fileName || '(unknown)'}`);
-      try {
-        planFeatures.push(...gpxTextToFeatures(parser, r.gpxContent, r.storagePath, r.fileName, planColorMap));
-      } catch (err) {
-        console.warn(`  Warning: Failed to process inline gpxContent for ${r.fileName || '(unknown)'}:`, err.message);
-      }
-    }
-
-    const categories = Object.keys(myFeaturesByCategory).sort();
-    const myFeatureCount = categories.reduce((sum, c) => sum + myFeaturesByCategory[c].length, 0);
-    console.log(`Personal routes: ${myFeatureCount} GeoJSON feature(s) across ${categories.length} categor${categories.length === 1 ? 'y' : 'ies'}: ${categories.join(', ') || '(none)'}.`);
-    console.log(`Planning routes: ${planFeatures.length} GeoJSON feature(s).`);
-
-    if (myFeatureCount === 0 && planFeatures.length === 0) {
-      console.warn('No valid GeoJSON features produced for either route set. Exiting without generating tiles.');
-      return;
-    }
-
-    // 4 & 5. Generate and upload one PMTiles shard per personal-route category,
-    // plus a single file for planned routes.
-    for (const category of categories) {
-      await generateAndUpload(myFeaturesByCategory[category], tmpDir, `my-routes-${category}`, bucket);
-    }
-    await generateAndUpload(planFeatures, tmpDir, 'planned-routes', bucket);
-
-    // Write a manifest listing the shards generated this run, so frontend
-    // pages can discover them dynamically without any hardcoded category list.
+    // 3c. Fingerprint each category and diff against last run.
     const assetsDir = path.join(__dirname, '..', 'assets', 'tiles');
     if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
+    const oldFingerprints = loadFingerprints();
+    const newFingerprints = {};
+
+    function fingerprintForCategory(storageFiles, firestoreOnlyRoutes) {
+      const entries = storageFiles.map(f => ({ name: f.name, md5Hash: (f.metadata && f.metadata.md5Hash) || '' }));
+      firestoreOnlyRoutes.forEach(r => {
+        entries.push({ name: 'firestore:' + (r.fileName || r.storagePath || ''), md5Hash: md5OfString(r.gpxContent) });
+      });
+      return fingerprintEntries(entries);
+    }
+
+    function categoryOutputExists(baseName) {
+      return fs.existsSync(path.join(assetsDir, `${baseName}.pmtiles`));
+    }
+
+    const allMyCategories = new Set([...Object.keys(myStorageFilesByCategory), ...Object.keys(myFirestoreOnlyByCategory)]);
+    const categoriesToProcess = [];
+    const categoriesUnchanged = [];
+    for (const category of allMyCategories) {
+      const fp = fingerprintForCategory(myStorageFilesByCategory[category] || [], myFirestoreOnlyByCategory[category] || []);
+      newFingerprints[category] = fp;
+      if (fp === oldFingerprints[category] && categoryOutputExists(`my-routes-${category}`)) {
+        categoriesUnchanged.push(category);
+      } else {
+        categoriesToProcess.push(category);
+      }
+    }
+
+    const planFp = fingerprintForCategory(planStorageFiles, planFirestoreOnly);
+    newFingerprints['planned-routes'] = planFp;
+    const planUnchanged = planFp === oldFingerprints['planned-routes'] && categoryOutputExists('planned-routes');
+
+    if (categoriesUnchanged.length > 0) {
+      console.log(`Unchanged, skipping: ${categoriesUnchanged.join(', ')}`);
+    }
+    if (planUnchanged) console.log('Unchanged, skipping: planned-routes');
+
+    // 4. Download + parse GPX only for categories that actually changed.
+    const myFeaturesByCategory = {}; // category -> feature array (only changed categories)
+    const planFeatures = [];
+
+    for (const category of categoriesToProcess) {
+      for (const file of myStorageFilesByCategory[category] || []) {
+        console.log(`  Processing Storage file: ${file.name}`);
+        try {
+          const [content] = await file.download();
+          const features = gpxTextToFeatures(parser, content.toString('utf8'), file.name, null, myColorMap);
+          if (!myFeaturesByCategory[category]) myFeaturesByCategory[category] = [];
+          myFeaturesByCategory[category].push(...features);
+        } catch (err) {
+          console.warn(`  Warning: Failed to process ${file.name}:`, err.message);
+        }
+      }
+      for (const r of myFirestoreOnlyByCategory[category] || []) {
+        console.log(`  Processing Firestore-cached GPX (personal): ${r.fileName || '(unknown)'}`);
+        try {
+          const features = gpxTextToFeatures(parser, r.gpxContent, r.storagePath, r.fileName, myColorMap);
+          if (!myFeaturesByCategory[category]) myFeaturesByCategory[category] = [];
+          myFeaturesByCategory[category].push(...features);
+        } catch (err) {
+          console.warn(`  Warning: Failed to process inline gpxContent for ${r.fileName || '(unknown)'}:`, err.message);
+        }
+      }
+    }
+
+    if (!planUnchanged) {
+      for (const file of planStorageFiles) {
+        console.log(`  Processing Storage file: ${file.name}`);
+        try {
+          const [content] = await file.download();
+          planFeatures.push(...gpxTextToFeatures(parser, content.toString('utf8'), file.name, null, planColorMap));
+        } catch (err) {
+          console.warn(`  Warning: Failed to process ${file.name}:`, err.message);
+        }
+      }
+      for (const r of planFirestoreOnly) {
+        console.log(`  Processing Firestore-cached GPX (planning): ${r.fileName || '(unknown)'}`);
+        try {
+          planFeatures.push(...gpxTextToFeatures(parser, r.gpxContent, r.storagePath, r.fileName, planColorMap));
+        } catch (err) {
+          console.warn(`  Warning: Failed to process inline gpxContent for ${r.fileName || '(unknown)'}:`, err.message);
+        }
+      }
+    }
+
+    const changedCategories = Object.keys(myFeaturesByCategory).sort();
+    const myFeatureCount = changedCategories.reduce((sum, c) => sum + myFeaturesByCategory[c].length, 0);
+    console.log(`Personal routes: ${myFeatureCount} GeoJSON feature(s) across ${changedCategories.length} changed categor${changedCategories.length === 1 ? 'y' : 'ies'}: ${changedCategories.join(', ') || '(none)'}.`);
+    console.log(`Planning routes: ${planFeatures.length} GeoJSON feature(s)${planUnchanged ? ' (unchanged, skipped)' : ''}.`);
+
+    // 5. Generate and upload only the shards that actually changed.
+    for (const category of changedCategories) {
+      await generateAndUpload(myFeaturesByCategory[category], tmpDir, `my-routes-${category}`, bucket);
+    }
+    if (!planUnchanged && planFeatures.length > 0) {
+      await generateAndUpload(planFeatures, tmpDir, 'planned-routes', bucket);
+    }
+
+    // The manifest must list every category with a valid file on disk, not
+    // just the ones processed this run — otherwise a skipped-but-unchanged
+    // category would vanish from the frontend on the next deploy.
+    const categories = [...allMyCategories].filter(c => categoryOutputExists(`my-routes-${c}`)).sort();
     const manifestPath = path.join(assetsDir, 'my-routes-manifest.json');
     fs.writeFileSync(manifestPath, JSON.stringify({ categories }, null, 2));
     console.log(`Wrote manifest: ${manifestPath}`);
+
+    saveFingerprints(newFingerprints);
+    console.log(`Wrote fingerprints: ${FINGERPRINTS_PATH}`);
 
   } finally {
     // 6. Clean up temp directory

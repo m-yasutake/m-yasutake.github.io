@@ -27,6 +27,13 @@ on:
   repository_dispatch:
     types: [regenerate-points]
 
+# Shared across all four data-refresh workflows so overlapping runs (nightly
+# Strava fetch, weekly facilities fetch, manual tile/point regen) queue
+# instead of racing on `git push` to main.
+concurrency:
+  group: repo-data-refresh
+  cancel-in-progress: false
+
 jobs:
   generate-snapshot:
     runs-on: ubuntu-latest

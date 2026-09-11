@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+  	// Helper: true when the signed-in user is the site admin.
+    function isAdmin() {
+    return request.auth != null
+        && (request.auth.token.email == 'tcharlton91@gmail.com'
+            || request.auth.token.email == 'm.a.yasutake@gmail.com');
+  	}
+
+    // ── Blog posts ────────────────────────────────────────────
+    // Public can read published posts; only admin can write.
+    match /blog_posts/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Map routes ───────────────────────────────────────────
+    match /routes/{routeId} {
+      allow read: if true;
+			allow write: if isAdmin();
+
+    }
+
+    // ── Map points ───────────────────────────────────────────
+    match /points/{pointId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Gear categories ──────────────────────────────────────
+    match /gear_categories/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // ── Site config (gear links etc.) ────────────────────────
+    match /site_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // ── Site config (admins etc) ────────────────────────
+    match /config/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    
+    // ── Photos ───────────────────────────────────────────────
+    // Public can read; only admin can upload / edit / delete.
+    match /photos/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // ── Videos ───────────────────────────────────────────────
+    // Public can read; only admin can upload / edit / delete.
+    match /videos/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // ── Subscribers ──────────────────────────────────────────
+    // Anyone can subscribe (unauthenticated write via set()).
+    // Only admin can list / delete subscribers.
+    match /subscribers/{docId} {
+      allow write: if request.resource.data.keys().hasAll(['email','token','preferences','subscribedAt'])
+                   && request.resource.data.email is string
+                   && request.resource.data.email.matches('.*@.*\\..*');
+      allow read, update, delete: if isAdmin();
+    }
+    
+    // ── Stats ──────────────────────────────────────────
+    // Anyone can read stats
+    match /stats/{doc} {
+      allow read: if true;
+    }
+
+  }
+}
