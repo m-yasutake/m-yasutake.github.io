@@ -80,6 +80,8 @@ jobs:
           DENMARK_TRIP_TO:      ${{ vars.DENMARK_TRIP_TO }}
           NORWAY_TRIP_FROM:     ${{ vars.NORWAY_TRIP_FROM }}
           NORWAY_TRIP_TO:       ${{ vars.NORWAY_TRIP_TO }}
+          TURKEY_TRIP_FROM:     ${{ vars.TURKEY_TRIP_FROM }}
+          TURKEY_TRIP_TO:       ${{ vars.TURKEY_TRIP_TO }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node fetch-strava-rides.js
 
@@ -130,6 +132,8 @@ jobs:
           DENMARK_TRIP_TO:      ${{ vars.DENMARK_TRIP_TO }}
           NORWAY_TRIP_FROM:     ${{ vars.NORWAY_TRIP_FROM }}
           NORWAY_TRIP_TO:       ${{ vars.NORWAY_TRIP_TO }}
+          TURKEY_TRIP_FROM:     ${{ vars.TURKEY_TRIP_FROM }}
+          TURKEY_TRIP_TO:       ${{ vars.TURKEY_TRIP_TO }}
         run: node generate-pmtiles.js
 
       - name: Commit updated PMTiles to repo

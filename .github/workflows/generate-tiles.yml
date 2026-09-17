@@ -22,6 +22,7 @@
 #   JAPAN_TRIP_FROM / JAPAN_TRIP_TO
 #   NORWAY_TRIP_FROM / NORWAY_TRIP_TO
 #   DENMARK_TRIP_FROM / DENMARK_TRIP_TO
+#   TURKEY_TRIP_FROM / TURKEY_TRIP_TO
 #
 # Triggers:
 #   - Manual: Actions tab > "Generate PMTiles Tiles" > Run workflow
@@ -78,6 +79,8 @@ jobs:
           DENMARK_TRIP_TO:      ${{ vars.DENMARK_TRIP_TO }}
           NORWAY_TRIP_FROM:     ${{ vars.NORWAY_TRIP_FROM }}
           NORWAY_TRIP_TO:       ${{ vars.NORWAY_TRIP_TO }}
+          TURKEY_TRIP_FROM:     ${{ vars.TURKEY_TRIP_FROM }}
+          TURKEY_TRIP_TO:       ${{ vars.TURKEY_TRIP_TO }}
         run: node generate-pmtiles.js
 
       - name: Commit updated PMTiles to repo

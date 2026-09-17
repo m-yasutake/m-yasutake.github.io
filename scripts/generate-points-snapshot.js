@@ -77,6 +77,7 @@ function wrapDefaultAsOther(normalizeFn) {
 const normalizePointType        = wrapDefaultAsOther(PointTypes.japan.normalize);
 const normalizeNorwayPointType  = wrapDefaultAsOther(PointTypes.norway.normalize);
 const normalizeDenmarkPointType = wrapDefaultAsOther(PointTypes.denmark.normalize);
+const normalizeTurkeyPointType  = wrapDefaultAsOther(PointTypes.turkey.normalize);
 
 // Counts visited onsens among Japan's points and writes stats/japan so
 // index.html can read a single document instead of downloading the entire
@@ -149,6 +150,13 @@ const COUNTRY_SNAPSHOTS = [
     normalize: normalizeDenmarkPointType,
     localFile: 'denmark-points.json',
     storageFile: 'points/denmark-points.json'
+  },
+  {
+    key: 'turkey',
+    filter: (p) => p.country === 'Turkey',
+    normalize: normalizeTurkeyPointType,
+    localFile: 'turkey-points.json',
+    storageFile: 'points/turkey-points.json'
   }
 ];
 

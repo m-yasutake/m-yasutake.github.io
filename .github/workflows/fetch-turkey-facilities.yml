@@ -1,0 +1,61 @@
+# .github/workflows/fetch-turkey-facilities.yml
+#
+# Workflow: Fetch Turkey Facilities
+#
+# Queries the public Overpass API for drinking water points, public toilets,
+# picnic benches, and public shelters across Turkey and commits the result to
+# assets/turkey-facilities.json so the planning map can load it as a static
+# asset without runtime API calls.
+#
+# No secrets required — Overpass is a public API.
+#
+# Triggers:
+#   - Weekly: every Sunday at 03:00 UTC (keeps OSM data reasonably fresh)
+#   - Manual: Actions tab > "Fetch Turkey Facilities" > Run workflow
+
+name: Fetch Turkey Facilities
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+# Shared across all data-refresh workflows so overlapping runs (nightly
+# Strava fetch, weekly facilities fetch, manual tile/point regen) queue
+# instead of racing on `git push` to main.
+concurrency:
+  group: repo-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  fetch-facilities:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install script dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Fetch Turkey facilities from Overpass
+        working-directory: scripts
+        run: node fetch-turkey-facilities.js
+
+      - name: Commit updated facilities snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/turkey-facilities.json
+          git diff --cached --quiet || git commit -m "chore: update turkey-facilities.json [skip ci]"
+          git pull --rebase
+          git push

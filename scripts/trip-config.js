@@ -15,7 +15,7 @@
  *      set the corresponding repository variables in GitHub Settings.
  * No other code changes are required in either script.
  */
-const TRIP_COUNTRIES = ['japan', 'denmark', 'norway'];
+const TRIP_COUNTRIES = ['japan', 'denmark', 'norway', 'turkey'];
 
 /**
  * Reads the <CATEGORY>_TRIP_FROM / <CATEGORY>_TRIP_TO env vars for a trip
