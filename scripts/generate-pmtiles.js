@@ -54,6 +54,12 @@ const { TRIP_COUNTRIES, getTripWindow } = require('./trip-config');
 // Must match ROUTE_COLORS in js/japan-map.js exactly
 const ROUTE_COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a29bfe','#fd79a8','#00b894','#e17055','#0984e3','#6c5ce7','#fdcb6e'];
 
+// Set FORCE_REGENERATE=true to rebuild every shard regardless of fingerprint —
+// e.g. after a code change to feature properties (like adding gpxUrl) that
+// isn't reflected in any GPX file's content, so the fingerprint check alone
+// wouldn't detect it.
+const FORCE_REGENERATE = process.env.FORCE_REGENERATE === 'true';
+
 // ── Credentials ───────────────────────────────────────────────────────────────
 let serviceAccount;
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -487,7 +493,7 @@ async function main() {
     for (const category of allMyCategories) {
       const fp = fingerprintForCategory(myStorageFilesByCategory[category] || [], myFirestoreOnlyByCategory[category] || []);
       newFingerprints[category] = fp;
-      if (fp === oldFingerprints[category] && categoryOutputExists(`my-routes-${category}`)) {
+      if (!FORCE_REGENERATE && fp === oldFingerprints[category] && categoryOutputExists(`my-routes-${category}`)) {
         categoriesUnchanged.push(category);
       } else {
         categoriesToProcess.push(category);
@@ -496,7 +502,7 @@ async function main() {
 
     const planFp = fingerprintForCategory(planStorageFiles, planFirestoreOnly);
     newFingerprints['planned-routes'] = planFp;
-    const planUnchanged = planFp === oldFingerprints['planned-routes'] && categoryOutputExists('planned-routes');
+    const planUnchanged = !FORCE_REGENERATE && planFp === oldFingerprints['planned-routes'] && categoryOutputExists('planned-routes');
 
     if (categoriesUnchanged.length > 0) {
       console.log(`Unchanged, skipping: ${categoriesUnchanged.join(', ')}`);
