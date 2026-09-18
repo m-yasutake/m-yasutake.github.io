@@ -554,13 +554,16 @@
       return 1.5;
     }
 
-    // Shows an info popup for a clicked route feature (name + optional source link).
+    // Shows an info popup for a clicked route feature (name + optional source/GPX links).
     function showRoutePopup(e) {
       var properties = e.layer && e.layer.properties;
       if (!properties) return;
       var html = '<b>' + escapeHtml(properties.name || 'Route') + '</b>';
       if (properties.sourceUrl) {
         html += '<br><a href="' + escapeAttr(properties.sourceUrl) + '" target="_blank" rel="noopener">View source</a>';
+      }
+      if (properties.gpxUrl) {
+        html += '<br><a href="' + escapeAttr(properties.gpxUrl) + '" target="_blank" rel="noopener" download>Download GPX</a>';
       }
       L.popup().setLatLng(e.latlng).setContent(html).openOn(map);
     }
