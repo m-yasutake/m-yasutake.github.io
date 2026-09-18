@@ -554,6 +554,17 @@
       return 1.5;
     }
 
+    // Shows an info popup for a clicked route feature (name + optional source link).
+    function showRoutePopup(e) {
+      var properties = e.layer && e.layer.properties;
+      if (!properties) return;
+      var html = '<b>' + escapeHtml(properties.name || 'Route') + '</b>';
+      if (properties.sourceUrl) {
+        html += '<br><a href="' + escapeAttr(properties.sourceUrl) + '" target="_blank" rel="noopener">View source</a>';
+      }
+      L.popup().setLatLng(e.latlng).setContent(html).openOn(map);
+    }
+
     // ── PMTiles route overlays ──────────────────────────────────
     function initPMTilesLayer() {
       if (typeof pmtiles === 'undefined' || typeof L.vectorGrid === 'undefined') return;
@@ -565,7 +576,14 @@
         return p.getHeader()
           .catch(function () { return { minZoom: 2, maxZoom: 14 }; })
           .then(function (header) {
-            return L.vectorGrid.protobuf('pmtiles://' + instanceKey + '/{z}/{x}/{y}', {
+            var nativeOpts = {
+              maxNativeZoom: header.maxZoom || 14,
+              minNativeZoom: header.minZoom || 2,
+              updateWhenZooming: false,
+              keepBuffer: 4
+            };
+
+            var displayLayer = L.vectorGrid.protobuf('pmtiles://' + instanceKey + '/{z}/{x}/{y}', Object.assign({
               vectorTileLayerStyles: {
                 routes: function (properties) {
                   return {
@@ -576,12 +594,25 @@
                   };
                 }
               },
-              interactive: false,
-              maxNativeZoom: header.maxZoom || 14,
-              minNativeZoom: header.minZoom || 2,
-              updateWhenZooming: false,
-              keepBuffer: 4
-            });
+              interactive: false
+            }, nativeOpts));
+
+            // A second, invisible layer with a much wider stroke purely for hit-testing —
+            // VectorGrid's canvas renderer uses the styled stroke weight as its click
+            // tolerance, so the thin visible line (down to 0.5px at high zoom) is far too
+            // thin a target for touch. This gives routes a generous, consistent tap area
+            // without changing how they're drawn.
+            var hitLayer = L.vectorGrid.protobuf('pmtiles://' + instanceKey + '/{z}/{x}/{y}', Object.assign({
+              vectorTileLayerStyles: {
+                routes: function () {
+                  return { weight: 20, opacity: 0, fill: false };
+                }
+              },
+              interactive: true
+            }, nativeOpts));
+            hitLayer.on('click', showRoutePopup);
+
+            return L.layerGroup([displayLayer, hitLayer]);
           });
       }
 
