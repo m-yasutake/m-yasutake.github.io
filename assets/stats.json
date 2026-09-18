@@ -46,6 +46,11 @@
     "currentRouteName": "Capeability",
     "currentCity": "Nordkapp"
   },
+  "turkey": {
+    "totalDistanceKm": 0,
+    "totalElevationGain": 0,
+    "rideCount": 0
+  },
   "tripDates": {
     "japan": {
       "from": "2026-03-05",
@@ -58,7 +63,11 @@
     "norway": {
       "from": "2026-06-27",
       "to": "2026-09-10"
+    },
+    "turkey": {
+      "from": "2026-09-19",
+      "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-09-17T06:59:24.190Z"
+  "generatedAt": "2026-09-18T06:56:35.750Z"
 }
