@@ -25,14 +25,23 @@
 #   TURKEY_TRIP_FROM / TURKEY_TRIP_TO
 #
 # Triggers:
-#   - Manual: Actions tab > "Generate PMTiles Tiles" > Run workflow
+#   - Manual: Actions tab > "Generate PMTiles Tiles" > Run workflow. Check
+#     "force" to rebuild every shard even if its GPX file set hasn't
+#     changed (e.g. after a code change to what gets baked into each
+#     feature's properties, which the fingerprint check can't detect).
 #   - Automatic: Send a repository_dispatch event with type "regenerate-tiles"
-#     (e.g., from a Firebase Cloud Function after a new GPX upload).
+#     (e.g., from a Firebase Cloud Function after a new GPX upload). Pass
+#     client_payload: { force: true } to force a full rebuild.
 
 name: Generate PMTiles Tiles
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild every shard, ignoring unchanged fingerprints'
+        type: boolean
+        default: false
   repository_dispatch:
     types: [regenerate-tiles]
 
@@ -73,6 +82,7 @@ jobs:
         working-directory: scripts
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FORCE_REGENERATE:     ${{ github.event.inputs.force || github.event.client_payload.force || 'false' }}
           JAPAN_TRIP_FROM:      ${{ vars.JAPAN_TRIP_FROM }}
           JAPAN_TRIP_TO:        ${{ vars.JAPAN_TRIP_TO }}
           DENMARK_TRIP_FROM:    ${{ vars.DENMARK_TRIP_FROM }}
