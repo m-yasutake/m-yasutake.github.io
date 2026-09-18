@@ -168,6 +168,11 @@ function md5OfString(str) {
   return crypto.createHash('md5').update(str).digest('base64');
 }
 
+/** Public download URL for a `gpx/`-prefixed object (storage.rules allows unauthenticated read there). */
+function gpxDownloadUrl(storagePath) {
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media`;
+}
+
 /**
  * Convert GPX XML text to GeoJSON LineString features, applying color/name from
  * the provided metadata map entry.
@@ -180,6 +185,7 @@ function gpxTextToFeatures(parser, xmlStr, storagePath, fallbackFileName, colorM
   const featureColor = meta.color || '#2A9D8F';
   const featureName = meta.name || fileName.replace(/\.gpx$/i, '');
   const featureSource = meta.sourceUrl || null;
+  const featureGpxUrl = storagePath && storagePath.startsWith('gpx/') ? gpxDownloadUrl(storagePath) : null;
   const produced = [];
   geojson.features.forEach(feat => {
     // Only include line/multiline geometries — skip Point features (waypoints)
@@ -190,6 +196,7 @@ function gpxTextToFeatures(parser, xmlStr, storagePath, fallbackFileName, colorM
     feat.properties.color    = featureColor;
     feat.properties.name     = featureName;
     if (featureSource) feat.properties.sourceUrl = featureSource;
+    if (featureGpxUrl) feat.properties.gpxUrl = featureGpxUrl;
     produced.push(feat);
   });
 
