@@ -47,9 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 0,
-    "totalElevationGain": 0,
-    "rideCount": 0
+    "totalDistanceKm": 32.8,
+    "totalElevationGain": 98,
+    "rideCount": 1,
+    "tripStartPosition": [
+      41.031049,
+      28.981329
+    ],
+    "tripStartCity": "Beyoğlu",
+    "currentPosition": [
+      40.982618,
+      28.769763
+    ],
+    "currentRouteName": "Lunch Ride",
+    "currentCity": "Küçükçekmece"
   },
   "tripDates": {
     "japan": {
@@ -69,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-09-19T06:55:04.501Z"
+  "generatedAt": "2026-09-20T07:20:39.569Z"
 }
