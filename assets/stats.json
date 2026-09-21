@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 32.8,
-    "totalElevationGain": 98,
-    "rideCount": 1,
+    "totalDistanceKm": 106.4,
+    "totalElevationGain": 1093,
+    "rideCount": 2,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      40.982618,
-      28.769763
+      41.146583,
+      28.468259
     ],
-    "currentRouteName": "Lunch Ride",
-    "currentCity": "Küçükçekmece"
+    "currentRouteName": "Tourkey unlocked 🔑",
+    "currentCity": "Çatalca"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-09-20T07:20:39.569Z"
+  "generatedAt": "2026-09-21T07:29:53.450Z"
 }
