@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 106.4,
-    "totalElevationGain": 1093,
-    "rideCount": 2,
+    "totalDistanceKm": 323.7,
+    "totalElevationGain": 3226,
+    "rideCount": 5,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      41.146583,
-      28.468259
+      40.978412,
+      27.52758
     ],
-    "currentRouteName": "Tourkey unlocked 🔑",
-    "currentCity": "Çatalca"
+    "currentRouteName": "Morning Ride",
+    "currentCity": "Tekirdağ"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-09-24T07:01:38.937Z"
+  "generatedAt": "2026-09-25T06:57:15.455Z"
 }
