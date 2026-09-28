@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 382.3,
-    "totalElevationGain": 4227,
-    "rideCount": 6,
+    "totalDistanceKm": 497.9,
+    "totalElevationGain": 5202,
+    "rideCount": 7,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      40.659929,
-      27.232488
+      40.118033,
+      26.411948
     ],
-    "currentRouteName": "Mount Rim",
-    "currentCity": "Şarköy"
+    "currentRouteName": "Morning Ride",
+    "currentCity": "Çanakkale Merkez"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-09-27T07:26:32.244Z"
+  "generatedAt": "2026-09-28T08:04:17.248Z"
 }
