@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 497.9,
-    "totalElevationGain": 5202,
-    "rideCount": 7,
+    "totalDistanceKm": 719.9,
+    "totalElevationGain": 7278,
+    "rideCount": 13,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      40.118033,
-      26.411948
+      39.307628,
+      26.675378
     ],
-    "currentRouteName": "Morning Ride",
-    "currentCity": "Çanakkale Merkez"
+    "currentRouteName": "Trailwind",
+    "currentCity": "Ayvalık"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-10-05T08:03:56.702Z"
+  "generatedAt": "2026-10-06T08:25:06.113Z"
 }
