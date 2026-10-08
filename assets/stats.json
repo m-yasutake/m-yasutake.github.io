@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 719.9,
-    "totalElevationGain": 7278,
-    "rideCount": 13,
+    "totalDistanceKm": 827.8,
+    "totalElevationGain": 8205,
+    "rideCount": 15,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      39.307628,
-      26.675378
+      38.876921,
+      27.061584
     ],
-    "currentRouteName": "Trailwind",
-    "currentCity": "Ayvalık"
+    "currentRouteName": "Lunch Ride",
+    "currentCity": "Aliağa"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-10-07T08:01:24.951Z"
+  "generatedAt": "2026-10-08T08:15:30.944Z"
 }
