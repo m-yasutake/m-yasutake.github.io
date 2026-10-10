@@ -471,46 +471,6 @@
     width: 100%;
   }
 
-  /* ── Gear admin in admin panel ──────────────────────── */
-  .admin-gear-bar {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    flex-wrap: wrap;
-    background: rgba(91,140,107,.08);
-    border: 1px solid rgba(91,140,107,.2);
-    border-radius: var(--radius-md);
-    padding: .75rem 1rem;
-    margin-bottom: 1.25rem;
-    font-size: .875rem;
-  }
-  .admin-gear-bar .gear-admin-btn {
-    padding: .4rem .9rem;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: .82rem;
-    font-family: var(--font-body);
-    font-weight: 500;
-    transition: opacity .15s;
-  }
-  .admin-gear-bar .gear-admin-btn.edit { background: var(--color-secondary); color: #fff; }
-  .admin-gear-bar .gear-admin-btn.save { background: var(--color-primary); color: #fff; }
-  .admin-gear-bar .gear-admin-btn.cancel { background: var(--color-gray-300); color: var(--color-gray-800); }
-  .gear-row-delete, .gear-row-move {
-    background: none; border: none; cursor: pointer;
-    font-size: 1rem; opacity: 0.5; padding: 0.2rem;
-    transition: opacity 0.15s;
-  }
-  .gear-row-delete:hover, .gear-row-move:hover { opacity: 1; }
-  .gear-row-move { font-size: 0.85rem; }
-  .gear-group-header td {
-    background: var(--color-gray-100);
-    font-weight: 700; font-size: 0.72rem;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--color-primary); padding: 0.4rem 1rem;
-  }
-
   /* ── Email composer ──────────────────────────────────── */
   .email-composer-card {
     background: var(--color-white);
@@ -1245,8 +1205,8 @@
 
       <!-- Bike Links -->
       <div class="new-post-form" style="margin-bottom:1.5rem">
-        <h3 style="margin-bottom:1rem">🚲 Bike Photos</h3>
-        <p style="font-size:.85rem;color:var(--color-gray-500);margin-bottom:1rem">These photos appear at the top of the Gear page.</p>
+        <h3 style="margin-bottom:1rem">🚲 Bike Photos &amp; Links</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-500);margin-bottom:1rem">The photo and link appear on the rider's name at the top of the Gear page.</p>
         <div class="form-row">
           <div class="form-group">
             <label>Mika's Bike Photo</label>
@@ -1258,6 +1218,8 @@
               </div>
               <input type="hidden" id="bike-photo-mika" />
             </div>
+            <label style="margin-top:.75rem">Mika's Bike Link</label>
+            <input type="text" id="bike-url-mika" class="form-control" placeholder="https://…" style="margin-top:.25rem" />
           </div>
           <div class="form-group">
             <label>Tom's Bike Photo</label>
@@ -1269,21 +1231,14 @@
               </div>
               <input type="hidden" id="bike-photo-tom" />
             </div>
+            <label style="margin-top:.75rem">Tom's Bike Link</label>
+            <input type="text" id="bike-url-tom" class="form-control" placeholder="https://…" style="margin-top:.25rem" />
           </div>
         </div>
-        <button class="btn btn-primary" id="bike-links-save-btn" onclick="saveBikeLinks()">💾 Save Bike Photos</button>
+        <button class="btn btn-primary" id="bike-links-save-btn" onclick="saveBikeLinks()">💾 Save Bike Photos &amp; Links</button>
       </div>
 
-      <div class="admin-gear-bar" id="gearAdminBar" style="display:none">
-        <strong>⚙️ Admin gear editor</strong>
-        <button class="gear-admin-btn edit" id="gearEditBtn">✏️ Edit Gear</button>
-        <button class="gear-admin-btn save" id="gearSaveBtn" style="display:none">💾 Save</button>
-        <button class="gear-admin-btn cancel" id="gearCancelBtn" style="display:none">✕ Cancel</button>
-      </div>
-
-      <div id="gearContent">
-        <p style="padding:2rem;color:var(--color-gray-600)">Loading gear list…</p>
-      </div>
+      <p style="font-size:.85rem;color:var(--color-gray-500)">The gear list itself (categories and items) is edited in code — see <code>gear.html</code> — not through this dashboard.</p>
     </div>
 
     <!-- ── Map Data ── -->
