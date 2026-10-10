@@ -12,9 +12,10 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>" />
 
-  <!-- Leaflet (Onsen Picker map) is loaded lazily by js/admin/onsen-picker.js,
-       only when that section is opened — see loadLeafletAssets() there. Every
-       other admin visit skips two mapping libraries it never uses. -->
+  <!-- Leaflet (Onsen/Shelter Picker maps) is loaded lazily by
+       js/admin/onsen-picker.js / js/admin/shelter-picker.js, only when one of
+       those sections is opened — see loadLeafletAssets() there. Every other
+       admin visit skips two mapping libraries it never uses. -->
 
   <style>
     body { background: var(--color-gray-100); }
@@ -721,6 +722,13 @@
     align-items: center;
   }
   .onsen-picker-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+  #shelter-picker-map {
+    height: 450px;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-gray-200);
+    margin-top: .75rem;
+  }
   .onsen-legend-dot {
     display: inline-block;
     width: 14px; height: 14px;
@@ -1386,6 +1394,22 @@
           <span style="color:var(--color-gray-500);font-size:.75rem">Click a marker to toggle visited status</span>
         </div>
       </div>
+
+      <!-- Visited Shelters picker -->
+      <div class="mapdata-upload-block">
+        <h3>🏚️ Mark Visited Shelters</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-600);margin-bottom:.75rem">Click on the map to toggle whether a Norway shelter/hut has been visited. Covers open shelters, lean-tos, DNT huts, day huts, and rock shelters/caves from the uploaded hut CSVs — not the generic OSM shelter facilities.</p>
+        <button class="btn btn-primary" id="shelter-picker-load-btn" onclick="loadShelterPickerMap()">🗺️ Open Shelter Map</button>
+        <button class="btn" id="shelter-strava-toggle-btn" onclick="toggleShelterStravaRoutes()" style="display:none;margin-left:.5rem">🚴 Show Strava Routes</button>
+        <div class="mapdata-upload-status" id="shelter-picker-status"></div>
+        <div id="shelter-picker-map" style="display:none"></div>
+        <div class="onsen-picker-legend" id="shelter-picker-legend" style="display:none">
+          <span><span class="onsen-legend-dot" style="background:#2a9d8f"></span> Visited</span>
+          <span><span class="onsen-legend-dot" style="background:#e74c3c"></span> Not visited</span>
+          <span id="shelter-strava-legend" style="display:none"><span class="onsen-legend-dot" style="background:#E76F51;border-radius:2px"></span> Strava route</span>
+          <span style="color:var(--color-gray-500);font-size:.75rem">Click a marker to toggle visited status</span>
+        </div>
+      </div>
     </div>
 
     <!-- ── Subscribers ── -->
@@ -1634,6 +1658,7 @@
 <script src="js/admin/mapdata.js"></script>
 
 <script src="js/admin/onsen-picker.js"></script>
+<script src="js/admin/shelter-picker.js"></script>
 
 <script src="js/admin/subscribers.js"></script>
 

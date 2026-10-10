@@ -463,10 +463,10 @@
     var seeMore = document.getElementById('trip-see-more');
     if (seeMore) seeMore.href = trip + '.html';
 
-    // Update onsens/hytte label
+    // Update onsens/shelters label
     var onsensLabel = document.getElementById('stat-onsens-label');
     if (onsensLabel) {
-      if (trip === 'norway') onsensLabel.textContent = 'Hytte 🏠';
+      if (trip === 'norway') onsensLabel.textContent = 'Shelters 🏚️';
       else if (trip === 'denmark') onsensLabel.textContent = 'Kanelsnegles 🥐';
       else if (trip === 'turkey') onsensLabel.textContent = 'Çay ☕';
       else onsensLabel.textContent = 'Onsens ♨️';

@@ -112,6 +112,30 @@ async function writeJapanOnsenStats(japanPoints) {
   console.log('  ✓ stats/japan onsensCount updated.');
 }
 
+// Counts visited shelters/huts among Norway's points and writes stats/norway,
+// mirroring writeJapanOnsenStats above. Reuses the `onsensCount` field name
+// since index.html already treats that field as a generic "secondary stat"
+// slot shared across trips (see TRIP_STAT_DEFAULTS there for Denmark's own
+// reuse of it for Kanelsnegles). Only counts the manually-catalogued
+// hut/shelter points (open shelters, lean-tos, DNT huts, day huts, rock
+// shelters/caves) — never the generic OSM "Public Shelter" facilities, which
+// live in a separate facilities snapshot and aren't things our route passed.
+const SHELTER_RE = /shelter|lean.?to|dnt|hut|gapahuk|cave/i;
+async function writeNorwayShelterStats(norwayPoints) {
+  let onsensCount = 0;
+  for (const p of norwayPoints) {
+    if (!p.visited) continue;
+    const rawType = (p.metadata && (p.metadata.Type || p.metadata.type)) || p.type || '';
+    if (SHELTER_RE.test(rawType)) onsensCount++;
+  }
+  console.log(`Shelter count: ${onsensCount}`);
+  await db.collection('stats').doc('norway').set(
+    { onsensCount, statsUpdatedAt: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+  console.log('  ✓ stats/norway onsensCount (shelters) updated.');
+}
+
 // Per-country snapshot config, used by the loop in main() below.
 //
 // Japan predates the multi-country feature — its snapshot used to just be
@@ -125,9 +149,9 @@ async function writeJapanOnsenStats(japanPoints) {
 // japan-points.json pattern the other countries use.
 //
 // To add another country: add an entry here (and, if it needs frontend
-// icons/normalization, a block in js/point-types.js). Only Japan needs
-// extraStats — it's an optional hook for a country-specific side effect
-// beyond the snapshot file itself.
+// icons/normalization, a block in js/point-types.js). extraStats is an
+// optional hook for a country-specific side effect beyond the snapshot file
+// itself (Japan's onsen count, Norway's shelter count).
 const COUNTRY_SNAPSHOTS = [
   {
     key: 'japan',
@@ -142,7 +166,8 @@ const COUNTRY_SNAPSHOTS = [
     filter: (p) => p.country === 'Norway',
     normalize: normalizeNorwayPointType,
     localFile: 'norway-points.json',
-    storageFile: 'points/norway-points.json'
+    storageFile: 'points/norway-points.json',
+    extraStats: writeNorwayShelterStats
   },
   {
     key: 'denmark',
