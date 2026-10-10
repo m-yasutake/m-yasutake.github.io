@@ -221,6 +221,7 @@
         <button class="btn btn-outline" data-trip-btn="denmark" onclick="switchTrip('denmark')">Denmark</button>
         <button class="btn btn-outline" data-trip-btn="norway" onclick="switchTrip('norway')" data-i18n="index.hero.btn2">Norway</button>
         <button class="btn btn-outline" data-trip-btn="turkey" onclick="switchTrip('turkey')">Türkiye</button>
+        <button class="btn btn-outline" data-trip-btn="taiwan" onclick="switchTrip('taiwan')">Taiwan</button>
       </div>
     </div>
     <div id="map-stats-row">
@@ -357,7 +358,8 @@
     japan:   { start: '2026-03-05', end: '2026-05-25', active: false },
     denmark: { start: '2026-06-20', end: '2026-06-26', active: false },
     norway:  { start: '2026-06-27', end: null,          active: true  },
-    turkey:  { start: null,         end: null,          active: false }
+    turkey:  { start: null,         end: null,          active: false },
+    taiwan:  { start: '2026-11-10', end: null,          active: false }
   };
 
   function updateDaysDisplay(trip) {
@@ -469,6 +471,7 @@
       if (trip === 'norway') onsensLabel.textContent = 'Shelters 🏚️';
       else if (trip === 'denmark') onsensLabel.textContent = 'Kanelsnegles 🥐';
       else if (trip === 'turkey') onsensLabel.textContent = 'Çay ☕';
+      else if (trip === 'taiwan') onsensLabel.textContent = 'Night Market Snacks 🥟';
       else onsensLabel.textContent = 'Onsens ♨️';
     }
 
@@ -491,7 +494,8 @@
       japan:   { center: [38, 136],  zoom: 4 },
       denmark: { center: [56, 10.5], zoom: 5 },
       norway:  { center: [65, 16],   zoom: 4 },
-      turkey:  { center: [39, 35],   zoom: 5 }
+      turkey:  { center: [39, 35],   zoom: 5 },
+      taiwan:  { center: [23.7, 121], zoom: 7 }
     };
     if (_homeMap && views[trip]) {
       _homeMap.flyTo(views[trip].center, views[trip].zoom, { duration: 1.5 });
@@ -517,7 +521,7 @@
     try {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       var db = firebase.firestore();
-      ['japan', 'denmark', 'norway', 'turkey'].forEach(function (trip) {
+      ['japan', 'denmark', 'norway', 'turkey', 'taiwan'].forEach(function (trip) {
         db.collection('stats').doc(trip).get()
           .then(function (doc) {
             _tripStats[trip] = doc;
