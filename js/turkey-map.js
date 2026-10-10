@@ -1,4 +1,4 @@
-// js/turkey-map.js — Turkey config for the shared js/country-map.js module.
+// js/turkey-map.js — Türkiye config for the shared js/country-map.js module.
 // Loads points from assets/turkey-points.json (+ assets/turkey-facilities.json)
 // with server-side clustering at zoom levels 3–7; shows PMTiles route
 // overlays, point-type filter UI, fullscreen toggle.

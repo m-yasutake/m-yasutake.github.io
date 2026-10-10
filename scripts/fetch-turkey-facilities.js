@@ -4,10 +4,10 @@
  * fetch-turkey-facilities.js
  *
  * Queries the Overpass API for drinking water points, public toilets,
- * picnic benches, and public shelters across Turkey and writes the results
+ * picnic benches, and public shelters across Türkiye and writes the results
  * to assets/turkey-facilities.json.
  *
- * The output file is loaded by the Turkey planning map (planning-turkey.html)
+ * The output file is loaded by the Türkiye planning map (planning-turkey.html)
  * as a static asset — no runtime API calls needed.
  *
  * Usage:
@@ -82,7 +82,7 @@ function buildServerClusterLevels(points) {
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
-// Use Turkey's ISO 3166-1 area instead of a bounding box so points in
+// Use Türkiye's ISO 3166-1 area instead of a bounding box so points in
 // neighbouring countries are excluded automatically.
 const makeQuery = (filter, timeout = 60) =>
   `[out:json][timeout:${timeout}];area["ISO3166-1"="TR"]->.turkey;${filter}(area.turkey);out body;`;
