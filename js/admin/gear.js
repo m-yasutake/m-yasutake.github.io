@@ -12,22 +12,32 @@ const GearManagerAdmin = (function () {
 
   const GEAR_DEFAULT = [
     { id: 'mika-rig', icon: '🚲', name: "Mika's Rig", order: 0, items: [
-      { id: 'mr1', name: 'Touring bike',          notes: 'Steel frame, 700c wheels',     group: 'Bike'   },
-      { id: 'mr2', name: 'Rear rack',             notes: '',                             group: 'Mounts' },
-      { id: 'mr3', name: 'Front rack',            notes: '',                             group: 'Mounts' },
-      { id: 'mr4', name: 'Rear panniers (pair)',  notes: 'Ortlieb Back-Roller Classic',  group: 'Bags'   },
-      { id: 'mr5', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller',         group: 'Bags'   },
-      { id: 'mr6', name: 'Handlebar bag',         notes: 'Quick access for snacks & map',group: 'Bags'   },
-      { id: 'mr7', name: 'Frame bag',             notes: 'Tools & spares',               group: 'Bags'   },
+      { id: 'mr1',  name: '2021 Opus Horizon AL Apex 1 650',                      notes: 'Aluminum frame · 27.5", 48mm tires',                      group: 'Bike'       },
+      { id: 'mr2',  name: 'SRAM Apex 1x11 drivetrain',                            notes: '11-46 cassette × Shimano CUES 26T/40T chainring',         group: 'Drivetrain' },
+      { id: 'mr3',  name: 'Axiom Streamliner Disc DLX rack',                      notes: '',                                                         group: 'Mounts'     },
+      { id: 'mr4',  name: 'Blackburn Outpost fork cages',                         notes: '',                                                         group: 'Mounts'     },
+      { id: 'mr5',  name: 'Ortlieb Back-Roller Classic 20L',                      notes: 'Pannier',                                                  group: 'Bags'       },
+      { id: 'mr6',  name: 'Rhinowalk 22L Waterproof Bicycle Pannier Backpack',    notes: 'With laptop sleeve',                                       group: 'Bags'       },
+      { id: 'mr7',  name: 'DIY framebag',                                        notes: '',                                                         group: 'Bags'       },
+      { id: 'mr8',  name: 'DIY stem feedbag',                                    notes: '',                                                         group: 'Bags'       },
+      { id: 'mr9',  name: 'Sea to Summit drybags',                               notes: '',                                                         group: 'Bags'       },
+      { id: 'mr10', name: 'NinetyK Yes saddle',                                  notes: '',                                                         group: 'Comfort'    },
+      { id: 'mr11', name: 'Da Brim helmet shade',                                notes: '',                                                         group: 'Comfort'    },
     ]},
     { id: 'tom-rig', icon: '🚲', name: "Tom's Rig", order: 1, items: [
-      { id: 'tr1', name: 'Touring bike',          notes: 'Steel frame, 700c wheels',     group: 'Bike'   },
-      { id: 'tr2', name: 'Rear rack',             notes: '',                             group: 'Mounts' },
-      { id: 'tr3', name: 'Front rack',            notes: '',                             group: 'Mounts' },
-      { id: 'tr4', name: 'Rear panniers (pair)',  notes: 'Ortlieb Back-Roller Classic',  group: 'Bags'   },
-      { id: 'tr5', name: 'Front panniers (pair)', notes: 'Ortlieb Front-Roller',         group: 'Bags'   },
-      { id: 'tr6', name: 'Handlebar bag',         notes: 'Route notes and quick-access gear', group: 'Bags' },
-      { id: 'tr7', name: 'Frame bag',             notes: 'Pump and repair essentials',   group: 'Bags'   },
+      { id: 'tr1',  name: '2019 Kona Unit',                  notes: 'Steel frame · 27.5" wheels, 2–3" tyres',           group: 'Bike'       },
+      { id: 'tr2',  name: 'Shimano Deore XT drivetrain',     notes: '11-46 cassette × 32T chainring',                   group: 'Drivetrain' },
+      { id: 'tr3',  name: 'SON dynamo hub',                  notes: '',                                                  group: 'Power'      },
+      { id: 'tr4',  name: 'Sinewave Beacon',                 notes: 'Dynamo-powered headlight / USB charger',           group: 'Power'      },
+      { id: 'tr5',  name: 'Old Man Mountain rear rack',      notes: '',                                                  group: 'Mounts'     },
+      { id: 'tr6',  name: 'Blackburn Outpost fork cages',    notes: '',                                                  group: 'Mounts'     },
+      { id: 'tr7',  name: 'Ortlieb Back-Roller Classic 20L', notes: 'Pannier',                                           group: 'Bags'       },
+      { id: 'tr8',  name: 'Ortlieb Vario 20L',                notes: 'Pannier',                                           group: 'Bags'       },
+      { id: 'tr9',  name: 'DIY framebag',                    notes: '',                                                  group: 'Bags'       },
+      { id: 'tr10', name: 'Sea to Summit drybags',           notes: '',                                                  group: 'Bags'       },
+      { id: 'tr11', name: 'Brooks B17 saddle',                notes: '',                                                  group: 'Comfort'    },
+      { id: 'tr12', name: 'Surly Moloko handlebars',          notes: '',                                                  group: 'Comfort'    },
+      { id: 'tr13', name: 'Da Brim helmet shade',              notes: '',                                                  group: 'Comfort'    },
     ]},
     { id: 'shelter-sleep', icon: '🛏️', name: 'Shelter & Sleep', order: 2, items: [
       { id: 'ss1', name: 'Tent (2-person)',     notes: 'Main shelter',           group: '' },
@@ -106,7 +116,7 @@ const GearManagerAdmin = (function () {
   }
 
   const RIG_IDS = new Set(['mika-rig', 'tom-rig']);
-  const RIG_GROUPS = ['Bike', 'Mounts', 'Bags'];
+  const RIG_GROUPS = ['Bike', 'Drivetrain', 'Power', 'Mounts', 'Bags', 'Comfort'];
 
   function renderGear(data, editMode) {
     const content = document.getElementById('gearContent');
@@ -284,6 +294,10 @@ const GearManagerAdmin = (function () {
             const clr = document.getElementById('bike-photo-clear-tom');
             if (clr) clr.style.display = '';
           }
+          const mikaUrlInp = document.getElementById('bike-url-mika');
+          if (mikaUrlInp) mikaUrlInp.value = d.mikaBikeUrl || '';
+          const tomUrlInp = document.getElementById('bike-url-tom');
+          if (tomUrlInp) tomUrlInp.value = d.tomBikeUrl || '';
         }
       } catch (e) { /* non-critical */ }
     },

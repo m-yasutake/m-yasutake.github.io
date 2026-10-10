@@ -1245,8 +1245,8 @@
 
       <!-- Bike Links -->
       <div class="new-post-form" style="margin-bottom:1.5rem">
-        <h3 style="margin-bottom:1rem">🚲 Bike Photos</h3>
-        <p style="font-size:.85rem;color:var(--color-gray-500);margin-bottom:1rem">These photos appear at the top of the Gear page.</p>
+        <h3 style="margin-bottom:1rem">🚲 Bike Photos &amp; Links</h3>
+        <p style="font-size:.85rem;color:var(--color-gray-500);margin-bottom:1rem">The photo and link appear on the rider's name at the top of the Gear page.</p>
         <div class="form-row">
           <div class="form-group">
             <label>Mika's Bike Photo</label>
@@ -1258,6 +1258,8 @@
               </div>
               <input type="hidden" id="bike-photo-mika" />
             </div>
+            <label style="margin-top:.75rem">Mika's Bike Link</label>
+            <input type="text" id="bike-url-mika" class="form-control" placeholder="https://…" style="margin-top:.25rem" />
           </div>
           <div class="form-group">
             <label>Tom's Bike Photo</label>
@@ -1269,9 +1271,11 @@
               </div>
               <input type="hidden" id="bike-photo-tom" />
             </div>
+            <label style="margin-top:.75rem">Tom's Bike Link</label>
+            <input type="text" id="bike-url-tom" class="form-control" placeholder="https://…" style="margin-top:.25rem" />
           </div>
         </div>
-        <button class="btn btn-primary" id="bike-links-save-btn" onclick="saveBikeLinks()">💾 Save Bike Photos</button>
+        <button class="btn btn-primary" id="bike-links-save-btn" onclick="saveBikeLinks()">💾 Save Bike Photos &amp; Links</button>
       </div>
 
       <div class="admin-gear-bar" id="gearAdminBar" style="display:none">
