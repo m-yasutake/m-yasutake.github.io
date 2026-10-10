@@ -468,6 +468,7 @@
     if (onsensLabel) {
       if (trip === 'norway') onsensLabel.textContent = 'Hytte 🏠';
       else if (trip === 'denmark') onsensLabel.textContent = 'Kanelsnegles 🥐';
+      else if (trip === 'turkey') onsensLabel.textContent = 'Çay ☕';
       else onsensLabel.textContent = 'Onsens ♨️';
     }
 
@@ -475,6 +476,15 @@
     updateStatsDisplay(_tripStats[trip] || null, trip);
     updateDaysDisplay(trip);
     updateWeAreHereMarker(_tripStats[trip] || null);
+
+    // Çay counter: 3x the number of days on the road.
+    if (trip === 'turkey') {
+      var cayEl = document.getElementById('stat-onsens');
+      var daysOnRoad = parseInt((document.getElementById('stat-days') || {}).textContent, 10);
+      if (cayEl) {
+        animateCounter(cayEl, isNaN(daysOnRoad) ? 0 : daysOnRoad * 3);
+      }
+    }
 
     // Fly map to trip region
     var views = {
