@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 827.8,
-    "totalElevationGain": 8205,
-    "rideCount": 15,
+    "totalDistanceKm": 1009.6,
+    "totalElevationGain": 9593,
+    "rideCount": 18,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      38.876921,
-      27.061584
+      38.340988,
+      26.695867
     ],
-    "currentRouteName": "Lunch Ride",
-    "currentCity": "Aliağa"
+    "currentRouteName": "Path o logical",
+    "currentCity": "Urla"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-10-11T08:06:38.738Z"
+  "generatedAt": "2026-10-12T08:24:12.473Z"
 }
