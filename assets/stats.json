@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 1009.6,
-    "totalElevationGain": 9593,
-    "rideCount": 18,
+    "totalDistanceKm": 1390.7,
+    "totalElevationGain": 14076,
+    "rideCount": 25,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      38.340988,
-      26.695867
+      37.578445,
+      29.095941
     ],
-    "currentRouteName": "Path o logical",
-    "currentCity": "Urla"
+    "currentRouteName": "Full steam-roller ahead",
+    "currentCity": "Tavas"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-10-19T07:11:24.216Z"
+  "generatedAt": "2026-10-20T06:58:33.691Z"
 }
