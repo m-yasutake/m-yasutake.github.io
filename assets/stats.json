@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 1617,
-    "totalElevationGain": 16739,
-    "rideCount": 30,
+    "totalDistanceKm": 1898.6,
+    "totalElevationGain": 21629,
+    "rideCount": 35,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      38.6457,
-      34.842632
+      38.278932,
+      34.278784
     ],
-    "currentRouteName": "Caved in",
-    "currentCity": "Göreme Beldesi"
+    "currentRouteName": "Special tea",
+    "currentCity": "Güzelyurt"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-11-01T08:31:37.930Z"
+  "generatedAt": "2026-11-02T08:43:19.966Z"
 }
