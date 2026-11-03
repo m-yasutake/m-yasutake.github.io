@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 1898.6,
-    "totalElevationGain": 21629,
-    "rideCount": 35,
+    "totalDistanceKm": 1934.2,
+    "totalElevationGain": 22008,
+    "rideCount": 36,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      38.278932,
-      34.278784
+      38.478276,
+      34.299086
     ],
-    "currentRouteName": "Special tea",
-    "currentCity": "Güzelyurt"
+    "currentRouteName": "I see delight",
+    "currentCity": "Gülağaç"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-11-02T08:43:19.966Z"
+  "generatedAt": "2026-11-03T08:55:27.826Z"
 }
