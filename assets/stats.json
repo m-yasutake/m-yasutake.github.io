@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 1934.2,
-    "totalElevationGain": 22008,
-    "rideCount": 36,
+    "totalDistanceKm": 1993.2,
+    "totalElevationGain": 22817,
+    "rideCount": 37,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      38.478276,
-      34.299086
+      38.641419,
+      34.713157
     ],
-    "currentRouteName": "I see delight",
-    "currentCity": "Gülağaç"
+    "currentRouteName": "Mechanicool",
+    "currentCity": "Nar Beldesi"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-11-03T08:55:27.826Z"
+  "generatedAt": "2026-11-04T08:24:23.872Z"
 }
