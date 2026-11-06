@@ -480,12 +480,12 @@
     updateDaysDisplay(trip);
     updateWeAreHereMarker(_tripStats[trip] || null);
 
-    // Çay counter: 3x the days on the road; Taiwan bubble tea: 2x.
+    // Çay counter: 3x the days on the road; Taiwan bubble tea: 1 per 2 days.
     if (trip === 'turkey' || trip === 'taiwan') {
       var cayEl = document.getElementById('stat-onsens');
       var daysOnRoad = parseInt((document.getElementById('stat-days') || {}).textContent, 10);
       if (cayEl) {
-        animateCounter(cayEl, isNaN(daysOnRoad) ? 0 : daysOnRoad * (trip === 'taiwan' ? 2 : 3));
+        animateCounter(cayEl, isNaN(daysOnRoad) ? 0 : (trip === 'taiwan' ? Math.floor(daysOnRoad / 2) : daysOnRoad * 3));
       }
     }
 
