@@ -47,20 +47,20 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 1390.7,
-    "totalElevationGain": 14076,
-    "rideCount": 25,
+    "totalDistanceKm": 1993.2,
+    "totalElevationGain": 22817,
+    "rideCount": 37,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      37.578445,
-      29.095941
+      38.641419,
+      34.713157
     ],
-    "currentRouteName": "Full steam-roller ahead",
-    "currentCity": "Tavas"
+    "currentRouteName": "Mechanicool",
+    "currentCity": "Nar Beldesi"
   },
   "tripDates": {
     "japan": {
@@ -80,5 +80,5 @@
       "to": "2026-11-19"
     }
   },
-  "generatedAt": "2026-10-26T07:17:32.416Z"
+  "generatedAt": "2026-11-06T08:51:02.356Z"
 }
