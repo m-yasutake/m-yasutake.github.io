@@ -33,6 +33,7 @@
       + '<a href="denmark.html" data-i18n="nav.denmark">Denmark</a>'
       + '<a href="norway.html" data-i18n="nav.norway">Norway</a>'
       + '<a href="turkey.html" data-i18n="nav.turkey">Türkiye</a>'
+      + '<a href="taiwan.html" data-i18n="nav.taiwan">Taiwan</a>'
       + '<a href="gear.html" data-i18n="nav.gear">Gear</a>'
       + '</div>'
       + '<div class="footer-col">'
