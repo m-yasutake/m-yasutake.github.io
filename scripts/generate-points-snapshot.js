@@ -156,8 +156,11 @@ async function writeNorwayShelterStats(norwayPoints) {
 const COUNTRY_SNAPSHOTS = [
   {
     key: 'japan',
-    filter: (p) => p.country !== 'Norway' && p.country !== 'Denmark' &&
-      p.country !== 'Turkey' && p.country !== 'Taiwan',
+    // Also excludes Turkey/Taiwan now that those have their own explicit
+    // country tag too — without this, their points would leak into both
+    // their own snapshot AND Japan's (this filter predates both countries
+    // and was never updated when they were added).
+    filter: (p) => !['Norway', 'Denmark', 'Turkey', 'Taiwan'].includes(p.country),
     normalize: normalizePointType,
     localFile: 'points.json',
     storageFile: 'points/points.json',
