@@ -78,6 +78,7 @@ const normalizePointType        = wrapDefaultAsOther(PointTypes.japan.normalize)
 const normalizeNorwayPointType  = wrapDefaultAsOther(PointTypes.norway.normalize);
 const normalizeDenmarkPointType = wrapDefaultAsOther(PointTypes.denmark.normalize);
 const normalizeTurkeyPointType  = wrapDefaultAsOther(PointTypes.turkey.normalize);
+const normalizeTaiwanPointType  = wrapDefaultAsOther(PointTypes.taiwan.normalize);
 
 // Counts visited onsens among Japan's points and writes stats/japan so
 // index.html can read a single document instead of downloading the entire
@@ -155,7 +156,11 @@ async function writeNorwayShelterStats(norwayPoints) {
 const COUNTRY_SNAPSHOTS = [
   {
     key: 'japan',
-    filter: (p) => p.country !== 'Norway' && p.country !== 'Denmark',
+    // Also excludes Turkey/Taiwan now that those have their own explicit
+    // country tag too — without this, their points would leak into both
+    // their own snapshot AND Japan's (this filter predates both countries
+    // and was never updated when they were added).
+    filter: (p) => !['Norway', 'Denmark', 'Turkey', 'Taiwan'].includes(p.country),
     normalize: normalizePointType,
     localFile: 'points.json',
     storageFile: 'points/points.json',
@@ -182,6 +187,13 @@ const COUNTRY_SNAPSHOTS = [
     normalize: normalizeTurkeyPointType,
     localFile: 'turkey-points.json',
     storageFile: 'points/turkey-points.json'
+  },
+  {
+    key: 'taiwan',
+    filter: (p) => p.country === 'Taiwan',
+    normalize: normalizeTaiwanPointType,
+    localFile: 'taiwan-points.json',
+    storageFile: 'points/taiwan-points.json'
   }
 ];
 
