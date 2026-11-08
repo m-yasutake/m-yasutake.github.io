@@ -62,6 +62,11 @@
     "currentRouteName": "Mechanicool",
     "currentCity": "Nar Beldesi"
   },
+  "taiwan": {
+    "totalDistanceKm": 0,
+    "totalElevationGain": 0,
+    "rideCount": 0
+  },
   "tripDates": {
     "japan": {
       "from": "2026-03-05",
@@ -78,7 +83,11 @@
     "turkey": {
       "from": "2026-09-19",
       "to": "2026-11-19"
+    },
+    "taiwan": {
+      "from": "2026-11-09",
+      "to": "2026-12-16"
     }
   },
-  "generatedAt": "2026-11-07T08:06:28.881Z"
+  "generatedAt": "2026-11-08T08:26:19.016Z"
 }
