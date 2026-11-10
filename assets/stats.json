@@ -47,25 +47,36 @@
     "currentCity": "Nordkapp"
   },
   "turkey": {
-    "totalDistanceKm": 1993.2,
-    "totalElevationGain": 22817,
-    "rideCount": 37,
+    "totalDistanceKm": 2044,
+    "totalElevationGain": 23020,
+    "rideCount": 38,
     "tripStartPosition": [
       41.031049,
       28.981329
     ],
     "tripStartCity": "Beyoğlu",
     "currentPosition": [
-      38.641419,
-      34.713157
+      25.045722,
+      121.510642
     ],
-    "currentRouteName": "Mechanicool",
-    "currentCity": "Nar Beldesi"
+    "currentRouteName": "T1 - Taoyuan to Taipei",
+    "currentCity": "臺北市"
   },
   "taiwan": {
-    "totalDistanceKm": 0,
-    "totalElevationGain": 0,
-    "rideCount": 0
+    "totalDistanceKm": 50.8,
+    "totalElevationGain": 203,
+    "rideCount": 1,
+    "tripStartPosition": [
+      25.074892,
+      121.198785
+    ],
+    "tripStartCity": "桃園市",
+    "currentPosition": [
+      25.045722,
+      121.510642
+    ],
+    "currentRouteName": "T1 - Taoyuan to Taipei",
+    "currentCity": "臺北市"
   },
   "tripDates": {
     "japan": {
@@ -89,5 +100,5 @@
       "to": "2026-12-16"
     }
   },
-  "generatedAt": "2026-11-09T08:57:02.909Z"
+  "generatedAt": "2026-11-10T09:03:07.382Z"
 }
